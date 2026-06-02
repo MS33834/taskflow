@@ -1,0 +1,70 @@
+name: EAS Build APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: 'Platform to build for'
+        required: true
+        default: 'android'
+        type: choice
+        options:
+        - android
+      profile:
+        description: 'Build profile'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+        - preview
+        - production
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build APK
+        if: ${{ secrets.EXPO_TOKEN != '' }}
+        run: |
+          echo "Starting EAS Build..."
+          eas build --platform ${{ inputs.platform }} --profile ${{ inputs.profile }} --non-interactive --no-wait
+          
+      - name: Build Report
+        run: |
+          echo "## 📱 EAS Build Started!" > build-status.txt
+          echo "" >> build-status.txt
+          echo "Check your Expo dashboard for progress and download:" >> build-status.txt
+          echo "https://expo.dev/" >> build-status.txt
+          echo "" >> build-status.txt
+          echo "### OR Build Locally!" >> build-status.txt
+          echo "See BUILD_APK.md for instructions on how to build locally!" >> build-status.txt
+          
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-info
+          path: build-status.txt
+          retention-days: 30

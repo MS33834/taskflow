@@ -1,0 +1,96 @@
+name: Build Android App
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify TypeScript
+        run: npx tsc --noEmit
+
+      - name: Setup EAS
+        if: ${{ secrets.EXPO_TOKEN != '' }}
+        run: |
+          # 配置 EAS
+          echo "EXPO_TOKEN=${{ secrets.EXPO_TOKEN }}" >> $GITHUB_ENV
+      
+      - name: Build APK (Preview)
+        if: ${{ secrets.EXPO_TOKEN != '' }}
+        run: |
+          # 构建 Android 预览版 APK
+          eas build --platform android --profile preview --non-interactive --no-wait
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-artifacts
+          path: |
+            ./
+            !node_modules
+            !.git
+          retention-days: 30
+
+  test-local:
+    name: Local Build Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify TypeScript
+        run: npx tsc --noEmit
+
+      - name: Validate project structure
+        run: node test-build.js
+
+      - name: Create test build report
+        run: |
+          echo "✅ 项目验证成功！" > build-report.txt
+          echo "📱 Todo App - 项目结构验证报告" >> build-report.txt
+          echo "日期: $(date)" >> build-report.txt
+          echo "Node版本: $(node --version)" >> build-report.txt
+          echo "npm版本: $(npm --version)" >> build-report.txt
+          
+      - name: Upload build report
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-report
+          path: build-report.txt
+          retention-days: 30

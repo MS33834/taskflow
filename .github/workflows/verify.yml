@@ -1,0 +1,64 @@
+name: Verify Project
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  verify:
+    name: Verify Project Setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: TypeScript Check
+        run: npx tsc --noEmit
+
+      - name: Create Success Report
+        run: |
+          echo "✅ Project Verification Successful!" > verification-report.txt
+          echo "" >> verification-report.txt
+          echo "📅 Date: $(date)" >> verification-report.txt
+          echo "📦 Project: TaskFlow Todo App" >> verification-report.txt
+          echo "" >> verification-report.txt
+          echo "✅ TypeScript: OK" >> verification-report.txt
+          echo "✅ Dependencies: OK" >> verification-report.txt
+          echo "✅ Node.js 24: OK" >> verification-report.txt
+          echo "" >> verification-report.txt
+          echo "📖 How to test:" >> verification-report.txt
+          echo "1. Use Expo Go: npm start and scan QR code" >> verification-report.txt
+          echo "2. See QUICK_START.md for more details" >> verification-report.txt
+          echo "3. Repository: https://github.com/badhope/TaskFlow" >> verification-report.txt
+
+      - name: Upload Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: verification-report
+          path: verification-report.txt
+          retention-days: 30
+
+      - name: Summary
+        run: |
+          echo "## ✅ Verification Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "TaskFlow Todo App is ready!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📱 Test the App" >> $GITHUB_STEP_SUMMARY
+          echo "- Use Expo Go: npm start and scan QR code" >> $GITHUB_STEP_SUMMARY
+          echo "- See QUICK_START.md for details" >> $GITHUB_STEP_SUMMARY
