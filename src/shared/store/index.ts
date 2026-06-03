@@ -1936,8 +1936,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
     try {
       // Execute actions based on rule
       rule.actions.forEach((action) => {
-        // Action execution logic would go here
-        console.log('Executing action:', action.type, action.config);
+        // Action execution logic would go here.
+        // The shape of `action` is intentionally left to product requirements;
+        // intentionally NOT logging to avoid noisy devtools in production builds.
       });
 
       get().updateAutomationRule(ruleId, {

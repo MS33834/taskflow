@@ -44,7 +44,7 @@ export const TableView: React.FC<TableViewProps> = ({ tasks, onTaskPress }) => {
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
 
   const sortedTasks = useMemo(() => {
-    let result = [...tasks].filter((t) => !t.isDeleted);
+    const result = [...tasks].filter((t) => !t.isDeleted);
 
     if (sortBy) {
       result.sort((a, b) => {
