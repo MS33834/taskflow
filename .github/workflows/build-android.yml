@@ -78,7 +78,16 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Validate project structure
-        run: node test-build.js
+        run: |
+          # Sanity check that the build target files actually exist before
+          # we spend EAS credits spinning up a cloud build.
+          for f in App.tsx app.json eas.json package.json src/shared/store/index.ts; do
+            if [ ! -f "$f" ]; then
+              echo "::error::missing required file: $f"
+              exit 1
+            fi
+          done
+          echo "project structure OK"
 
       - name: Create test build report
         run: |

@@ -1,7 +1,7 @@
 {
   "name": "taskflow",
   "version": "1.1.0",
-  "description": "📱 TaskFlow - 现代化、跨平台（Web/Android/iOS）的 Todo & 任务管理 App。AI 智能建议、Forest 风格专注模式、@ 提及协作、拖拽重排、6 种视图（看板/甘特/时间线等），TypeScript 严格模式。",
+  "description": "Cross-platform (Web / Android / iOS) task manager built on React Native + Expo. TypeScript, Zustand, AsyncStorage.",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
@@ -35,8 +35,8 @@
     "material-icons"
   ],
   "author": {
-    "name": "TaskFlow Contributors",
-    "url": "https://github.com/badhope/TaskFlow"
+    "name": "badhope",
+    "url": "https://github.com/badhope"
   },
   "license": "MIT",
   "homepage": "https://github.com/badhope/TaskFlow#readme",

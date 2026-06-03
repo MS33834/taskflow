@@ -1,113 +1,44 @@
-# 📱 TaskFlow Releases
+# TaskFlow releases
 
-## Get Your APK! 📦
+Built APKs land here. The repo doesn't ship binaries; this folder exists
+so a manual upload via the GitHub UI (Actions → run workflow → upload
+artifact → drag into `releases/`) has an obvious destination.
 
-Three ways to download the app!
+## How to actually build one
 
----
+Three paths. Pick whichever one you have credentials for.
 
-## 1️⃣ **EAS Build (Recommended)**
+### EAS (cloud build, needs an Expo account)
 
-The easiest way!
+```
+npm install -g eas-cli
+eas login
+eas build:configure
+eas build --platform android --profile preview
+```
 
-1. Go to https://expo.dev/ and sign up
-2. Install EAS CLI: `npm install -g eas-cli`
-3. Login: `eas login`
-4. Configure: `eas build:configure`
-5. Build: `eas build --platform android --profile preview`
-6. Download your APK when finished!
+The dashboard gives you a download link when it's done. See
+[BUILD_APK.md](../BUILD_APK.md) for the long version.
 
-See [BUILD_APK.md](../BUILD_APK.md) for detailed instructions.
+### Local Gradle (no account)
 
----
-
-## 2️⃣ **Build Locally (No Account Needed!)**
-
-Build APK on your computer!
-
-**Linux/Mac:**
-```bash
-cd /workspace
+```
 npm install
 npx expo prebuild --platform android
 cd android
-chmod +x gradlew
 ./gradlew assembleDebug
-
-# APK will be at: android/app/build/outputs/apk/debug/app-debug.apk
+# APK: android/app/build/outputs/apk/debug/app-debug.apk
 ```
 
-**Windows:**
-```batch
-cd \workspace
-npm install
-npx expo prebuild --platform android
-cd android
-gradlew.bat assembleDebug
+### GitHub Actions
 
-# APK will be at: android\app\build\outputs\apk\debug\app-debug.apk
-```
+The `EAS Build APK` workflow takes a `EXPO_TOKEN` secret. Add one in
+the repo settings if you want to use this — without it the workflow
+will silently skip the actual build step.
 
----
+## What you'll get
 
-## 3️⃣ **GitHub Actions (Optional)**
-
-If you have configured your `EXPO_TOKEN` in GitHub Secrets:
-
-1. Go to: https://github.com/badhope/TaskFlow/actions
-2. Select the "EAS Build APK" workflow
-3. Click "Run workflow"
-4. Check your Expo dashboard for progress!
-
----
-
-## 4️⃣ **Test First! (Fastest!)**
-
-Don't want to build yet? Test the app instantly!
-
-1. Install **Expo Go** on your phone:
-   - Android: https://play.google.com/store/apps/details?id=host.exp.exponent
-   - iOS: https://apps.apple.com/app/expo-go/id982107779
-
-2. Run in the project directory:
-   ```bash
-   cd /workspace
-   npm start
-   ```
-
-3. Open Expo Go and scan the QR code!
-
----
-
-## About TaskFlow
-
-TaskFlow is a beautiful, modern todo list application built with React Native and Expo.
-
-### ✨ Features
-- Create, edit, and delete tasks
-- Mark tasks as complete
-- Organize with categories
-- Beautiful, intuitive UI
-- Local data persistence
-- TypeScript support
-
-### 🛠️ Tech Stack
-- React Native
-- Expo
-- TypeScript
-- React Navigation
-- Zustand (State Management)
-- AsyncStorage
-
----
-
-## 📞 Need Help?
-
-Check out these files:
-- [QUICK_START.md](../QUICK_START.md) - Fast start guide!
-- [BUILD_APK.md](../BUILD_APK.md) - Detailed build instructions!
-- [README.md](../README.md) - Project overview!
-
----
-
-Made with ❤️
+Same APK regardless of path. v1.1.0 bundle ID is `com.taskflow.app`,
+min SDK 24, target SDK 34. Release builds are signed with whatever
+keystore EAS generated; debug builds use the auto-generated debug
+keystore (fine for side-loading, not for the Play Store).
