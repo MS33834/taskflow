@@ -21,6 +21,8 @@ module.exports = [
       '**/*.min.js',
       '.trae/**', // internal IDE tooling, not part of the app
       'scripts/inject-cache-buster.js', // run in CI, not part of app source
+      'desktop/**', // separate sub-project with its own toolchain
+      'backend/**', // separate sub-project with its own toolchain
     ],
   },
 
