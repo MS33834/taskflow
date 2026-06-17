@@ -6,7 +6,7 @@ import { toast } from '../components/common/Toast';
 type UndoableAction = {
   id: string;
   type: 'task' | 'project' | 'note' | 'goal' | 'habit' | 'view' | 'category' | 'tag' | 'template' | 'automation';
-  data: any;
+  data: unknown;
   undo: () => void;
   message: string;
 };
@@ -91,7 +91,7 @@ export function withUndo<T>(
   undoFn: () => void,
   message: string,
   actionType: UndoableAction['type'],
-  data?: any
+  data?: unknown
 ): T {
   pushUndo({ type: actionType, data, undo: undoFn, message });
   toast.withAction(message, '撤销', () => undoFn(), 'info');
@@ -100,7 +100,7 @@ export function withUndo<T>(
 
 export function confirmAndExecute(
   type: UndoableAction['type'],
-  data: any,
+  data: unknown,
   execute: () => void,
   undo: () => void,
   message: string

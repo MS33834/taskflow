@@ -18,6 +18,7 @@ import {
   Filter,
   SortOption,
   DashboardStats,
+  TaskStats,
   AISuggestion,
   AIInsight,
   SyncConfig,
@@ -25,6 +26,7 @@ import {
   AutomationRule,
   Template,
   Team,
+  TeamMember,
   Activity,
   Comment,
   Attachment,
@@ -175,7 +177,7 @@ interface AppStore {
   // Analytics
   dashboardStats: DashboardStats | null;
   calculateDashboardStats: () => void;
-  getTaskStats: (taskIds: string[]) => any;
+  getTaskStats: (taskIds: string[]) => TaskStats;
   getProductivityScore: () => number;
   getCompletionRate: () => number;
   getStreak: () => number;
@@ -212,14 +214,14 @@ interface AppStore {
   updateAutomationRule: (id: string, updates: Partial<AutomationRule>) => void;
   deleteAutomationRule: (id: string) => void;
   toggleAutomationRule: (id: string) => void;
-  executeAutomation: (ruleId: string, context: any) => void;
+  executeAutomation: (ruleId: string, context: Record<string, unknown>) => void;
 
   // Templates
   templates: Template[];
   addTemplate: (template: Omit<Template, 'id' | 'createdAt' | 'updatedAt'>) => string;
   updateTemplate: (id: string, updates: Partial<Template>) => void;
   deleteTemplate: (id: string) => void;
-  applyTemplate: (templateId: string, variables?: any) => any;
+  applyTemplate: (templateId: string, variables?: Record<string, unknown>) => unknown;
 
   // Teams
   teams: Team[];
@@ -229,9 +231,9 @@ interface AppStore {
   updateTeam: (id: string, updates: Partial<Team>) => void;
   deleteTeam: (id: string) => void;
   setCurrentTeam: (team: Team | null) => void;
-  addTeamMember: (teamId: string, member: any) => void;
+  addTeamMember: (teamId: string, member: Omit<TeamMember, 'id' | 'joinedAt'>) => void;
   removeTeamMember: (teamId: string, memberId: string) => void;
-  updateTeamMember: (teamId: string, memberId: string, updates: any) => void;
+  updateTeamMember: (teamId: string, memberId: string, updates: Partial<TeamMember>) => void;
   addActivity: (activity: Omit<Activity, 'id' | 'createdAt'>) => void;
 
   // Sync & Backup
@@ -888,12 +890,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
   sortTasks: (tasks, sortOptions) => {
     return [...tasks].sort((a, b) => {
       for (const option of sortOptions) {
-        const aVal = (a as any)[option.field];
-        const bVal = (b as any)[option.field];
+        const aVal = (a as unknown as Record<string, unknown>)[option.field];
+        const bVal = (b as unknown as Record<string, unknown>)[option.field];
         if (aVal === bVal) continue;
         if (aVal === null || aVal === undefined) return 1;
         if (bVal === null || bVal === undefined) return -1;
-        const comparison = aVal < bVal ? -1 : 1;
+        const comparison = (aVal as number | string | Date) < (bVal as number | string | Date) ? -1 : 1;
         return option.direction === 'asc' ? comparison : -comparison;
       }
       return 0;
@@ -903,7 +905,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   filterTasks: (tasks, filters) => {
     return tasks.filter((task) => {
       return filters.every((filter) => {
-        const value = (task as any)[filter.field];
+        const value = (task as unknown as Record<string, unknown>)[filter.field];
         const filterValue = filter.value;
         switch (filter.operator) {
           case 'equals':
@@ -913,11 +915,11 @@ export const useAppStore = create<AppStore>((set, get) => ({
           case 'contains':
             return String(value).toLowerCase().includes(String(filterValue).toLowerCase());
           case 'greater-than':
-            return value > filterValue;
+            return (value as number | string | Date) > (filterValue as number | string | Date);
           case 'less-than':
-            return value < filterValue;
+            return (value as number | string | Date) < (filterValue as number | string | Date);
           case 'in':
-            return filterValue.includes(value);
+            return (filterValue as string[] | string).includes(value as string);
           case 'is-empty':
             return value === null || value === undefined || value === '';
           case 'is-not-empty':
@@ -2065,7 +2067,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const team = get().teams.find((t) => t.id === teamId);
     if (team) {
       get().updateTeam(teamId, {
-        members: [...team.members, { ...member, id: generateId(), joinedAt: new Date() }],
+        members: [...team.members, { ...member, id: generateId(), joinedAt: new Date() } as TeamMember],
       });
     }
   },
@@ -2163,14 +2165,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
         AsyncStorage.getItem(STORAGE_KEYS.SESSIONS),
       ]);
 
-      const parseDates = (data: any) => ({
+      const parseDates = (data: Record<string, unknown>) => ({
         ...data,
-        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
-        updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
-        dueDate: data.dueDate ? new Date(data.dueDate) : null,
-        completedAt: data.completedAt ? new Date(data.completedAt) : null,
-        startDate: data.startDate ? new Date(data.startDate) : null,
-        endDate: data.endDate ? new Date(data.endDate) : null,
+        createdAt: data.createdAt ? new Date(data.createdAt as string | number | Date) : new Date(),
+        updatedAt: data.updatedAt ? new Date(data.updatedAt as string | number | Date) : new Date(),
+        dueDate: data.dueDate ? new Date(data.dueDate as string | number | Date) : null,
+        completedAt: data.completedAt ? new Date(data.completedAt as string | number | Date) : null,
+        startDate: data.startDate ? new Date(data.startDate as string | number | Date) : null,
+        endDate: data.endDate ? new Date(data.endDate as string | number | Date) : null,
       });
 
       if (tasksData) {
@@ -2236,9 +2238,9 @@ export const useAppStore = create<AppStore>((set, get) => ({
         if (teams.length > 0) set({ teams });
       }
       if (sessionsData) {
-        const sessions = JSON.parse(sessionsData).map((s: any) => ({
+        const sessions = JSON.parse(sessionsData).map((s: Record<string, unknown>) => ({
           ...s,
-          startedAt: s.startedAt ? new Date(s.startedAt) : new Date(),
+          startedAt: s.startedAt ? new Date(s.startedAt as string | number | Date) : new Date(),
         }));
         if (sessions.length > 0) set({ sessions });
       }
@@ -2317,38 +2319,38 @@ export const useAppStore = create<AppStore>((set, get) => ({
     try {
       const importData = JSON.parse(data);
       if (importData.tasks) {
-        set({ tasks: importData.tasks.map((t: any) => ({
+        set({ tasks: importData.tasks.map((t: Record<string, unknown>) => ({
           ...t,
-          createdAt: new Date(t.createdAt),
-          updatedAt: new Date(t.updatedAt),
+          createdAt: new Date(t.createdAt as string | number | Date),
+          updatedAt: new Date(t.updatedAt as string | number | Date),
         })) });
       }
       if (importData.projects) {
-        set({ projects: importData.projects.map((p: any) => ({
+        set({ projects: importData.projects.map((p: Record<string, unknown>) => ({
           ...p,
-          createdAt: new Date(p.createdAt),
-          updatedAt: new Date(p.updatedAt),
+          createdAt: new Date(p.createdAt as string | number | Date),
+          updatedAt: new Date(p.updatedAt as string | number | Date),
         })) });
       }
       if (importData.categories) {
-        set({ categories: importData.categories.map((c: any) => ({
+        set({ categories: importData.categories.map((c: Record<string, unknown>) => ({
           ...c,
-          createdAt: new Date(c.createdAt),
-          updatedAt: new Date(c.updatedAt),
+          createdAt: new Date(c.createdAt as string | number | Date),
+          updatedAt: new Date(c.updatedAt as string | number | Date),
         })) });
       }
       if (importData.tags) {
-        set({ tags: importData.tags.map((t: any) => ({
+        set({ tags: importData.tags.map((t: Record<string, unknown>) => ({
           ...t,
-          createdAt: new Date(t.createdAt),
-          updatedAt: new Date(t.updatedAt),
+          createdAt: new Date(t.createdAt as string | number | Date),
+          updatedAt: new Date(t.updatedAt as string | number | Date),
         })) });
       }
       if (importData.views) {
-        set({ views: importData.views.map((v: any) => ({
+        set({ views: importData.views.map((v: Record<string, unknown>) => ({
           ...v,
-          createdAt: new Date(v.createdAt),
-          updatedAt: new Date(v.updatedAt),
+          createdAt: new Date(v.createdAt as string | number | Date),
+          updatedAt: new Date(v.updatedAt as string | number | Date),
         })) });
       }
       if (importData.goals) set({ goals: importData.goals });

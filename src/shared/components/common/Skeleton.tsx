@@ -3,7 +3,7 @@ import { View, Animated, StyleSheet } from 'react-native';
 import { useAppStore } from '../../store';
 
 const SkeletonBlock: React.FC<{
-  width: number | string;
+  width: number | `${number}%`;
   height: number;
   borderRadius?: number;
 }> = ({ width, height, borderRadius = 8 }) => {
@@ -45,7 +45,7 @@ const SkeletonBlock: React.FC<{
     <Animated.View
       style={[
         {
-          width: width as any,
+          width,
           height,
           borderRadius,
         },
@@ -58,7 +58,7 @@ const SkeletonBlock: React.FC<{
 export const SkeletonLine = React.memo(function SkeletonLine({
   width = '80%',
 }: {
-  width?: number | string;
+  width?: number | `${number}%`;
 }) {
   return (
     <View style={styles.lineWrapper}>
@@ -106,7 +106,7 @@ const Skeleton = React.memo(function Skeleton({
   listCount,
 }: {
   type?: 'line' | 'card' | 'list';
-  lineWidth?: number | string;
+  lineWidth?: number | `${number}%`;
   listCount?: number;
 }) {
   if (type === 'line') {

@@ -32,9 +32,10 @@ import {
 } from '../src/shared/components/common';
 import { useBulkSelection } from '../src/shared/hooks/useBulkSelection';
 import { undoDeleteTask } from '../src/shared/hooks/useUndo';
-import { HomeStackParamList, Task } from '../src/shared/types';
+import { HomeStackParamList, Task, Priority } from '../src/shared/types';
 
 type NavigationProp = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
+type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -124,8 +125,8 @@ export default function HomeScreen() {
     bulk.exit();
   };
 
-  const handleBulkPriority = (priority: string) => {
-    bulk.selectedItems.forEach((t) => updateTask(t.id, { priority: priority as any }));
+  const handleBulkPriority = (priority: Priority) => {
+    bulk.selectedItems.forEach((t) => updateTask(t.id, { priority }));
     toast.success(`已更新 ${bulk.count} 个任务优先级`);
     bulk.exit();
   };
@@ -151,17 +152,18 @@ export default function HomeScreen() {
   };
 
   const handleApplySuggestion = (s: TaskSuggestion) => {
-    if (s.kind === 'priority' && s.payload?.taskId) {
-      updateTask(s.payload.taskId, { priority: s.payload.priority });
+    const payload = s.payload as Record<string, unknown> | undefined;
+    if (s.kind === 'priority' && typeof payload?.taskId === 'string' && typeof payload?.priority === 'string') {
+      updateTask(payload.taskId, { priority: payload.priority as Priority });
       toast.success('已应用优先级建议');
-    } else if (s.kind === 'category' && s.payload?.categoryId) {
-      setSelectedCategory(s.payload.categoryId);
+    } else if (s.kind === 'category' && typeof payload?.categoryId === 'string') {
+      setSelectedCategory(payload.categoryId);
       toast.success('已切换到建议分类');
-    } else if (s.kind === 'merge' && s.payload) {
-      updateTask(s.payload.keep, { isArchived: false });
-      deleteTask(s.payload.remove);
+    } else if (s.kind === 'merge' && payload && typeof payload.keep === 'string' && typeof payload.remove === 'string') {
+      updateTask(payload.keep, { isArchived: false });
+      deleteTask(payload.remove);
       toast.withAction?.('已合并相似任务', '撤销', () => {
-        undoDeleteTask({ id: s.payload.remove } as Task);
+        undoDeleteTask({ id: payload.remove } as Task);
         toast.success('已恢复');
       });
     } else {
@@ -244,7 +246,7 @@ export default function HomeScreen() {
       icon: 'priority-high',
       label: '优先级',
       onPress: () => {
-        const priorities: ('low' | 'medium' | 'high' | 'urgent')[] = ['low', 'medium', 'high', 'urgent'];
+        const priorities: Priority[] = ['low', 'medium', 'high', 'urgent'];
         const next = priorities[(priorities.indexOf('medium') + 1) % priorities.length];
         handleBulkPriority(next);
       },
@@ -443,11 +445,11 @@ export default function HomeScreen() {
           <TouchableOpacity
             key={item.label}
             style={[styles.quickAction, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
-            onPress={() => navigation.navigate(item.target as any)}
+            onPress={() => navigation.navigate(item.target as never)}
             activeOpacity={0.7}
           >
             <View style={[styles.quickActionIcon, { backgroundColor: item.bg }]}>
-              <MaterialIcons name={item.icon as any} size={20} color={item.color} />
+              <MaterialIcons name={item.icon as unknown as MaterialIconName} size={20} color={item.color} />
             </View>
             <Text style={[styles.quickActionText, { color: theme.colors.text }]}>{item.label}</Text>
           </TouchableOpacity>
@@ -496,7 +498,7 @@ export default function HomeScreen() {
       setFocusTaskTitle(nextTask?.title);
       setShowFocus(true);
     } else {
-      navigation.navigate(target as any);
+      navigation.navigate(target as never);
     }
   }, [navigation, sortedTasks, openReorder]);
 

@@ -21,6 +21,7 @@ import { Button } from '../src/shared/components/common';
 import { toast } from '../src/shared/components/common/Toast';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Projects'>;
+type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
 const { width } = Dimensions.get('window');
 
@@ -217,7 +218,7 @@ export default function ProjectsScreen() {
       >
         <View style={styles.projectHeader}>
           <View style={[styles.projectIcon, { backgroundColor: project.color + '20' }]}>
-            <MaterialIcons name={project.icon as any} size={20} color={project.color} />
+            <MaterialIcons name={project.icon as unknown as MaterialIconName} size={20} color={project.color} />
           </View>
           <View style={styles.projectActions}>
             {project.isFavorite && <MaterialIcons name="star" size={18} color="#F59E0B" style={{ marginRight: 8 }} />}
@@ -311,7 +312,7 @@ export default function ProjectsScreen() {
         <View style={styles.projectListContent}>
           <View style={styles.projectListHeader}>
             <Text style={styles.projectListIcon}>
-              <MaterialIcons name={project.icon as any} size={24} color={project.color} />
+              <MaterialIcons name={project.icon as unknown as MaterialIconName} size={24} color={project.color} />
             </Text>
             <View style={styles.projectListInfo}>
               <Text style={[styles.projectListName, { color: theme.colors.text }]}>
@@ -413,7 +414,7 @@ export default function ProjectsScreen() {
             ]}
             onPress={() => onIconSelect(icon)}
           >
-            <MaterialIcons name={icon as any} size={24} color={selectedIcon === icon ? theme.colors.primary : theme.colors.textSecondary} />
+            <MaterialIcons name={icon as unknown as MaterialIconName} size={24} color={selectedIcon === icon ? theme.colors.primary : theme.colors.textSecondary} />
           </TouchableOpacity>
         ))}
       </View>

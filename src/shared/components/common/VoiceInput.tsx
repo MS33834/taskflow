@@ -19,10 +19,41 @@ export interface VoiceInputProps {
   hint?: string;
 }
 
+interface SpeechRecognitionResult {
+  isFinal: boolean;
+  [index: number]: { transcript: string };
+}
+
+interface SpeechRecognitionEvent {
+  resultIndex: number;
+  results: SpeechRecognitionResult[];
+}
+
+interface SpeechRecognitionErrorEvent {
+  error: string;
+}
+
+interface SpeechRecognitionInstance {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onstart: (() => void) | null;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+  start(): void;
+  stop(): void;
+}
+
+interface SpeechRecognitionConstructor {
+  new (): SpeechRecognitionInstance;
+}
+
 declare global {
   interface Window {
-    SpeechRecognition: any;
-    webkitSpeechRecognition: any;
+    SpeechRecognition?: SpeechRecognitionConstructor;
+    webkitSpeechRecognition?: SpeechRecognitionConstructor;
   }
 }
 
@@ -33,11 +64,11 @@ export function VoiceInput({ onResult, size = 48, color, hint = '点击开始语
   const [transcript, setTranscript] = useState('');
   const [supported, setSupported] = useState<boolean | null>(null);
   const pulse = useRef(new Animated.Value(0)).current;
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
   useEffect(() => {
     if (Platform.OS === 'web') {
-      const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       setSupported(!!SR);
     } else {
       setSupported(false);
@@ -86,7 +117,7 @@ export function VoiceInput({ onResult, size = 48, color, hint = '点击开始语
       Alert.alert('不支持', '当前平台暂不支持语音输入，仅 Web 平台可用');
       return;
     }
-    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) {
       Alert.alert('不支持', '当前浏览器不支持 Web Speech API。请使用 Chrome / Edge。');
       return;
@@ -103,7 +134,7 @@ export function VoiceInput({ onResult, size = 48, color, hint = '点击开始语
         setListening(true);
         setTranscript('');
       };
-      recognition.onresult = (event: any) => {
+      recognition.onresult = (event: SpeechRecognitionEvent) => {
         let interim = '';
         let final = '';
         for (let i = event.resultIndex; i < event.results.length; ++i) {
@@ -118,7 +149,7 @@ export function VoiceInput({ onResult, size = 48, color, hint = '点击开始语
           setListening(false);
         }
       };
-      recognition.onerror = (e: any) => {
+      recognition.onerror = (e: SpeechRecognitionErrorEvent) => {
         console.warn('SpeechRecognition error', e.error);
         setListening(false);
         if (e.error !== 'aborted' && e.error !== 'no-speech') {
@@ -133,9 +164,10 @@ export function VoiceInput({ onResult, size = 48, color, hint = '点击开始语
       };
       recognitionRef.current = recognition;
       recognition.start();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to start speech recognition', err);
-      Alert.alert('启动失败', err?.message || '未知错误');
+      const message = err instanceof Error ? err.message : '未知错误';
+      Alert.alert('启动失败', message);
     }
   }, [onResult, transcript]);
 

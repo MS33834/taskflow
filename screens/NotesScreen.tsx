@@ -19,6 +19,7 @@ import { RootStackParamList, Note } from '../src/shared/types';
 import { toast } from '../src/shared/components/common/Toast';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Notes'>;
+type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
 const NOTE_COLORS = [
   '#fef3c7', '#fed7aa', '#fecaca', '#fde7f3',
@@ -190,7 +191,7 @@ export default function NotesScreen() {
           }}
         >
           <View style={styles.noteIconRow}>
-            <MaterialIcons name={note.icon as any || 'edit-note'} size={24} color={note.color} />
+            <MaterialIcons name={(note.icon as unknown as MaterialIconName) || 'edit-note'} size={24} color={note.color} />
             {note.isPinned && <MaterialIcons name="push-pin" size={16} color="#f59e0b" />}
           </View>
           <Text style={[styles.noteTitle, { color: '#1f2937' }]} numberOfLines={2}>
@@ -227,7 +228,7 @@ export default function NotesScreen() {
           <View style={[styles.noteListColor, { backgroundColor: note.color }]} />
           <View style={styles.noteListContent}>
             <View style={styles.noteListHeader}>
-              <MaterialIcons name={note.icon as any || 'edit-note'} size={20} color={note.color} style={styles.noteListIcon} />
+              <MaterialIcons name={(note.icon as unknown as MaterialIconName) || 'edit-note'} size={20} color={note.color} style={styles.noteListIcon} />
               <Text style={[styles.noteListTitle, { color: theme.colors.text }]} numberOfLines={1}>
                 {note.title}
               </Text>

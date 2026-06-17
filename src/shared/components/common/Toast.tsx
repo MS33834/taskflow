@@ -11,6 +11,8 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAppStore } from '../../store';
 
+type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
+
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
 
 interface ToastConfig {
@@ -83,11 +85,11 @@ export function ToastContainer() {
 
   if (!current) return null;
 
-  const colors = {
-    success: { bg: theme.colors.success, icon: 'check-circle' },
-    error: { bg: theme.colors.error, icon: 'error' },
-    info: { bg: theme.colors.primary, icon: 'info' },
-    warning: { bg: theme.colors.warning, icon: 'warning' },
+  const colors: { bg: string; icon: MaterialIconName } = {
+    success: { bg: theme.colors.success, icon: 'check-circle' as MaterialIconName },
+    error: { bg: theme.colors.error, icon: 'error' as MaterialIconName },
+    info: { bg: theme.colors.primary, icon: 'info' as MaterialIconName },
+    warning: { bg: theme.colors.warning, icon: 'warning' as MaterialIconName },
   }[current.type];
 
   return (
@@ -106,7 +108,7 @@ export function ToastContainer() {
         ]}
       >
         <View style={[styles.iconWrap, { backgroundColor: colors.bg + '20' }]}>
-          <MaterialIcons name={colors.icon as any} size={22} color={colors.bg} />
+          <MaterialIcons name={colors.icon} size={22} color={colors.bg} />
         </View>
         <View style={styles.textWrap}>
           <Text style={[styles.message, { color: theme.colors.text }]} numberOfLines={2}>

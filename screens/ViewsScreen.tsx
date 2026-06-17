@@ -20,6 +20,7 @@ import { Button } from '../src/shared/components/common';
 import { toast } from '../src/shared/components/common/Toast';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Views'>;
+type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
 const VIEW_TYPES: { type: ViewType; label: string; iconName: keyof typeof MaterialIcons.glyphMap; description: string }[] = [
   { type: 'list', label: '列表视图', iconName: 'format-list-bulleted', description: '经典的任务列表展示' },
@@ -182,7 +183,7 @@ export default function ViewsScreen() {
         >
           <View style={styles.viewHeader}>
             <View style={[styles.viewIcon, { backgroundColor: item.colorSchema + '20' }]}>
-              <MaterialIcons name={item.iconName as any || 'format-list-bulleted' as any} size={20} color={item.colorSchema} />
+              <MaterialIcons name={(item.iconName as unknown as MaterialIconName) || 'format-list-bulleted'} size={20} color={item.colorSchema} />
             </View>
             {isActive && (
               <View style={[styles.activeBadge, { backgroundColor: '#10b98120' }]}>

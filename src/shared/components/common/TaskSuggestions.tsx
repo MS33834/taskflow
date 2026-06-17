@@ -8,7 +8,9 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAppStore } from '../../store';
-import { Task } from '../../types';
+import { Task, Category } from '../../types';
+
+type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
 export interface TaskSuggestion {
   id: string;
@@ -17,7 +19,7 @@ export interface TaskSuggestion {
   reason: string;
   confidence: number;
   action?: () => void;
-  payload?: any;
+  payload?: Record<string, unknown>;
 }
 
 interface HourBucketStat {
@@ -138,7 +140,7 @@ function buildTimeSuggestion(buckets: HourBucketStat[]): TaskSuggestion | null {
   };
 }
 
-function buildCategorySuggestion(stats: Map<string, CategoryStat>, categories: any[]): TaskSuggestion | null {
+function buildCategorySuggestion(stats: Map<string, CategoryStat>, categories: Category[]): TaskSuggestion | null {
   if (stats.size === 0) return null;
   let best: CategoryStat | null = null;
   let bestName = '';
@@ -272,7 +274,7 @@ export function TaskSuggestions({
             >
               <View style={styles.cardHeader}>
                 <View style={[styles.kindIcon, { backgroundColor: kindMeta.color + '20' }]}>
-                  <MaterialIcons name={kindMeta.icon as any} size={14} color={kindMeta.color} />
+                  <MaterialIcons name={kindMeta.icon} size={14} color={kindMeta.color} />
                 </View>
                 <Text style={[styles.kindLabel, { color: kindMeta.color }]}>{kindMeta.label}</Text>
                 {onDismiss && (
@@ -324,7 +326,7 @@ export function TaskSuggestions({
   );
 }
 
-const kindMap: Record<TaskSuggestion['kind'], { label: string; icon: string; color: string }> = {
+const kindMap: Record<TaskSuggestion['kind'], { label: string; icon: MaterialIconName; color: string }> = {
   time: { label: '时间', icon: 'schedule', color: '#3b82f6' },
   priority: { label: '优先级', icon: 'priority-high', color: '#ef4444' },
   merge: { label: '合并', icon: 'merge-type', color: '#8b5cf6' },

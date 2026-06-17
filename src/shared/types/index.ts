@@ -130,10 +130,10 @@ export interface CustomField {
   id: string;
   name: string;
   type: CustomFieldType;
-  value: any;
+  value: unknown;
   options?: string[];
   required: boolean;
-  defaultValue?: any;
+  defaultValue?: unknown;
   order: number;
 }
 
@@ -254,7 +254,7 @@ export interface ProjectCustomField {
   type: CustomFieldType;
   options?: string[];
   required: boolean;
-  defaultValue?: any;
+  defaultValue?: unknown;
   order: number;
   showInList: boolean;
   width: number;
@@ -430,7 +430,7 @@ export interface Filter {
   id: string;
   field: string;
   operator: FilterOperator;
-  value: any;
+  value: unknown;
   isNegated: boolean;
   conjunction: 'and' | 'or';
   order: number;
@@ -750,6 +750,13 @@ export interface DashboardStats {
   habits: HabitStats[];
 }
 
+export interface TaskStats {
+  total: number;
+  completed: number;
+  inProgress: number;
+  overdue: number;
+}
+
 export interface OverviewStats {
   totalTasks: number;
   completedTasks: number;
@@ -866,7 +873,7 @@ export interface AutomationRule {
 
 export interface AutomationTrigger {
   type: AutomationTriggerType;
-  config: any;
+  config: Record<string, unknown>;
   schedule?: CronSchedule;
 }
 
@@ -881,14 +888,14 @@ export interface AutomationCondition {
   type: 'field' | 'date' | 'status' | 'priority' | 'tag' | 'project' | 'custom' | 'time' | 'user';
   field: string;
   operator: FilterOperator;
-  value: any;
+  value: unknown;
   conjunction: 'and' | 'or';
 }
 
 export interface AutomationAction {
   id: string;
   type: AutomationActionType;
-  config: any;
+  config: Record<string, unknown>;
   delay: number;
   order: number;
 }
@@ -906,7 +913,7 @@ export interface Template {
   downloads: number;
   rating: number;
   tags: string[];
-  content: any;
+  content: unknown;
   variables: TemplateVariable[];
   author: string;
   authorAvatar?: string;
@@ -919,7 +926,7 @@ export interface TemplateVariable {
   name: string;
   label: string;
   type: CustomFieldType;
-  defaultValue: any;
+  defaultValue: unknown;
   required: boolean;
   options?: string[];
   placeholder?: string;
@@ -983,7 +990,7 @@ export interface Activity {
   projectId: string | null;
   userId: string | null;
   user: User | null;
-  metadata: any;
+  metadata: Record<string, unknown>;
   createdAt: Date;
 }
 
@@ -999,7 +1006,7 @@ export interface SyncConfig {
   syncOnStart: boolean;
   syncOnEdit: boolean;
   wifiOnly: boolean;
-  credentials: any;
+  credentials: Record<string, unknown> | null;
 }
 
 export interface SyncLog {
@@ -1018,8 +1025,8 @@ export interface SyncConflict {
   id: string;
   itemId: string;
   itemType: string;
-  localVersion: any;
-  remoteVersion: any;
+  localVersion: Record<string, unknown>;
+  remoteVersion: Record<string, unknown>;
   resolution: 'local' | 'remote' | 'newest' | 'merge' | 'manual' | null;
   resolvedAt: Date | null;
   resolvedBy: string | null;
@@ -1056,7 +1063,7 @@ export interface SearchQuery {
 export interface SearchFilter {
   field: string;
   operator: FilterOperator;
-  value: any;
+  value: unknown;
 }
 
 export interface SearchResult {
@@ -1092,7 +1099,7 @@ export interface AISuggestion {
   isAccepted: boolean;
   isDismissed: boolean;
   createdAt: Date;
-  context: any;
+  context: Record<string, unknown>;
 }
 
 export interface AIInsight {
@@ -1100,7 +1107,7 @@ export interface AIInsight {
   type: 'productivity' | 'patterns' | 'recommendations' | 'predictions';
   title: string;
   description: string;
-  data: any;
+  data: Record<string, unknown>;
   confidence: number;
   actionItems: string[];
   createdAt: Date;
@@ -1359,7 +1366,7 @@ export interface PaginationInfo {
 
 export interface SelectOption {
   label: string;
-  value: any;
+  value: unknown;
   icon?: string;
   color?: string;
 }
@@ -1385,7 +1392,7 @@ export interface Notification {
   type: 'task' | 'project' | 'comment' | 'mention' | 'reminder' | 'system' | 'collaboration';
   title: string;
   message: string;
-  data: any;
+  data: Record<string, unknown>;
   isRead: boolean;
   isArchived: boolean;
   actionUrl: string | null;
@@ -1539,7 +1546,7 @@ export interface SyncState {
 
 export interface OfflineState {
   isOnline: boolean;
-  pendingChanges: any[];
+  pendingChanges: unknown[];
   lastSyncAt: Date | null;
   storageUsed: number;
   storageQuota: number;
@@ -1549,7 +1556,7 @@ export interface FilterCondition {
   id: string;
   field: string;
   operator: FilterOperator;
-  value: any;
+  value: unknown;
   isNegated: boolean;
   conjunction: 'and' | 'or';
 }

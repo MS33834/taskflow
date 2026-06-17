@@ -10,9 +10,13 @@ import {
   StyleProp,
   ViewStyle,
   TextStyle,
+  NativeSyntheticEvent,
+  TextInputSelectionChangeEventData,
+  TextInputKeyPressEventData,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAppStore } from '../../store';
+import { ThemePreset } from '../../types';
 
 export interface MentionUser {
   id: string;
@@ -43,7 +47,7 @@ export function parseMentions(text: string): MentionEntity[] {
 
 export function renderMentionText(
   text: string,
-  theme: any,
+  theme: ThemePreset,
   baseStyle?: StyleProp<TextStyle>,
   mentionColor?: string
 ): React.ReactNode {
@@ -150,12 +154,12 @@ export function MentionInput({
     onChange(v);
   };
 
-  const handleSelectionChange = (e: any) => {
+  const handleSelectionChange = (e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
     const start = e.nativeEvent?.selection?.start ?? 0;
     setCursor(start);
   };
 
-  const handleKeyPress = (e: any) => {
+  const handleKeyPress = (e: NativeSyntheticEvent<TextInputKeyPressEventData>) => {
     if (e.nativeEvent?.key === 'Escape' && showSuggestions) {
       setShowSuggestions(false);
     }

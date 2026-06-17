@@ -28,6 +28,8 @@ export interface QuickAddTaskProps {
   onClose: () => void;
 }
 
+type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
+
 export function QuickAddTask({ visible, onClose }: QuickAddTaskProps) {
   const theme = useAppStore((s) => s.theme);
   const addTask = useAppStore((s) => s.addTask);
@@ -190,7 +192,7 @@ export function QuickAddTask({ visible, onClose }: QuickAddTaskProps) {
                 { backgroundColor: c.color + '20', borderColor: c.color + '40' },
               ]}
             >
-              <MaterialIcons name={c.icon as any} size={14} color={c.color} />
+              <MaterialIcons name={c.icon as unknown as MaterialIconName} size={14} color={c.color} />
               <Text style={[styles.chipText, { color: c.color }]}>{c.label}</Text>
             </View>
           ))}

@@ -37,7 +37,7 @@ export function Pomodoro({ visible, onClose, taskTitle, onComplete }: PomodoroPr
   const [secondsLeft, setSecondsLeft] = useState(DURATIONS.focus);
   const [running, setRunning] = useState(false);
   const [cycleCount, setCycleCount] = useState(0);
-  const intervalRef = useRef<any>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimeRef = useRef<number>(0);
   const progressAnim = useRef(new Animated.Value(0)).current;
 

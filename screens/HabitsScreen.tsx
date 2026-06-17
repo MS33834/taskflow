@@ -21,6 +21,7 @@ import { Button } from '../src/shared/components/common';
 import { toast } from '../src/shared/components/common/Toast';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Habits'>;
+type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
 const HABIT_ICONS = [
   'fitness-center', 'directions-run', 'directions-bike', 'sports-gymnastics', 'self-improvement', 'alarm', 'auto-stories', 'library-books',
@@ -216,7 +217,7 @@ export default function HabitsScreen() {
             ]}
             onPress={() => handleToggleComplete(item)}
           >
-            <MaterialIcons name={item.icon as any} size={24} color={isCompletedToday ? '#10b981' : theme.colors.textSecondary} />
+            <MaterialIcons name={item.icon as unknown as MaterialIconName} size={24} color={isCompletedToday ? '#10b981' : theme.colors.textSecondary} />
             {isCompletedToday && (
               <View style={styles.checkmark}>
                 <MaterialIcons name="check" size={12} color="#FFFFFF" />
@@ -349,7 +350,7 @@ export default function HabitsScreen() {
             ]}
             onPress={() => setNewHabit({ ...newHabit, icon })}
           >
-            <MaterialIcons name={icon as any} size={24} color={newHabit.icon === icon ? theme.colors.primary : theme.colors.textSecondary} />
+            <MaterialIcons name={icon as unknown as MaterialIconName} size={24} color={newHabit.icon === icon ? theme.colors.primary : theme.colors.textSecondary} />
           </TouchableOpacity>
         ))}
       </View>

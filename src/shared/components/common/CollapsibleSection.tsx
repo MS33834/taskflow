@@ -10,6 +10,7 @@ import {
   UIManager,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { ThemePreset } from '../../types';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -22,11 +23,13 @@ export interface CollapsibleSectionProps {
   iconColor?: string;
   defaultExpanded?: boolean;
   children: React.ReactNode;
-  theme: any;
+  theme: ThemePreset;
   headerRight?: React.ReactNode;
   /** 紧凑模式：减少 padding */
   compact?: boolean;
 }
+
+type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
 export function CollapsibleSection({
   title,
@@ -92,7 +95,7 @@ export function CollapsibleSection({
             ]}
           >
             <MaterialIcons
-              name={icon as any}
+              name={icon as unknown as MaterialIconName}
               size={compact ? 14 : 16}
               color={iconColor || theme.colors.primary}
             />

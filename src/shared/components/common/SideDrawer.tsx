@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { ThemePreset } from '../../types';
 
 export interface DrawerItem {
   key: string;
@@ -32,8 +33,11 @@ export interface SideDrawerProps {
   onNavigate: (target: string) => void;
   pendingCount?: number;
   completedToday?: number;
-  theme: any;
+  theme: ThemePreset;
 }
+
+type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
+type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DRAWER_WIDTH = Math.min(320, SCREEN_WIDTH * 0.85);
@@ -139,7 +143,7 @@ export function SideDrawer({
             styles.backdrop,
             {
               opacity: backdropOpacity,
-              backgroundColor: theme.colors.backdrop || 'rgba(0,0,0,0.5)',
+              backgroundColor: ((theme.colors as unknown) as Record<string, string>).backdrop || 'rgba(0,0,0,0.5)',
             },
           ]}
         >
@@ -279,8 +283,6 @@ export function SideDrawer({
                       {labels[groupKey]}
                     </Text>
                     {groupItems.map((item) => {
-                      const Icon =
-                        item.iconType === 'ionicons' ? Ionicons : MaterialIcons;
                       return (
                         <TouchableOpacity
                           key={item.key}
@@ -297,11 +299,19 @@ export function SideDrawer({
                               { backgroundColor: item.color + '18' },
                             ]}
                           >
-                            <Icon
-                              name={item.icon as any}
-                              size={20}
-                              color={item.color}
-                            />
+                            {item.iconType === 'ionicons' ? (
+                              <Ionicons
+                                name={item.icon as unknown as IoniconsName}
+                                size={20}
+                                color={item.color}
+                              />
+                            ) : (
+                              <MaterialIcons
+                                name={item.icon as unknown as MaterialIconName}
+                                size={20}
+                                color={item.color}
+                              />
+                            )}
                           </View>
                           <View style={{ flex: 1 }}>
                             <Text

@@ -15,7 +15,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAppStore } from '../src/shared/store';
-import { RootStackParamList, Template } from '../src/shared/types';
+import { RootStackParamList, Template, TemplateType } from '../src/shared/types';
 import { Button } from '../src/shared/components/common';
 import { toast } from '../src/shared/components/common/Toast';
 
@@ -62,7 +62,7 @@ export default function TemplatesScreen() {
       id: `template-${Date.now()}`,
       name: newTemplate.name.trim(),
       description: newTemplate.description || '',
-      type: newTemplate.type as any || 'task',
+      type: (newTemplate.type as TemplateType) || 'task',
       thumbnail: '',
       isPublic: false,
       isSystem: false,
@@ -293,7 +293,7 @@ export default function TemplatesScreen() {
                       styles.typeOption,
                       newTemplate.type === type.type && { backgroundColor: theme.colors.primary + '20' },
                     ]}
-                    onPress={() => setNewTemplate({ ...newTemplate, type: type.type as any })}
+                    onPress={() => setNewTemplate({ ...newTemplate, type: type.type as TemplateType })}
                   >
                     <MaterialIcons name={type.iconName} size={16} color={theme.colors.primary} style={{ marginRight: 4 }} />
                     <Text style={[styles.typeOptionText, { color: theme.colors.text }]}>{type.label}</Text>

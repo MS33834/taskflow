@@ -20,6 +20,7 @@ import { Button } from '../src/shared/components/common';
 import { toast } from '../src/shared/components/common/Toast';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Categories'>;
+type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
 const PRESET_COLORS = [
   '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
@@ -179,7 +180,7 @@ export default function CategoriesScreen() {
       <View style={[styles.categoryCard, { backgroundColor: theme.colors.surface }]}>
         <View style={styles.categoryHeader}>
           <View style={styles.categoryIconContainer}>
-            <MaterialIcons name={item.icon as any} size={32} color={item.color} />
+            <MaterialIcons name={item.icon as unknown as MaterialIconName} size={32} color={item.color} />
             <View style={[styles.categoryColorDot, { backgroundColor: item.color }]} />
           </View>
           <View style={styles.categoryInfo}>
@@ -275,7 +276,7 @@ export default function CategoriesScreen() {
               ]}
               onPress={() => onIconSelect(icon)}
             >
-              <MaterialIcons name={icon as any} size={24} color={selectedIcon === icon ? theme.colors.primary : theme.colors.textSecondary} />
+              <MaterialIcons name={icon as unknown as MaterialIconName} size={24} color={selectedIcon === icon ? theme.colors.primary : theme.colors.textSecondary} />
             </TouchableOpacity>
           ))}
         </View>

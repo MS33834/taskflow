@@ -21,7 +21,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Search'>;
 interface SearchFilter {
   field: string;
   operator: string;
-  value: any;
+  value: unknown;
   conjunction: 'AND' | 'OR';
 }
 
@@ -54,7 +54,7 @@ export default function SearchScreen() {
     setRecentTasks(recent);
   }, [tasks]);
 
-  const addFilter = (field: string, operator: string = 'contains', value: any = '') => {
+  const addFilter = (field: string, operator: string = 'contains', value: unknown = '') => {
     setFilters([...filters, { field, operator, value, conjunction: filters.length > 0 ? 'AND' : 'AND' }]);
   };
 
@@ -119,7 +119,7 @@ export default function SearchScreen() {
 
   const applyFilter = (taskList: Task[], filter: SearchFilter): Task[] => {
     return taskList.filter((task) => {
-      let fieldValue: any;
+      let fieldValue: unknown;
 
       switch (filter.field) {
         case 'status':
@@ -185,15 +185,15 @@ export default function SearchScreen() {
           if (typeof fieldValue === 'string') {
             return fieldValue.toLowerCase().includes(String(filter.value).toLowerCase());
           }
-          return Array.isArray(fieldValue) && fieldValue.includes(filter.value);
+          return Array.isArray(fieldValue) && fieldValue.includes(filter.value as string);
         case 'is-empty':
           return !fieldValue || (Array.isArray(fieldValue) && fieldValue.length === 0);
         case 'is-not-empty':
           return fieldValue && (!Array.isArray(fieldValue) || fieldValue.length > 0);
         case 'greater-than':
-          return fieldValue > filter.value;
+          return (fieldValue as number | string | Date) > (filter.value as number | string | Date);
         case 'less-than':
-          return fieldValue < filter.value;
+          return (fieldValue as number | string | Date) < (filter.value as number | string | Date);
         default:
           return true;
       }
@@ -261,7 +261,7 @@ export default function SearchScreen() {
           'cancelled': '已取消',
           'on-hold': '暂停',
         };
-        valueDisplay = statusLabels[filter.value] || filter.value;
+        valueDisplay = statusLabels[String(filter.value)] || String(filter.value);
         break;
       }
       case 'priority': {
@@ -272,17 +272,17 @@ export default function SearchScreen() {
           'urgent': '紧急',
           'critical': '紧急且重要',
         };
-        valueDisplay = priorityLabels[filter.value] || filter.value;
+        valueDisplay = priorityLabels[String(filter.value)] || String(filter.value);
         break;
       }
       case 'project': {
         const project = projects.find((p) => p.id === filter.value);
-        valueDisplay = project?.name || filter.value;
+        valueDisplay = project?.name || String(filter.value);
         break;
       }
       case 'category': {
         const category = categories.find((c) => c.id === filter.value);
-        valueDisplay = category?.name || filter.value;
+        valueDisplay = category?.name || String(filter.value);
         break;
       }
       default:

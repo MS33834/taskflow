@@ -12,6 +12,14 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { toast } from './Toast';
 
+type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
+
+declare global {
+  interface Window {
+    webkitAudioContext?: typeof AudioContext;
+  }
+}
+
 export interface NoiseTrack {
   id: string;
   name: string;
@@ -121,7 +129,7 @@ export const WhiteNoisePlayer = forwardRef<WhiteNoisePlayerHandle, {
   const [currentTrackId, setCurrentTrackId] = useState('white');
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(0.4);
-  const [supported] = useState(() => Platform.OS === 'web' && typeof window !== 'undefined' && typeof (window as any).AudioContext !== 'undefined');
+  const [supported] = useState(() => Platform.OS === 'web' && typeof window !== 'undefined' && typeof window.AudioContext !== 'undefined');
   const audioRef = useRef<WebAudioContextRef | null>(null);
   const pulseAnim = useRef(new Animated.Value(0)).current;
 
@@ -154,9 +162,8 @@ export const WhiteNoisePlayer = forwardRef<WhiteNoisePlayerHandle, {
 
   const startAudio = useCallback(() => {
     if (Platform.OS !== 'web' || typeof window === 'undefined') return;
-    const Win = window as any;
     if (!audioRef.current) {
-      const AC = Win.AudioContext || (Win as any).webkitAudioContext;
+      const AC = window.AudioContext || window.webkitAudioContext;
       if (!AC) return;
       const ctx = new AC();
       const gain = ctx.createGain();
@@ -256,7 +263,7 @@ export const WhiteNoisePlayer = forwardRef<WhiteNoisePlayerHandle, {
       <View style={styles.headerRow}>
         <View style={[styles.iconWrap, { backgroundColor: currentTrack.color + '20' }]}>
           <Animated.View style={{ transform: playing ? [{ scale: pulseScale }] : [] }}>
-            <MaterialIcons name={currentTrack.icon as any} size={20} color={currentTrack.color} />
+            <MaterialIcons name={currentTrack.icon as MaterialIconName} size={20} color={currentTrack.color} />
           </Animated.View>
         </View>
         <View style={{ flex: 1, marginLeft: 12 }}>
@@ -298,7 +305,7 @@ export const WhiteNoisePlayer = forwardRef<WhiteNoisePlayerHandle, {
                 ]}
               >
                 <MaterialIcons
-                  name={track.icon as any}
+                  name={track.icon as MaterialIconName}
                   size={16}
                   color={isActive ? track.color : 'rgba(255,255,255,0.5)'}
                 />
