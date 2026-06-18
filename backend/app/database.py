@@ -1,7 +1,15 @@
+from pathlib import Path
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 
 from app.config import settings
+
+# Ensure the directory for the SQLite database exists before the engine tries
+# to open the file. This makes the backend robust to whichever working directory
+# is used to start uvicorn.
+_db_path = Path(settings.database_url.replace("sqlite+aiosqlite:///", "")).resolve()
+_db_path.parent.mkdir(parents=True, exist_ok=True)
 
 engine = create_async_engine(
     settings.database_url,

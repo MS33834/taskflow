@@ -22,10 +22,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# 配置 CORS
+# 配置 CORS — 开发环境允许所有来源，便于前端在不同端口（Expo web 默认 8081、
+# Vite 5173、Next.js 3000 等）下进行联调。
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
