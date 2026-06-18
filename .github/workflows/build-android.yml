@@ -10,6 +10,8 @@ jobs:
   build:
     name: Build Android APK
     runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6.0.3
@@ -21,6 +23,7 @@ jobs:
           cache: 'npm'
 
       - name: Setup Expo and EAS
+        if: env.EXPO_TOKEN != ''
         uses: expo/expo-github-action@v9
         with:
           expo-version: latest
@@ -34,18 +37,16 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Setup EAS
-        if: ${{ secrets.EXPO_TOKEN != '' }}
+        if: env.EXPO_TOKEN != ''
         run: |
           # 配置 EAS
           echo "EXPO_TOKEN=${{ secrets.EXPO_TOKEN }}" >> $GITHUB_ENV
-      
+
       - name: Build APK (Preview)
-        if: ${{ secrets.EXPO_TOKEN != '' }}
+        if: env.EXPO_TOKEN != ''
         run: |
           # 构建 Android 预览版 APK
           eas build --platform android --profile preview --non-interactive --no-wait
-        env:
-          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
