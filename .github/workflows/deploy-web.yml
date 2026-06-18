@@ -64,7 +64,7 @@ jobs:
               '<meta name=\"build-timestamp\" content=\"' + ts + '\">',
             ].join('\n  ');
             html = html.replace(/<head>/i, '<head>\n  ' + metaTags);
-            html = html.replace(/(src|href)=\"(\/TaskFlow\/(?:_expo|assets)\/[^\"]+)\"/g, (m, attr, url) => {
+            html = html.replace(/(src|href)="(\/taskflow\/(?:_expo|assets)\/[^\"]+)"/g, (m, attr, url) => {
               if (url.includes('?v=')) return m;
               const sep = url.includes('?') ? '&' : '?';
               return attr + '=\"' + url + sep + 'v=' + ts + '\"';
