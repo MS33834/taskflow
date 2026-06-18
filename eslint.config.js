@@ -21,6 +21,9 @@ module.exports = [
       '**/*.min.js',
       '.trae/**', // internal IDE tooling, not part of the app
       'scripts/inject-cache-buster.js', // run in CI, not part of app source
+      'backend/.venv/**',
+      'backend/**/__pycache__/**',
+      'backend/data/**',
     ],
   },
 

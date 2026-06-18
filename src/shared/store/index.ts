@@ -1,6 +1,25 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  createTask as apiCreateTask,
+  createProject as apiCreateProject,
+  createCategory as apiCreateCategory,
+  createTag as apiCreateTag,
+  deleteTask as apiDeleteTask,
+  deleteProject as apiDeleteProject,
+  deleteCategory as apiDeleteCategory,
+  deleteTag as apiDeleteTag,
+  fetchTasks,
+  fetchProjects,
+  fetchCategories,
+  fetchTags,
+  isApiAvailable,
+  updateTask as apiUpdateTask,
+  updateProject as apiUpdateProject,
+  updateCategory as apiUpdateCategory,
+  updateTag as apiUpdateTag,
+} from '../api';
+import {
   Task,
   Project,
   Category,
@@ -238,9 +257,11 @@ interface AppStore {
   syncConfig: SyncConfig;
   lastSyncAt: Date | null;
   isSyncing: boolean;
+  apiAvailable: boolean;
   setSyncConfig: (config: SyncConfig) => void;
   performSync: () => Promise<void>;
   setLastSyncAt: (date: Date) => void;
+  checkApiAvailability: () => Promise<void>;
 
   // Focus Sessions (Pomodoro)
   sessions: FocusSession[];
@@ -823,6 +844,19 @@ export const useAppStore = create<AppStore>((set, get) => ({
     };
     set((state) => ({ tasks: [...state.tasks, newTask] }));
     get().saveData();
+
+    if (get().apiAvailable) {
+      apiCreateTask({ ...task, id })
+        .then((created) => {
+          set((state) => ({
+            tasks: state.tasks.map((t) => (t.id === id ? created : t)),
+          }));
+        })
+        .catch((error) => {
+          console.warn('API create task failed:', error);
+        });
+    }
+
     return id;
   },
 
@@ -833,6 +867,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ),
     }));
     get().saveData();
+
+    if (get().apiAvailable) {
+      apiUpdateTask(id, updates).catch((error) => {
+        console.warn('API update task failed:', error);
+      });
+    }
   },
 
   deleteTask: (id) => {
@@ -841,6 +881,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       selectedTask: state.selectedTask?.id === id ? null : state.selectedTask,
     }));
     get().saveData();
+
+    if (get().apiAvailable) {
+      apiDeleteTask(id).catch((error) => {
+        console.warn('API delete task failed:', error);
+      });
+    }
   },
 
   selectTask: (task) => set({ selectedTask: task }),
@@ -1046,6 +1092,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
     };
     set((state) => ({ projects: [...state.projects, newProject] }));
     get().saveData();
+
+    if (get().apiAvailable) {
+      apiCreateProject({ ...project, id })
+        .then((created) => {
+          set((state) => ({
+            projects: state.projects.map((p) => (p.id === id ? created : p)),
+          }));
+        })
+        .catch((error) => console.warn('API create project failed:', error));
+    }
+
     return id;
   },
 
@@ -1056,6 +1113,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ),
     }));
     get().saveData();
+
+    if (get().apiAvailable) {
+      apiUpdateProject(id, updates).catch((error) =>
+        console.warn('API update project failed:', error),
+      );
+    }
   },
 
   deleteProject: (id) => {
@@ -1064,6 +1127,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       selectedProject: state.selectedProject?.id === id ? null : state.selectedProject,
     }));
     get().saveData();
+
+    if (get().apiAvailable) {
+      apiDeleteProject(id).catch((error) =>
+        console.warn('API delete project failed:', error),
+      );
+    }
   },
 
   selectProject: (project) => set({ selectedProject: project }),
@@ -1090,6 +1159,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
     };
     set((state) => ({ categories: [...state.categories, newCategory] }));
     get().saveData();
+
+    if (get().apiAvailable) {
+      apiCreateCategory({ ...category, id })
+        .then((created) => {
+          set((state) => ({
+            categories: state.categories.map((c) => (c.id === id ? created : c)),
+          }));
+        })
+        .catch((error) => console.warn('API create category failed:', error));
+    }
+
     return id;
   },
 
@@ -1100,6 +1180,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ),
     }));
     get().saveData();
+
+    if (get().apiAvailable) {
+      apiUpdateCategory(id, updates).catch((error) =>
+        console.warn('API update category failed:', error),
+      );
+    }
   },
 
   deleteCategory: (id) => {
@@ -1108,6 +1194,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       selectedCategory: state.selectedCategory === id ? null : state.selectedCategory,
     }));
     get().saveData();
+
+    if (get().apiAvailable) {
+      apiDeleteCategory(id).catch((error) =>
+        console.warn('API delete category failed:', error),
+      );
+    }
   },
 
   setSelectedCategory: (id) => set({ selectedCategory: id }),
@@ -1142,6 +1234,17 @@ export const useAppStore = create<AppStore>((set, get) => ({
     };
     set((state) => ({ tags: [...state.tags, newTag] }));
     get().saveData();
+
+    if (get().apiAvailable) {
+      apiCreateTag({ ...tag, id })
+        .then((created) => {
+          set((state) => ({
+            tags: state.tags.map((t) => (t.id === id ? created : t)),
+          }));
+        })
+        .catch((error) => console.warn('API create tag failed:', error));
+    }
+
     return id;
   },
 
@@ -1152,6 +1255,12 @@ export const useAppStore = create<AppStore>((set, get) => ({
       ),
     }));
     get().saveData();
+
+    if (get().apiAvailable) {
+      apiUpdateTag(id, updates).catch((error) =>
+        console.warn('API update tag failed:', error),
+      );
+    }
   },
 
   deleteTag: (id) => {
@@ -1159,6 +1268,10 @@ export const useAppStore = create<AppStore>((set, get) => ({
       tags: state.tags.filter((tag) => tag.id !== id),
     }));
     get().saveData();
+
+    if (get().apiAvailable) {
+      apiDeleteTag(id).catch((error) => console.warn('API delete tag failed:', error));
+    }
   },
 
   mergeTags: (sourceId, targetId) => {
@@ -2114,6 +2227,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
   },
   lastSyncAt: null,
   isSyncing: false,
+  apiAvailable: false,
 
   setSyncConfig: (config) => {
     set({ syncConfig: config });
@@ -2136,9 +2250,32 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   setLastSyncAt: (date) => set({ lastSyncAt: date }),
 
+  checkApiAvailability: async () => {
+    const available = await isApiAvailable();
+    set({ apiAvailable: available });
+  },
+
   // Persistence
   loadData: async () => {
     try {
+      await get().checkApiAvailability();
+
+      if (get().apiAvailable) {
+        try {
+          const [tasks, projects, categories, tags] = await Promise.all([
+            fetchTasks(),
+            fetchProjects(),
+            fetchCategories(),
+            fetchTags(),
+          ]);
+          set({ tasks, projects, categories, tags });
+          return;
+        } catch (error) {
+          console.warn('API load failed, falling back to local storage:', error);
+          set({ apiAvailable: false });
+        }
+      }
+
       const [
         tasksData, projectsData, categoriesData, tagsData, viewsData,
         themeData, goalsData, habitsData, notesData, calendarsData,

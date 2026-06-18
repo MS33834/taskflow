@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import files, git, plugins
+from app.api import files, git, plugins, tasks
 from app.config import settings
 from app.database import init_db
 
@@ -51,3 +51,4 @@ async def health_check():
 app.include_router(files.router, prefix="/api/v1")
 app.include_router(git.router, prefix="/api/v1")
 app.include_router(plugins.router, prefix="/api/v1")
+app.include_router(tasks.router, prefix="/api/v1")
