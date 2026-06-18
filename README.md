@@ -4,7 +4,7 @@
 
 A local-first, cross-platform task manager built with React Native + Expo.
 
-[Live web demo](https://badhope.github.io/TaskFlow/) · [Report a bug](https://github.com/badhope/TaskFlow/issues) · [Request a feature](https://github.com/badhope/TaskFlow/issues)
+[Project intro](https://ms33834.github.io/taskflow/) · [Report a bug](https://github.com/MS33834/taskflow/issues) · [Request a feature](https://github.com/MS33834/taskflow/issues)
 
 </div>
 
@@ -97,17 +97,14 @@ issue, not a blocker.
 
 ## Deployment
 
-The repo ships four GitHub Actions:
+The repo ships these GitHub Actions:
 
 - `verify.yml` — typecheck + lint on every push
 - `build-android.yml` — APK build artifact
-- `eas-build.yml` — EAS Cloud Build
-- `deploy-web.yml` — exports the web bundle, injects cache-busting query
-  params, and publishes to GitHub Pages
+- `eas-build.yml` — EAS Cloud Build (manual trigger)
+- `pages-intro.yml` — publishes the static project intro in `docs/` to GitHub Pages
 
-`deploy-web.yml` has a workaround for Fastly's CDN caching the first 404
-response on a fresh deploy — see the `Inject no-cache meta + cache-buster`
-step for the gory details. PRs welcome if anyone has a cleaner answer.
+The GitHub Pages site is only an introduction page; the actual app must be run locally.
 
 ## Known caveats
 
