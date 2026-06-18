@@ -8,18 +8,20 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
-# Scorecard only needs read access; result upload needs id-token: write.
+# Keep global permissions minimal; write permissions are granted at job level.
 permissions:
   contents: read
-  id-token: write
-  actions: read
-  security-events: write
 
 jobs:
   analysis:
     name: Scorecard
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+      actions: read
+      security-events: write
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
