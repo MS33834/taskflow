@@ -69,9 +69,6 @@ web-build
 # Trae IDE
 .trae/
 
-# CI/build helper scripts that are intentionally local-only.
-# (Kept untracked so contributors can re-generate them via the workflow steps.)
-scripts/inject-cache-buster.js
 
 # EAS
 .eas
