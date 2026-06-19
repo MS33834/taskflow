@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import files, git, plugins
+from app.api import files, git, plugins, tasks
 from app.config import settings
 from app.database import init_db
 
@@ -22,10 +22,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# 配置 CORS
+# 配置 CORS — 开发环境允许所有来源，便于前端在不同端口（Expo web 默认 8081、
+# Vite 5173、Next.js 3000 等）下进行联调。
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -50,3 +51,4 @@ async def health_check():
 app.include_router(files.router, prefix="/api/v1")
 app.include_router(git.router, prefix="/api/v1")
 app.include_router(plugins.router, prefix="/api/v1")
+app.include_router(tasks.router, prefix="/api/v1")

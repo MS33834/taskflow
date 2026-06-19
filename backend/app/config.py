@@ -7,23 +7,23 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     """应用配置"""
-    
+
     model_config = ConfigDict(
         env_file=".env",
         env_file_encoding="utf-8"
     )
-    
+
     # 应用基础配置
-    app_name: str = "AI Dev Assistant"
+    app_name: str = "TaskFlow Backend"
     app_version: str = "0.1.0"
     debug: bool = False
-    
+
     # API 服务配置
     api_host: str = "127.0.0.1"
     api_port: int = 8000
-    
-    # 数据库配置
-    database_url: str = "sqlite+aiosqlite:///./data/assistant.db"
+
+    # 数据库配置：基于 backend 目录的绝对路径，避免启动目录不同导致找不到文件
+    database_url: str = f"sqlite+aiosqlite:///{Path(__file__).resolve().parent.parent / 'data' / 'taskflow.db'}"
     
     # 大模型配置
     llm_provider: str = Field(default="openai", description="openai | ollama")

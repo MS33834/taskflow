@@ -1,7 +1,15 @@
+from pathlib import Path
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import DeclarativeBase
 
 from app.config import settings
+from app.models.base import Base
+
+# Ensure the directory for the SQLite database exists before the engine tries
+# to open the file. This makes the backend robust to whichever working directory
+# is used to start uvicorn.
+_db_path = Path(settings.database_url.replace("sqlite+aiosqlite:///", "")).resolve()
+_db_path.parent.mkdir(parents=True, exist_ok=True)
 
 engine = create_async_engine(
     settings.database_url,
@@ -14,13 +22,18 @@ async_session = async_sessionmaker(
     expire_on_commit=False
 )
 
-class Base(DeclarativeBase):
-    pass
 
 async def init_db():
     """初始化数据库，创建所有表"""
+    # Import models here so Base.metadata knows about all tables, without
+    # creating a circular import at module load time.
+    from app.models import task as _task_models  # noqa: F401
+    from app.models import file as _file_models  # noqa: F401
+    from app.models import operation as _operation_models  # noqa: F401
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
 
 async def get_db():
     """获取数据库会话"""

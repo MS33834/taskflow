@@ -26,6 +26,8 @@ jobs:
   build:
     name: Build APK
     runs-on: ubuntu-latest
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6.0.3
@@ -37,6 +39,7 @@ jobs:
           cache: 'npm'
 
       - name: Setup Expo and EAS
+        if: env.EXPO_TOKEN != ''
         uses: expo/expo-github-action@v9
         with:
           expo-version: latest
@@ -47,7 +50,7 @@ jobs:
         run: npm install
 
       - name: Build APK
-        if: ${{ secrets.EXPO_TOKEN != '' }}
+        if: env.EXPO_TOKEN != ''
         run: |
           echo "Starting EAS Build..."
           eas build --platform ${{ inputs.platform }} --profile ${{ inputs.profile }} --non-interactive --no-wait

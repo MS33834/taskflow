@@ -23,6 +23,9 @@ module.exports = [
       'scripts/inject-cache-buster.js', // run in CI, not part of app source
       'desktop/**', // separate sub-project with its own toolchain
       'backend/**', // separate sub-project with its own toolchain
+      'backend/.venv/**',
+      'backend/**/__pycache__/**',
+      'backend/data/**',
     ],
   },
 
