@@ -20,7 +20,7 @@ export function VaultList() {
           {items.map((item) => (
             <VaultCard key={item.id} item={item} />
           ))}
-          {items.length === 0 && <p className="text-slate-400">保险库为空</p>}
+          {items.length === 0 && <p className="text-slate-400 dark:text-slate-500">保险库为空</p>}
         </div>
       )}
     </div>

@@ -17,17 +17,17 @@ export function VaultCard({ item }: VaultCardProps) {
   };
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800">
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-semibold text-slate-800">{item.title}</h3>
-        <button onClick={() => deleteItem(item.id)} className="text-sm text-slate-400 hover:text-danger">
+        <h3 className="font-semibold text-slate-800 dark:text-slate-100">{item.title}</h3>
+        <button onClick={() => deleteItem(item.id)} className="text-sm text-slate-400 hover:text-danger dark:text-slate-500 dark:hover:text-danger">
           删除
         </button>
       </div>
       <div className="space-y-2">
         {item.fields.map((field) => (
           <div key={field.id} className="flex items-center justify-between text-sm">
-            <span className="text-slate-500">{field.name}</span>
+            <span className="text-slate-500 dark:text-slate-400">{field.name}</span>
             <div className="flex items-center gap-2">
               <span className={field.isSensitive && !showSensitive ? 'blur-sm' : ''}>
                 {field.isSensitive && !showSensitive ? '••••••••' : field.value}

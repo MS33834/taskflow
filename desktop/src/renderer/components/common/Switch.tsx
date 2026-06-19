@@ -8,7 +8,7 @@ export function Switch({ checked, onChange, label }: SwitchProps) {
   return (
     <label className="flex cursor-pointer items-center gap-3">
       <div
-        className={`relative h-6 w-11 rounded-full transition-colors ${checked ? 'bg-primary' : 'bg-slate-200'}`}
+        className={`relative h-6 w-11 rounded-full transition-colors ${checked ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'}`}
         onClick={() => onChange(!checked)}
       >
         <div
@@ -17,7 +17,7 @@ export function Switch({ checked, onChange, label }: SwitchProps) {
           }`}
         />
       </div>
-      {label && <span className="text-sm text-slate-700">{label}</span>}
+      {label && <span className="text-sm text-slate-700 dark:text-slate-300">{label}</span>}
     </label>
   );
 }

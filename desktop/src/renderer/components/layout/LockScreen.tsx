@@ -16,8 +16,8 @@ export function LockScreen() {
   };
 
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center bg-slate-50">
-      <div className="mb-8 text-3xl font-semibold text-slate-800">TaskFlow</div>
+    <div className="flex h-screen w-full flex-col items-center justify-center bg-slate-50 dark:bg-slate-900">
+      <div className="mb-8 text-3xl font-semibold text-slate-800 dark:text-slate-100">TaskFlow</div>
       <form onSubmit={handleSubmit} className="w-80 space-y-4">
         <Input
           type="password"
@@ -31,7 +31,7 @@ export function LockScreen() {
           解锁
         </Button>
       </form>
-      <p className="mt-6 text-xs text-slate-400">本地加密 · 数据不上传</p>
+      <p className="mt-6 text-xs text-slate-400 dark:text-slate-500">本地加密 · 数据不上传</p>
     </div>
   );
 }

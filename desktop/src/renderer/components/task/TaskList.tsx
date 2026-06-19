@@ -20,7 +20,7 @@ export function TaskList() {
           {tasks.map((task) => (
             <TaskCard key={task.id} task={task} />
           ))}
-          {tasks.length === 0 && <p className="text-slate-400">暂无任务</p>}
+          {tasks.length === 0 && <p className="text-slate-400 dark:text-slate-500">暂无任务</p>}
         </div>
       )}
     </div>

@@ -1,10 +1,17 @@
 import { useState } from 'react';
 import { Switch } from '../components/common/Switch';
 import { Button } from '../components/common/Button';
+import { useThemeStore, type ThemeMode } from '../store/themeStore';
+
+const themeLabels: Record<ThemeMode, string> = {
+  light: '浅色',
+  dark: '深色',
+  system: '跟随系统',
+};
 
 export function SettingsPage() {
   const [autoLock, setAutoLock] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+  const { mode, setMode } = useThemeStore();
   const [isBusy, setIsBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -40,18 +47,29 @@ export function SettingsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-2xl font-semibold text-slate-800">设置</h1>
-      <div className="space-y-6 rounded-lg border border-slate-200 bg-white p-6">
+      <h1 className="mb-6 text-2xl font-semibold text-slate-800 dark:text-slate-100">设置</h1>
+      <div className="space-y-6 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
         <div>
-          <h2 className="mb-3 font-medium text-slate-800">安全</h2>
+          <h2 className="mb-3 font-medium text-slate-800 dark:text-slate-100">安全</h2>
           <Switch label="5 分钟无操作自动锁定" checked={autoLock} onChange={setAutoLock} />
         </div>
         <div>
-          <h2 className="mb-3 font-medium text-slate-800">外观</h2>
-          <Switch label="深色模式" checked={darkMode} onChange={setDarkMode} />
+          <h2 className="mb-3 font-medium text-slate-800 dark:text-slate-100">外观</h2>
+          <div className="flex gap-2">
+            {(Object.keys(themeLabels) as ThemeMode[]).map((themeMode) => (
+              <Button
+                key={themeMode}
+                variant={mode === themeMode ? 'primary' : 'secondary'}
+                size="sm"
+                onClick={() => setMode(themeMode)}
+              >
+                {themeLabels[themeMode]}
+              </Button>
+            ))}
+          </div>
         </div>
         <div>
-          <h2 className="mb-3 font-medium text-slate-800">数据</h2>
+          <h2 className="mb-3 font-medium text-slate-800 dark:text-slate-100">数据</h2>
           <div className="flex flex-wrap items-center gap-3">
             <Button variant="secondary" onClick={handleExport} disabled={isBusy}>
               导出备份
@@ -59,9 +77,9 @@ export function SettingsPage() {
             <Button variant="secondary" onClick={handleImport} disabled={isBusy}>
               导入备份
             </Button>
-            {feedback && <span className="text-sm text-slate-600">{feedback}</span>}
+            {feedback && <span className="text-sm text-slate-600 dark:text-slate-400">{feedback}</span>}
           </div>
-          <p className="mt-2 text-xs text-slate-500">
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
             备份文件使用当前主密钥加密，仅能通过相同的解锁密码恢复。
           </p>
         </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from './store/authStore';
+import { useThemeStore } from './store/themeStore';
 import { usePrivacyMode } from './hooks/usePrivacyMode';
 import { useAutoLock } from './hooks/useAutoLock';
 import { LockScreen } from './components/layout/LockScreen';
@@ -13,11 +14,13 @@ function App() {
   const { isUnlocked, isLoading, checkStatus, lock } = useAuthStore();
   const [currentPage, setCurrentPage] = useState('today');
   const privacyMode = usePrivacyMode();
+  const { init: initTheme } = useThemeStore();
   useAutoLock(5);
 
   useEffect(() => {
     checkStatus();
-  }, [checkStatus]);
+    initTheme();
+  }, [checkStatus, initTheme]);
 
   // Register global shortcut handlers from main process
   useEffect(() => {
@@ -45,14 +48,14 @@ function App() {
   if (!isUnlocked) return <LockScreen />;
 
   return (
-    <div className="flex h-screen w-full bg-slate-50">
+    <div className="flex h-screen w-full bg-slate-50 text-slate-800 dark:bg-slate-900 dark:text-slate-100">
       <Sidebar current={currentPage} onChange={setCurrentPage} privacyMode={privacyMode} />
       <main className="flex-1 overflow-auto p-6">
         {currentPage === 'today' && <TodayPage />}
         {currentPage === 'calendar' && <CalendarPage />}
         {currentPage === 'vault' && !privacyMode && <VaultPage />}
         {privacyMode && currentPage === 'vault' && (
-          <div className="text-slate-400">隐私模式下保险库已隐藏</div>
+          <div className="text-slate-400 dark:text-slate-500">隐私模式下保险库已隐藏</div>
         )}
         {currentPage === 'settings' && <SettingsPage />}
       </main>

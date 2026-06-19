@@ -29,7 +29,7 @@ export function VaultEditor() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mb-6 space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+    <form onSubmit={handleSubmit} className="mb-6 space-y-3 rounded-lg border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
       <Input placeholder="名称（如 GitHub）" value={title} onChange={(e) => setTitle(e.target.value)} />
       <Input placeholder="账号" value={account} onChange={(e) => setAccount(e.target.value)} />
       <div className="flex gap-2">

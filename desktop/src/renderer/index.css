@@ -6,3 +6,7 @@ body {
   @apply bg-surface text-slate-800 antialiased;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
+
+html.dark body {
+  @apply bg-slate-900 text-slate-100;
+}
