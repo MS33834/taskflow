@@ -1,3 +1,4 @@
+import { clipboard } from 'electron';
 import { deriveKey, generateSalt, hashPassword } from './cryptoService';
 import { openDatabase, closeDatabase, runMigrations } from './dbService';
 
@@ -60,4 +61,12 @@ export function resetAutoLock(minutes: number): void {
   autoLockTimer = setTimeout(() => {
     lock();
   }, minutes * 60 * 1000);
+}
+
+export function scheduleClipboardClear(seconds: number): void {
+  setTimeout(() => {
+    if (process.platform !== 'linux') {
+      clipboard.clear();
+    }
+  }, seconds * 1000);
 }

@@ -1,10 +1,21 @@
 import { app, ipcMain } from 'electron';
 import path from 'path';
 import { createMainWindow, registerGlobalShortcuts, unregisterGlobalShortcuts } from './windowManager';
-import { unlock, lock, isUnlocked, resetAutoLock } from './services/authService';
+import { unlock, lock, isUnlocked, resetAutoLock, scheduleClipboardClear } from './services/authService';
 import { registerTaskChannels } from './ipc/taskChannels';
 import { registerVaultChannels } from './ipc/vaultChannels';
 import { IPC_CHANNELS } from '../shared/constants';
+import type { SecuritySettings } from '../shared/types';
+
+const defaultSettings: SecuritySettings = {
+  lockMethod: 'password',
+  autoLockMinutes: 5,
+  clipboardClearSeconds: 30,
+  screenshotProtection: false,
+  privacyModeEnabled: false,
+};
+
+let currentSettings: SecuritySettings = { ...defaultSettings };
 
 app.whenReady().then(() => {
   process.env.TASKFLOW_DB_PATH = path.join(app.getPath('userData'), 'taskflow.db');
@@ -14,7 +25,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle(IPC_CHANNELS.AUTH.UNLOCK, async (_, password: string) => {
     const success = unlock(password);
-    if (success) resetAutoLock(5);
+    if (success) resetAutoLock(currentSettings.autoLockMinutes);
     return success;
   });
 
@@ -23,6 +34,17 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle(IPC_CHANNELS.AUTH.IS_UNLOCKED, async () => isUnlocked());
+
+  ipcMain.handle(IPC_CHANNELS.SECURITY.GET_SETTINGS, async () => currentSettings);
+
+  ipcMain.handle(IPC_CHANNELS.SECURITY.SET_SETTINGS, async (_, settings: SecuritySettings) => {
+    currentSettings = { ...settings };
+  });
+
+  ipcMain.handle(IPC_CHANNELS.SECURITY.CLEAR_CLIPBOARD, async () => {
+    scheduleClipboardClear(currentSettings.clipboardClearSeconds);
+    return true;
+  });
 
   registerTaskChannels();
   registerVaultChannels();

@@ -13,7 +13,7 @@ export function VaultCard({ item }: VaultCardProps) {
 
   const handleCopy = async (value: string) => {
     await navigator.clipboard.writeText(value);
-    // TODO: 触发剪贴板清空定时器
+    await window.taskflowAPI.security.clearClipboard();
   };
 
   return (

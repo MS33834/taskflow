@@ -2,10 +2,15 @@ import { contextBridge, ipcRenderer } from 'electron';
 import { IPC_CHANNELS } from '../shared/constants';
 import type { Task, VaultItem, SecuritySettings } from '../shared/types';
 
+type AppEventChannel = 'app:lock' | 'app:newTask' | 'app:togglePrivacy';
+type EventCallback = () => void;
+
+const appListeners = new Map<EventCallback, (...args: unknown[]) => void>();
+
 const api = {
   auth: {
     unlock: (password: string) => ipcRenderer.invoke(IPC_CHANNELS.AUTH.UNLOCK, password),
-    lock: () => ipcRenderer.send(IPC_CHANNELS.AUTH.LOCK),
+    lock: () => ipcRenderer.invoke(IPC_CHANNELS.AUTH.LOCK),
     isUnlocked: () => ipcRenderer.invoke(IPC_CHANNELS.AUTH.IS_UNLOCKED),
   },
   tasks: {
@@ -31,6 +36,20 @@ const api = {
     setSettings: (settings: SecuritySettings) =>
       ipcRenderer.invoke(IPC_CHANNELS.SECURITY.SET_SETTINGS, settings),
     clearClipboard: () => ipcRenderer.invoke(IPC_CHANNELS.SECURITY.CLEAR_CLIPBOARD),
+  },
+  app: {
+    on: (channel: AppEventChannel, callback: EventCallback) => {
+      const listener = () => callback();
+      appListeners.set(callback, listener);
+      ipcRenderer.on(channel, listener);
+    },
+    off: (channel: AppEventChannel, callback: EventCallback) => {
+      const listener = appListeners.get(callback);
+      if (listener) {
+        ipcRenderer.off(channel, listener);
+        appListeners.delete(callback);
+      }
+    },
   },
 };
 
