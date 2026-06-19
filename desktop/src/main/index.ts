@@ -1,5 +1,6 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
+import { IPC_CHANNELS } from '../shared/constants';
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -44,3 +45,12 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
+
+ipcMain.handle(IPC_CHANNELS.AUTH.UNLOCK, async (_, password: string) => {
+  return password === 'test';
+});
+
+ipcMain.handle(IPC_CHANNELS.AUTH.IS_UNLOCKED, async () => false);
+
+ipcMain.handle(IPC_CHANNELS.TASKS.LIST, async () => []);
+ipcMain.handle(IPC_CHANNELS.VAULT.LIST, async () => []);
