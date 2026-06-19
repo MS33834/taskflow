@@ -1,4 +1,4 @@
-import Database from 'better-sqlite3';
+import Database from 'better-sqlite3-multiple-ciphers';
 import path from 'path';
 import os from 'os';
 
@@ -15,13 +15,20 @@ export function openDatabase(key: Buffer): Database.Database {
   const dbPath = getDbPath();
   db = new Database(dbPath);
 
+  // Enable SQLCipher-compatible encryption using better-sqlite3-multiple-ciphers.
+  // The key is provided as a 64-character hex string representing 32 bytes.
+  db.pragma("cipher = 'sqlcipher'");
+  db.pragma('legacy = 4');
+  db.pragma(`key = "x'${key.toString('hex')}'"`);
+
+  // Verify the key is correct by attempting a simple query.
+  // If the database is encrypted with a different key, this will throw.
   try {
-    db.pragma(`key = "x'${key.toString('hex')}'"`);
-    db.pragma('cipher = "aes-256-cbc"');
-  } catch {
-    // TODO: SQLCipher is not enabled in this better-sqlite3 build.
-    // Fallback to regular SQLite for this implementation phase.
-    // Production builds should compile better-sqlite3 against SQLCipher.
+    db.prepare("SELECT count(*) FROM sqlite_master").get();
+  } catch (error) {
+    db.close();
+    db = null;
+    throw new Error('Failed to open encrypted database. Invalid key or corrupted file.');
   }
 
   return db;
