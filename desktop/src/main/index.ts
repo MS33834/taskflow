@@ -3,6 +3,7 @@ import path from 'path';
 import { createMainWindow, registerGlobalShortcuts, unregisterGlobalShortcuts } from './windowManager';
 import { unlock, lock, isUnlocked, resetAutoLock } from './services/authService';
 import { registerTaskChannels } from './ipc/taskChannels';
+import { registerVaultChannels } from './ipc/vaultChannels';
 import { IPC_CHANNELS } from '../shared/constants';
 
 app.whenReady().then(() => {
@@ -24,6 +25,7 @@ app.whenReady().then(() => {
   ipcMain.handle(IPC_CHANNELS.AUTH.IS_UNLOCKED, async () => isUnlocked());
 
   registerTaskChannels();
+  registerVaultChannels();
 });
 
 app.on('window-all-closed', () => {
