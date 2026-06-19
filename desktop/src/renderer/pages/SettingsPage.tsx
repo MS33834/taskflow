@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Switch } from '../components/common/Switch';
 import { Button } from '../components/common/Button';
 import { useThemeStore, type ThemeMode } from '../store/themeStore';
+import type { SecuritySettings } from '../../shared/types';
 
 const themeLabels: Record<ThemeMode, string> = {
   light: '浅色',
@@ -9,11 +10,33 @@ const themeLabels: Record<ThemeMode, string> = {
   system: '跟随系统',
 };
 
+const defaultSettings: SecuritySettings = {
+  lockMethod: 'password',
+  autoLockMinutes: 5,
+  clipboardClearSeconds: 30,
+  screenshotProtection: true,
+  privacyModeEnabled: false,
+};
+
 export function SettingsPage() {
-  const [autoLock, setAutoLock] = useState(true);
   const { mode, setMode } = useThemeStore();
+  const [settings, setSettings] = useState<SecuritySettings>(defaultSettings);
   const [isBusy, setIsBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [hasLoaded, setHasLoaded] = useState(false);
+
+  useEffect(() => {
+    window.taskflowAPI.security.getSettings().then((loaded) => {
+      setSettings({ ...defaultSettings, ...loaded });
+      setHasLoaded(true);
+    });
+  }, []);
+
+  const updateSettings = async (updates: Partial<SecuritySettings>) => {
+    const next = { ...settings, ...updates };
+    setSettings(next);
+    await window.taskflowAPI.security.setSettings(next);
+  };
 
   const showFeedback = (message: string) => {
     setFeedback(message);
@@ -45,13 +68,38 @@ export function SettingsPage() {
     }
   };
 
+  if (!hasLoaded) {
+    return (
+      <div>
+        <h1 className="mb-6 text-2xl font-semibold text-slate-800 dark:text-slate-100">设置</h1>
+        <p className="text-slate-500 dark:text-slate-400">加载中...</p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <h1 className="mb-6 text-2xl font-semibold text-slate-800 dark:text-slate-100">设置</h1>
       <div className="space-y-6 rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-800">
         <div>
           <h2 className="mb-3 font-medium text-slate-800 dark:text-slate-100">安全</h2>
-          <Switch label="5 分钟无操作自动锁定" checked={autoLock} onChange={setAutoLock} />
+          <div className="space-y-3">
+            <Switch
+              label="5 分钟无操作自动锁定"
+              checked={settings.autoLockMinutes > 0}
+              onChange={(checked) =>
+                updateSettings({ autoLockMinutes: checked ? 5 : 0 })
+              }
+            />
+            <Switch
+              label="截图/录屏保护"
+              checked={settings.screenshotProtection}
+              onChange={(checked) => updateSettings({ screenshotProtection: checked })}
+            />
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              开启后，Windows/macOS 上的截图和录屏工具将无法捕获 TaskFlow 窗口内容。
+            </p>
+          </div>
         </div>
         <div>
           <h2 className="mb-3 font-medium text-slate-800 dark:text-slate-100">外观</h2>

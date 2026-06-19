@@ -31,6 +31,16 @@ export function createMainWindow(): BrowserWindow {
   return mainWindow;
 }
 
+export function setContentProtection(enabled: boolean): void {
+  if (!mainWindow) return;
+
+  try {
+    mainWindow.setContentProtection(enabled);
+  } catch {
+    // Linux may not support content protection; fail silently.
+  }
+}
+
 export function getMainWindow(): BrowserWindow | null {
   return mainWindow;
 }

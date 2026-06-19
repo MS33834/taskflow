@@ -1,6 +1,6 @@
 import { app, ipcMain } from 'electron';
 import path from 'path';
-import { createMainWindow, registerGlobalShortcuts, unregisterGlobalShortcuts } from './windowManager';
+import { createMainWindow, registerGlobalShortcuts, unregisterGlobalShortcuts, setContentProtection } from './windowManager';
 import { unlock, lock, isUnlocked, resetAutoLock, scheduleClipboardClear } from './services/authService';
 import { registerTaskChannels } from './ipc/taskChannels';
 import { registerVaultChannels } from './ipc/vaultChannels';
@@ -12,7 +12,7 @@ const defaultSettings: SecuritySettings = {
   lockMethod: 'password',
   autoLockMinutes: 5,
   clipboardClearSeconds: 30,
-  screenshotProtection: false,
+  screenshotProtection: true,
   privacyModeEnabled: false,
 };
 
@@ -22,6 +22,7 @@ app.whenReady().then(() => {
   process.env.TASKFLOW_DB_PATH = path.join(app.getPath('userData'), 'taskflow.db');
 
   createMainWindow();
+  setContentProtection(currentSettings.screenshotProtection);
   registerGlobalShortcuts();
 
   ipcMain.handle(IPC_CHANNELS.AUTH.UNLOCK, async (_, password: string) => {
@@ -40,6 +41,7 @@ app.whenReady().then(() => {
 
   ipcMain.handle(IPC_CHANNELS.SECURITY.SET_SETTINGS, async (_, settings: SecuritySettings) => {
     currentSettings = { ...settings };
+    setContentProtection(currentSettings.screenshotProtection);
   });
 
   ipcMain.handle(IPC_CHANNELS.SECURITY.CLEAR_CLIPBOARD, async () => {
