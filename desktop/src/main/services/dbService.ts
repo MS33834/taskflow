@@ -3,7 +3,6 @@ import path from 'path';
 import os from 'os';
 
 let db: Database.Database | null = null;
-let currentKey: Buffer | null = null;
 
 export function getDbPath(): string {
   if (process.env.TASKFLOW_DB_PATH) {
@@ -15,7 +14,6 @@ export function getDbPath(): string {
 export function openDatabase(key: Buffer): Database.Database {
   const dbPath = getDbPath();
   db = new Database(dbPath);
-  currentKey = key;
 
   try {
     db.pragma(`key = "x'${key.toString('hex')}'"`);
@@ -32,7 +30,6 @@ export function openDatabase(key: Buffer): Database.Database {
 export function closeDatabase(): void {
   db?.close();
   db = null;
-  currentKey = null;
 }
 
 export function getDatabase(): Database.Database {

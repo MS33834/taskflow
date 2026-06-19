@@ -1,4 +1,4 @@
-import { randomBytes, pbkdf2Sync, createCipheriv, createDecipheriv } from 'crypto';
+import { randomBytes, randomInt, pbkdf2Sync, createCipheriv, createDecipheriv } from 'crypto';
 
 const SALT_LENGTH = 32;
 const IV_LENGTH = 16;
@@ -38,9 +38,7 @@ export function decrypt(ciphertext: Buffer, key: Buffer): string {
 
 export function generatePassword(length = 16): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-  return Array.from(randomBytes(length))
-    .map((b) => chars[b % chars.length])
-    .join('');
+  return Array.from({ length }, () => chars[randomInt(0, chars.length)]).join('');
 }
 
 export function hashPassword(password: string, salt: Buffer): Buffer {

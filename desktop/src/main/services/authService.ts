@@ -1,12 +1,10 @@
 import { clipboard } from 'electron';
 import { deriveKey, generateSalt, hashPassword } from './cryptoService';
 import { openDatabase, closeDatabase, runMigrations } from './dbService';
+import { loadVerifier, saveVerifier } from './authStorage';
 
 let masterKey: Buffer | null = null;
 let autoLockTimer: NodeJS.Timeout | null = null;
-
-const SALT_STORAGE_KEY = 'authSalt';
-const HASH_STORAGE_KEY = 'authHash';
 
 export function isUnlocked(): boolean {
   return masterKey !== null;
@@ -19,26 +17,27 @@ export function getMasterKey(): Buffer | null {
 export function setupPassword(password: string): void {
   const salt = generateSalt();
   const hash = hashPassword(password, salt);
-  process.env[SALT_STORAGE_KEY] = salt.toString('hex');
-  process.env[HASH_STORAGE_KEY] = hash.toString('hex');
+  saveVerifier(salt, hash);
 }
 
 export function unlock(password: string): boolean {
-  const saltHex = process.env[SALT_STORAGE_KEY];
-  const hashHex = process.env[HASH_STORAGE_KEY];
+  const verifier = loadVerifier();
 
-  if (!saltHex || !hashHex) {
+  if (!verifier) {
     setupPassword(password);
   } else {
-    const salt = Buffer.from(saltHex, 'hex');
-    const expectedHash = Buffer.from(hashHex, 'hex');
+    const salt = Buffer.from(verifier.salt, 'hex');
+    const expectedHash = Buffer.from(verifier.hash, 'hex');
     const actualHash = hashPassword(password, salt);
     if (!actualHash.equals(expectedHash)) {
       return false;
     }
   }
 
-  const salt = Buffer.from(process.env[SALT_STORAGE_KEY]!, 'hex');
+  const currentVerifier = loadVerifier();
+  if (!currentVerifier) return false;
+
+  const salt = Buffer.from(currentVerifier.salt, 'hex');
   const { key } = deriveKey(password, salt);
   masterKey = key;
   openDatabase(key);
