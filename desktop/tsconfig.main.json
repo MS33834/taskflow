@@ -5,11 +5,11 @@
     "lib": ["ES2020"],
     "skipLibCheck": true,
     "moduleResolution": "node",
-    "outDir": "../dist/main",
-    "rootDir": "src/main",
+    "outDir": "dist",
+    "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
     "resolveJsonModule": true
   },
-  "include": ["src/main/**/*"]
+  "include": ["src/main/**/*", "src/shared/**/*", "src/preload/**/*"]
 }
