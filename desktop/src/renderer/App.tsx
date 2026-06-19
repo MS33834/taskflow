@@ -10,7 +10,7 @@ import { VaultPage } from './pages/VaultPage';
 import { SettingsPage } from './pages/SettingsPage';
 
 function App() {
-  const { isUnlocked, isLoading, checkStatus } = useAuthStore();
+  const { isUnlocked, isLoading, checkStatus, lock } = useAuthStore();
   const [currentPage, setCurrentPage] = useState('today');
   const privacyMode = usePrivacyMode();
   useAutoLock(5);
@@ -18,6 +18,28 @@ function App() {
   useEffect(() => {
     checkStatus();
   }, [checkStatus]);
+
+  // Register global shortcut handlers from main process
+  useEffect(() => {
+    const handleLock = () => lock();
+    const handleTogglePrivacy = () => {
+      window.dispatchEvent(new CustomEvent('toggle-privacy'));
+    };
+    const handleNewTask = () => {
+      setCurrentPage('today');
+      // TODO: focus task input
+    };
+
+    window.taskflowAPI.app.on('app:lock', handleLock);
+    window.taskflowAPI.app.on('app:togglePrivacy', handleTogglePrivacy);
+    window.taskflowAPI.app.on('app:newTask', handleNewTask);
+
+    return () => {
+      window.taskflowAPI.app.off('app:lock', handleLock);
+      window.taskflowAPI.app.off('app:togglePrivacy', handleTogglePrivacy);
+      window.taskflowAPI.app.off('app:newTask', handleNewTask);
+    };
+  }, [lock]);
 
   if (isLoading) return <div className="flex h-screen items-center justify-center">加载中...</div>;
   if (!isUnlocked) return <LockScreen />;
