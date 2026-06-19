@@ -1,0 +1,14 @@
+appId: com.taskflow.app
+productName: TaskFlow
+directories:
+  output: release
+files:
+  - dist/**/*
+  - package.json
+mac:
+  category: public.app-category.productivity
+  target: dmg
+win:
+  target: nsis
+linux:
+  target: AppImage
