@@ -68,6 +68,7 @@ web-build
 
 # Trae IDE
 .trae/
+.superpowers/
 
 # CI/build helper scripts that are intentionally local-only.
 # (Kept untracked so contributors can re-generate them via the workflow steps.)
