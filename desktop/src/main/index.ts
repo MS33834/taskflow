@@ -2,6 +2,7 @@ import { app, ipcMain } from 'electron';
 import path from 'path';
 import { createMainWindow, registerGlobalShortcuts, unregisterGlobalShortcuts } from './windowManager';
 import { unlock, lock, isUnlocked, resetAutoLock } from './services/authService';
+import { registerTaskChannels } from './ipc/taskChannels';
 import { IPC_CHANNELS } from '../shared/constants';
 
 app.whenReady().then(() => {
@@ -21,6 +22,8 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle(IPC_CHANNELS.AUTH.IS_UNLOCKED, async () => isUnlocked());
+
+  registerTaskChannels();
 });
 
 app.on('window-all-closed', () => {
