@@ -5,18 +5,21 @@ import { unlock, lock, isUnlocked, resetAutoLock, scheduleClipboardClear } from 
 import { registerTaskChannels } from './ipc/taskChannels';
 import { registerVaultChannels } from './ipc/vaultChannels';
 import { registerBackupChannels } from './ipc/backupChannels';
+import {
+  getSecuritySettings,
+  initializeSecuritySettings,
+  saveSecuritySettings,
+} from './repositories/securitySettingsRepository';
 import { IPC_CHANNELS } from '../shared/constants';
 import type { SecuritySettings } from '../shared/types';
 
-const defaultSettings: SecuritySettings = {
+let currentSettings: SecuritySettings = {
   lockMethod: 'password',
   autoLockMinutes: 5,
   clipboardClearSeconds: 30,
   screenshotProtection: true,
   privacyModeEnabled: false,
 };
-
-let currentSettings: SecuritySettings = { ...defaultSettings };
 
 app.whenReady().then(() => {
   process.env.TASKFLOW_DB_PATH = path.join(app.getPath('userData'), 'taskflow.db');
@@ -27,7 +30,12 @@ app.whenReady().then(() => {
 
   ipcMain.handle(IPC_CHANNELS.AUTH.UNLOCK, async (_, password: string) => {
     const success = unlock(password);
-    if (success) resetAutoLock(currentSettings.autoLockMinutes);
+    if (success) {
+      initializeSecuritySettings();
+      currentSettings = getSecuritySettings();
+      setContentProtection(currentSettings.screenshotProtection);
+      resetAutoLock(currentSettings.autoLockMinutes);
+    }
     return success;
   });
 
@@ -41,6 +49,11 @@ app.whenReady().then(() => {
 
   ipcMain.handle(IPC_CHANNELS.SECURITY.SET_SETTINGS, async (_, settings: SecuritySettings) => {
     currentSettings = { ...settings };
+    try {
+      saveSecuritySettings(currentSettings);
+    } catch {
+      // Database may not be unlocked yet; keep in-memory only.
+    }
     setContentProtection(currentSettings.screenshotProtection);
   });
 

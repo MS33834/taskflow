@@ -28,6 +28,33 @@ interface BackupPayload {
 
 const TABLE_NAMES = ['tasks', 'vault_items', 'categories', 'security_settings'] as const;
 
+const ALLOWED_COLUMNS: Record<(typeof TABLE_NAMES)[number], Set<string>> = {
+  tasks: new Set([
+    'id',
+    'title',
+    'description',
+    'due_date',
+    'reminder_at',
+    'repeat_rule',
+    'priority',
+    'status',
+    'category_id',
+    'tag_ids',
+    'created_at',
+    'updated_at',
+  ]),
+  vault_items: new Set(['id', 'type', 'title', 'fields', 'is_hidden', 'created_at', 'updated_at']),
+  categories: new Set(['id', 'name', 'color', 'is_hidden', 'created_at']),
+  security_settings: new Set([
+    'id',
+    'lock_method',
+    'auto_lock_minutes',
+    'clipboard_clear_seconds',
+    'screenshot_protection',
+    'privacy_mode_enabled',
+  ]),
+};
+
 export function createBackup(): Buffer {
   const key = getMasterKey();
   if (!key) throw new Error('Application is locked');
@@ -106,11 +133,12 @@ export function restoreBackup(encryptedBackup: Buffer): BackupResult {
   return { success: true, message: '数据恢复成功' };
 }
 
-function insertRow(db: ReturnType<typeof getDatabase>, table: string, row: unknown): void {
+function insertRow(db: ReturnType<typeof getDatabase>, table: (typeof TABLE_NAMES)[number], row: unknown): void {
   if (row === null || typeof row !== 'object') return;
 
   const record = row as Record<string, unknown>;
-  const columns = Object.keys(record);
+  const allowed = ALLOWED_COLUMNS[table];
+  const columns = Object.keys(record).filter((column) => allowed.has(column));
   if (columns.length === 0) return;
 
   const placeholders = columns.map(() => '?').join(', ');

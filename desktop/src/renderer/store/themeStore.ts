@@ -6,7 +6,7 @@ interface ThemeState {
   mode: ThemeMode;
   resolved: 'light' | 'dark';
   setMode: (mode: ThemeMode) => void;
-  init: () => void;
+  init: () => () => void;
 }
 
 const STORAGE_KEY = 'taskflow-theme';
@@ -54,6 +54,11 @@ export const useThemeStore = create<ThemeState>((set) => ({
       }
     };
 
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', listener);
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    mediaQuery.addEventListener('change', listener);
+
+    return () => {
+      mediaQuery.removeEventListener('change', listener);
+    };
   },
 }));

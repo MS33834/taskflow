@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Switch } from '../components/common/Switch';
 import { Button } from '../components/common/Button';
 import { useThemeStore, type ThemeMode } from '../store/themeStore';
-import type { SecuritySettings } from '../../shared/types';
+import { useSecuritySettingsStore } from '../store/securitySettingsStore';
+import { useTaskStore } from '../store/taskStore';
+import { useVaultStore } from '../store/vaultStore';
 
 const themeLabels: Record<ThemeMode, string> = {
   light: '浅色',
@@ -10,33 +12,13 @@ const themeLabels: Record<ThemeMode, string> = {
   system: '跟随系统',
 };
 
-const defaultSettings: SecuritySettings = {
-  lockMethod: 'password',
-  autoLockMinutes: 5,
-  clipboardClearSeconds: 30,
-  screenshotProtection: true,
-  privacyModeEnabled: false,
-};
-
 export function SettingsPage() {
   const { mode, setMode } = useThemeStore();
-  const [settings, setSettings] = useState<SecuritySettings>(defaultSettings);
+  const { isLoading, update, fetch: fetchSecuritySettings, ...settings } = useSecuritySettingsStore();
+  const { fetch: fetchTasks } = useTaskStore();
+  const { fetch: fetchVault } = useVaultStore();
   const [isBusy, setIsBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [hasLoaded, setHasLoaded] = useState(false);
-
-  useEffect(() => {
-    window.taskflowAPI.security.getSettings().then((loaded) => {
-      setSettings({ ...defaultSettings, ...loaded });
-      setHasLoaded(true);
-    });
-  }, []);
-
-  const updateSettings = async (updates: Partial<SecuritySettings>) => {
-    const next = { ...settings, ...updates };
-    setSettings(next);
-    await window.taskflowAPI.security.setSettings(next);
-  };
 
   const showFeedback = (message: string) => {
     setFeedback(message);
@@ -62,13 +44,16 @@ export function SettingsPage() {
     setIsBusy(true);
     try {
       const result = await window.taskflowAPI.backup.importBackup();
+      if (result.success) {
+        await Promise.all([fetchTasks(), fetchVault(), fetchSecuritySettings()]);
+      }
       showFeedback(result.success ? `导入成功：${result.message}` : `导入失败：${result.message}`);
     } finally {
       setIsBusy(false);
     }
   };
 
-  if (!hasLoaded) {
+  if (isLoading) {
     return (
       <div>
         <h1 className="mb-6 text-2xl font-semibold text-slate-800 dark:text-slate-100">设置</h1>
@@ -87,14 +72,12 @@ export function SettingsPage() {
             <Switch
               label="5 分钟无操作自动锁定"
               checked={settings.autoLockMinutes > 0}
-              onChange={(checked) =>
-                updateSettings({ autoLockMinutes: checked ? 5 : 0 })
-              }
+              onChange={(checked) => update({ autoLockMinutes: checked ? 5 : 0 })}
             />
             <Switch
               label="截图/录屏保护"
               checked={settings.screenshotProtection}
-              onChange={(checked) => updateSettings({ screenshotProtection: checked })}
+              onChange={(checked) => update({ screenshotProtection: checked })}
             />
             <p className="text-xs text-slate-500 dark:text-slate-400">
               开启后，Windows/macOS 上的截图和录屏工具将无法捕获 TaskFlow 窗口内容。

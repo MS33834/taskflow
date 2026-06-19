@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuthStore } from './store/authStore';
 import { useThemeStore } from './store/themeStore';
+import { useSecuritySettingsStore } from './store/securitySettingsStore';
 import { usePrivacyMode } from './hooks/usePrivacyMode';
 import { useAutoLock } from './hooks/useAutoLock';
 import { LockScreen } from './components/layout/LockScreen';
@@ -15,12 +16,17 @@ function App() {
   const [currentPage, setCurrentPage] = useState('today');
   const privacyMode = usePrivacyMode();
   const { init: initTheme } = useThemeStore();
-  useAutoLock(5);
+  const { autoLockMinutes, fetch: fetchSecuritySettings } = useSecuritySettingsStore();
+  useAutoLock(autoLockMinutes);
 
   useEffect(() => {
     checkStatus();
-    initTheme();
-  }, [checkStatus, initTheme]);
+    const cleanupTheme = initTheme();
+    fetchSecuritySettings();
+    return () => {
+      cleanupTheme();
+    };
+  }, [checkStatus, initTheme, fetchSecuritySettings]);
 
   // Register global shortcut handlers from main process
   useEffect(() => {
