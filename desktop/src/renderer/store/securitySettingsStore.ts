@@ -23,8 +23,16 @@ export const useSecuritySettingsStore = create<SecuritySettingsState>((set) => (
     set({ ...settings, isLoading: false });
   },
   update: async (updates) => {
-    const current = useSecuritySettingsStore.getState();
-    const next = { ...current, ...updates };
+    const { lockMethod, autoLockMinutes, clipboardClearSeconds, screenshotProtection, privacyModeEnabled } =
+      useSecuritySettingsStore.getState();
+    const next: SecuritySettings = {
+      lockMethod,
+      autoLockMinutes,
+      clipboardClearSeconds,
+      screenshotProtection,
+      privacyModeEnabled,
+      ...updates,
+    };
     await window.taskflowAPI.security.setSettings(next);
     set(next);
   },

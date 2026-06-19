@@ -1,40 +1,31 @@
 import { app, ipcMain } from 'electron';
 import path from 'path';
 import { createMainWindow, registerGlobalShortcuts, unregisterGlobalShortcuts, setContentProtection } from './windowManager';
-import { unlock, lock, isUnlocked, resetAutoLock, scheduleClipboardClear } from './services/authService';
+import { unlock, lock, isUnlocked, scheduleClipboardClear } from './services/authService';
 import { registerTaskChannels } from './ipc/taskChannels';
 import { registerVaultChannels } from './ipc/vaultChannels';
 import { registerBackupChannels } from './ipc/backupChannels';
+import { initializeSecuritySettings } from './repositories/securitySettingsRepository';
 import {
-  getSecuritySettings,
-  initializeSecuritySettings,
-  saveSecuritySettings,
-} from './repositories/securitySettingsRepository';
+  getCurrentSettings,
+  loadSettingsFromDatabase,
+  updateCurrentSettings,
+} from './services/securitySettingsState';
 import { IPC_CHANNELS } from '../shared/constants';
-import type { SecuritySettings } from '../shared/types';
-
-let currentSettings: SecuritySettings = {
-  lockMethod: 'password',
-  autoLockMinutes: 5,
-  clipboardClearSeconds: 30,
-  screenshotProtection: true,
-  privacyModeEnabled: false,
-};
 
 app.whenReady().then(() => {
   process.env.TASKFLOW_DB_PATH = path.join(app.getPath('userData'), 'taskflow.db');
 
   createMainWindow();
-  setContentProtection(currentSettings.screenshotProtection);
+  setContentProtection(getCurrentSettings().screenshotProtection);
   registerGlobalShortcuts();
 
   ipcMain.handle(IPC_CHANNELS.AUTH.UNLOCK, async (_, password: string) => {
     const success = unlock(password);
     if (success) {
       initializeSecuritySettings();
-      currentSettings = getSecuritySettings();
-      setContentProtection(currentSettings.screenshotProtection);
-      resetAutoLock(currentSettings.autoLockMinutes);
+      const settings = loadSettingsFromDatabase();
+      setContentProtection(settings.screenshotProtection);
     }
     return success;
   });
@@ -45,20 +36,17 @@ app.whenReady().then(() => {
 
   ipcMain.handle(IPC_CHANNELS.AUTH.IS_UNLOCKED, async () => isUnlocked());
 
-  ipcMain.handle(IPC_CHANNELS.SECURITY.GET_SETTINGS, async () => currentSettings);
+  ipcMain.handle(IPC_CHANNELS.SECURITY.GET_SETTINGS, async () => {
+    return getCurrentSettings();
+  });
 
-  ipcMain.handle(IPC_CHANNELS.SECURITY.SET_SETTINGS, async (_, settings: SecuritySettings) => {
-    currentSettings = { ...settings };
-    try {
-      saveSecuritySettings(currentSettings);
-    } catch {
-      // Database may not be unlocked yet; keep in-memory only.
-    }
-    setContentProtection(currentSettings.screenshotProtection);
+  ipcMain.handle(IPC_CHANNELS.SECURITY.SET_SETTINGS, async (_, settings) => {
+    updateCurrentSettings(settings);
+    setContentProtection(settings.screenshotProtection);
   });
 
   ipcMain.handle(IPC_CHANNELS.SECURITY.CLEAR_CLIPBOARD, async () => {
-    scheduleClipboardClear(currentSettings.clipboardClearSeconds);
+    scheduleClipboardClear(getCurrentSettings().clipboardClearSeconds);
     return true;
   });
 

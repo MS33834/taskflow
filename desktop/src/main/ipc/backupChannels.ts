@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { IPC_CHANNELS } from '../../shared/constants';
 import { createBackup, restoreBackup, BACKUP_FILE_EXTENSION, type BackupResult } from '../services/backupService';
+import { loadSettingsFromDatabase } from '../services/securitySettingsState';
 
 export function registerBackupChannels(): void {
   ipcMain.handle(IPC_CHANNELS.BACKUP.EXPORT, async (_, defaultFileName?: string): Promise<BackupResult> => {
@@ -37,7 +38,11 @@ export function registerBackupChannels(): void {
       }
 
       const encryptedBackup = fs.readFileSync(filePaths[0]);
-      return restoreBackup(encryptedBackup);
+      const result = restoreBackup(encryptedBackup);
+      if (result.success) {
+        loadSettingsFromDatabase();
+      }
+      return result;
     } catch (error) {
       return { success: false, message: error instanceof Error ? error.message : '导入失败' };
     }
