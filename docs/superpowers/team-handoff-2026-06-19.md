@@ -8,7 +8,7 @@
 
 **已完成**：1.0 MVP（桌面端）
 - 基于 Electron + Vite + React + TypeScript 的桌面应用
-- 本地 SQLite 数据库（当前为普通 better-sqlite3，未启用 SQLCipher）
+- 本地 SQLite 数据库（已启用 SQLCipher 文件级加密，使用 better-sqlite3-multiple-ciphers）
 - 任务管理：增删改查、完成状态、优先级
 - 加密保险库：密码条目、字段级 AES-GCM 加密、密码生成器
 - 隐私外壳：启动锁、自动锁屏、隐私模式、剪贴板自动清空、全局快捷键
@@ -100,7 +100,7 @@ git push github main
 - [ ] CI 通过：GitHub Actions 全部绿灯
 
 ### 4.4 已知限制（暂不阻塞，但需记录）
-- [ ] SQLCipher 文件级加密未启用
+- [x] SQLCipher 文件级加密已启用
 - [ ] 生物识别（Touch ID / Windows Hello）未实现
 - [ ] 截图保护未实现
 - [ ] 设置页导入/导出未接实现
@@ -112,7 +112,7 @@ git push github main
 ## 5. 下一步建议优先级
 
 ### P0（必须做，才能称为完整 1.0）
-1. **启用 SQLCipher 文件级加密**：编译带 SQLCipher 的 better-sqlite3，确保数据库文件被拷贝后无法读取
+1. ✅ **启用 SQLCipher 文件级加密**：已通过 better-sqlite3-multiple-ciphers 实现
 2. **修复已知 bug**：根据测试清单产出修复
 
 ### P1（强烈建议）
