@@ -1,7 +1,7 @@
 {
-  "name": "ai-dev-assistant-desktop",
-  "version": "0.1.0",
-  "description": "AI Dev Assistant Desktop Client",
+  "name": "taskflow-desktop",
+  "version": "0.2.0",
+  "description": "TaskFlow - Local-first encrypted personal schedule and sensitive information manager",
   "main": "dist/main/index.js",
   "scripts": {
     "dev": "concurrently \"npm run dev:main\" \"npm run dev:renderer\"",
@@ -11,29 +11,41 @@
     "build:main": "tsc -p tsconfig.main.json",
     "build:renderer": "vite build",
     "start": "electron .",
-    "package": "electron-builder"
+    "package": "electron-builder",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit -p tsconfig.main.json && tsc --noEmit -p tsconfig.renderer.json",
+    "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.21.0",
-    "antd": "^5.13.0",
-    "@ant-design/icons": "^5.2.6",
-    "axios": "^1.6.0"
+    "zustand": "^4.5.0",
+    "better-sqlite3": "^11.0.0",
+    "date-fns": "^3.6.0"
   },
   "devDependencies": {
     "electron": "^42.4.1",
     "electron-builder": "^26.15.3",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "@types/better-sqlite3": "^7.6.10",
     "typescript": "^5.3.0",
     "vite": "^6.4.3",
     "@vitejs/plugin-react": "^4.2.0",
-    "concurrently": "^8.2.0"
+    "concurrently": "^8.2.0",
+    "vitest": "^1.6.0",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0"
   },
   "build": {
-    "appId": "com.ai-dev-assistant.app",
-    "productName": "AI Dev Assistant",
+    "appId": "com.taskflow.app",
+    "productName": "TaskFlow",
     "directories": {
       "output": "release"
     },
@@ -42,7 +54,7 @@
       "package.json"
     ],
     "mac": {
-      "category": "public.app-category.developer-tools"
+      "category": "public.app-category.productivity"
     },
     "win": {
       "target": "nsis"
