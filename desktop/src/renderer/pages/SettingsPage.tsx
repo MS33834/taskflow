@@ -5,6 +5,38 @@ import { Button } from '../components/common/Button';
 export function SettingsPage() {
   const [autoLock, setAutoLock] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const [isBusy, setIsBusy] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  const showFeedback = (message: string) => {
+    setFeedback(message);
+    setTimeout(() => setFeedback(null), 4000);
+  };
+
+  const handleExport = async () => {
+    setIsBusy(true);
+    try {
+      const result = await window.taskflowAPI.backup.exportBackup();
+      showFeedback(result.success ? `导出成功：${result.message}` : `导出失败：${result.message}`);
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const handleImport = async () => {
+    const confirmed = window.confirm(
+      '导入备份将覆盖当前所有数据（任务、保险库、分类和设置）。\n\n确定要继续吗？'
+    );
+    if (!confirmed) return;
+
+    setIsBusy(true);
+    try {
+      const result = await window.taskflowAPI.backup.importBackup();
+      showFeedback(result.success ? `导入成功：${result.message}` : `导入失败：${result.message}`);
+    } finally {
+      setIsBusy(false);
+    }
+  };
 
   return (
     <div>
@@ -20,10 +52,18 @@ export function SettingsPage() {
         </div>
         <div>
           <h2 className="mb-3 font-medium text-slate-800">数据</h2>
-          <div className="flex gap-3">
-            <Button variant="secondary">导出备份</Button>
-            <Button variant="secondary">导入备份</Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button variant="secondary" onClick={handleExport} disabled={isBusy}>
+              导出备份
+            </Button>
+            <Button variant="secondary" onClick={handleImport} disabled={isBusy}>
+              导入备份
+            </Button>
+            {feedback && <span className="text-sm text-slate-600">{feedback}</span>}
           </div>
+          <p className="mt-2 text-xs text-slate-500">
+            备份文件使用当前主密钥加密，仅能通过相同的解锁密码恢复。
+          </p>
         </div>
       </div>
     </div>

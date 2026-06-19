@@ -22,4 +22,8 @@ export const IPC_CHANNELS = {
     SET_SETTINGS: 'security:setSettings',
     CLEAR_CLIPBOARD: 'security:clearClipboard',
   },
+  BACKUP: {
+    EXPORT: 'backup:export',
+    IMPORT: 'backup:import',
+  },
 } as const;

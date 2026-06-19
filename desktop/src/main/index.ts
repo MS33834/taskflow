@@ -4,6 +4,7 @@ import { createMainWindow, registerGlobalShortcuts, unregisterGlobalShortcuts } 
 import { unlock, lock, isUnlocked, resetAutoLock, scheduleClipboardClear } from './services/authService';
 import { registerTaskChannels } from './ipc/taskChannels';
 import { registerVaultChannels } from './ipc/vaultChannels';
+import { registerBackupChannels } from './ipc/backupChannels';
 import { IPC_CHANNELS } from '../shared/constants';
 import type { SecuritySettings } from '../shared/types';
 
@@ -48,6 +49,7 @@ app.whenReady().then(() => {
 
   registerTaskChannels();
   registerVaultChannels();
+  registerBackupChannels();
 });
 
 app.on('window-all-closed', () => {

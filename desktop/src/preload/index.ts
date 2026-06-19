@@ -37,6 +37,11 @@ const api = {
       ipcRenderer.invoke(IPC_CHANNELS.SECURITY.SET_SETTINGS, settings),
     clearClipboard: () => ipcRenderer.invoke(IPC_CHANNELS.SECURITY.CLEAR_CLIPBOARD),
   },
+  backup: {
+    exportBackup: (defaultFileName?: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.BACKUP.EXPORT, defaultFileName),
+    importBackup: () => ipcRenderer.invoke(IPC_CHANNELS.BACKUP.IMPORT),
+  },
   app: {
     on: (channel: AppEventChannel, callback: EventCallback) => {
       const listener = () => callback();
