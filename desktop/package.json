@@ -26,12 +26,14 @@
     "zustand": "^4.5.0"
   },
   "devDependencies": {
+    "@eslint/js": "^8.57.0",
     "@types/better-sqlite3": "^7.6.10",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "@vitejs/plugin-react": "^4.2.0",
+    "globals": "^15.0.0",
     "autoprefixer": "^10.4.0",
     "concurrently": "^8.2.0",
     "electron": "^42.4.1",
