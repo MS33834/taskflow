@@ -80,6 +80,21 @@ describe('backupService', () => {
     expect(backup.toString('utf8').includes('Backup test task')).toBe(false);
   });
 
+  it('should not include authentication verifier in the backup payload', () => {
+    createTask({
+      title: 'Backup test task',
+      priority: 'high',
+      status: 'todo',
+      tagIds: [],
+    });
+
+    const backup = createBackup();
+    // Even though the whole file is not raw JSON, the verifier hash should
+    // never appear anywhere in the encrypted or unencrypted portions.
+    const readable = backup.toString('utf8');
+    expect(readable.includes('"hash"')).toBe(false);
+  });
+
   it('should restore data from a backup and overwrite existing data', () => {
     createTask({
       title: 'Original task',
@@ -98,7 +113,7 @@ describe('backupService', () => {
       tagIds: [],
     });
 
-    const result = restoreBackup(backup);
+    const result = restoreBackup(backup, TEST_PASSWORD);
     expect(result.success).toBe(true);
 
     const tasks = getDatabase().prepare('SELECT * FROM tasks').all();
@@ -129,14 +144,41 @@ describe('backupService', () => {
     unlock(OTHER_PASSWORD);
     runMigrations();
 
-    const result = restoreBackup(backup);
+    const result = restoreBackup(backup, TEST_PASSWORD);
     expect(result.success).toBe(false);
-    expect(result.message).toContain('无法解密');
+    expect(result.message).toContain('密码');
+  });
+
+  it('should allow restoring a backup when no verifier exists yet', () => {
+    createTask({
+      title: 'Task to backup',
+      priority: 'medium',
+      status: 'todo',
+      tagIds: [],
+    });
+
+    const backup = createBackup();
+
+    closeDatabase();
+    const dbPath = getDbPath();
+    try {
+      fs.unlinkSync(dbPath);
+    } catch {
+      // ignore
+    }
+    clearVerifier();
+
+    const result = restoreBackup(backup, TEST_PASSWORD);
+    expect(result.success).toBe(true);
+
+    const tasks = getDatabase().prepare('SELECT * FROM tasks').all();
+    expect(tasks).toHaveLength(1);
+    expect((tasks[0] as Record<string, unknown>).title).toBe('Task to backup');
   });
 
   it('should reject an invalid backup file', () => {
     const invalidBackup = Buffer.from('not a valid backup');
-    const result = restoreBackup(invalidBackup);
+    const result = restoreBackup(invalidBackup, TEST_PASSWORD);
     expect(result.success).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 import { app, ipcMain } from 'electron';
 import path from 'path';
 import { createMainWindow, registerGlobalShortcuts, unregisterGlobalShortcuts, setContentProtection } from './windowManager';
-import { unlock, lock, isUnlocked, scheduleClipboardClear } from './services/authService';
+import { unlock, lock, isUnlocked, hasVerifier, scheduleClipboardClear } from './services/authService';
 import { registerTaskChannels } from './ipc/taskChannels';
 import { registerVaultChannels } from './ipc/vaultChannels';
 import { registerBackupChannels } from './ipc/backupChannels';
@@ -35,6 +35,8 @@ app.whenReady().then(() => {
   });
 
   ipcMain.handle(IPC_CHANNELS.AUTH.IS_UNLOCKED, async () => isUnlocked());
+
+  ipcMain.handle(IPC_CHANNELS.AUTH.HAS_VERIFIER, async () => hasVerifier());
 
   ipcMain.handle(IPC_CHANNELS.SECURITY.GET_SETTINGS, async () => {
     return getCurrentSettings();

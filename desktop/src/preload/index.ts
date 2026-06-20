@@ -12,6 +12,7 @@ const api = {
     unlock: (password: string) => ipcRenderer.invoke(IPC_CHANNELS.AUTH.UNLOCK, password),
     lock: () => ipcRenderer.invoke(IPC_CHANNELS.AUTH.LOCK),
     isUnlocked: () => ipcRenderer.invoke(IPC_CHANNELS.AUTH.IS_UNLOCKED),
+    hasVerifier: () => ipcRenderer.invoke(IPC_CHANNELS.AUTH.HAS_VERIFIER),
   },
   tasks: {
     list: () => ipcRenderer.invoke(IPC_CHANNELS.TASKS.LIST),
@@ -40,7 +41,8 @@ const api = {
   backup: {
     exportBackup: (defaultFileName?: string) =>
       ipcRenderer.invoke(IPC_CHANNELS.BACKUP.EXPORT, defaultFileName),
-    importBackup: () => ipcRenderer.invoke(IPC_CHANNELS.BACKUP.IMPORT),
+    importBackup: (password: string, newPassword?: string) =>
+      ipcRenderer.invoke(IPC_CHANNELS.BACKUP.IMPORT, password, newPassword),
   },
   app: {
     on: (channel: AppEventChannel, callback: EventCallback) => {

@@ -3,6 +3,7 @@ export const IPC_CHANNELS = {
     UNLOCK: 'auth:unlock',
     LOCK: 'auth:lock',
     IS_UNLOCKED: 'auth:isUnlocked',
+    HAS_VERIFIER: 'auth:hasVerifier',
   },
   TASKS: {
     LIST: 'tasks:list',

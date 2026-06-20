@@ -41,9 +41,24 @@ export function SettingsPage() {
     );
     if (!confirmed) return;
 
+    const hasVerifier = await window.taskflowAPI.auth.hasVerifier();
+    let password: string | null;
+    let newPassword: string | undefined;
+
+    if (hasVerifier) {
+      password = window.prompt('请输入当前解锁密码以恢复备份。');
+    } else {
+      password = window.prompt('请输入备份的解锁密码。');
+      if (!password) return;
+      newPassword = window.prompt('请为应用设置新密码以加密恢复后的数据。') ?? undefined;
+    }
+
+    if (!password) return;
+    if (!hasVerifier && !newPassword) return;
+
     setIsBusy(true);
     try {
-      const result = await window.taskflowAPI.backup.importBackup();
+      const result = await window.taskflowAPI.backup.importBackup(password, newPassword);
       if (result.success) {
         await Promise.all([fetchTasks(), fetchVault(), fetchSecuritySettings()]);
       }

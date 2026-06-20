@@ -26,7 +26,7 @@ export function registerBackupChannels(): void {
     }
   });
 
-  ipcMain.handle(IPC_CHANNELS.BACKUP.IMPORT, async (): Promise<BackupResult> => {
+  ipcMain.handle(IPC_CHANNELS.BACKUP.IMPORT, async (_, password: string, newPassword?: string): Promise<BackupResult> => {
     try {
       const { filePaths } = await dialog.showOpenDialog({
         properties: ['openFile'],
@@ -37,8 +37,12 @@ export function registerBackupChannels(): void {
         return { success: false, message: '用户取消了导入' };
       }
 
+      if (!password) {
+        return { success: false, message: '需要解锁密码才能恢复备份' };
+      }
+
       const encryptedBackup = fs.readFileSync(filePaths[0]);
-      const result = restoreBackup(encryptedBackup);
+      const result = restoreBackup(encryptedBackup, password, newPassword);
       if (result.success) {
         loadSettingsFromDatabase();
       }
