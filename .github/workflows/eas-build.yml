@@ -19,9 +19,6 @@ on:
         - preview
         - production
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 permissions:
   contents: read
 
@@ -32,45 +29,100 @@ jobs:
     env:
       EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
     steps:
+      - name: Harden Runner
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Check EAS credentials
+        id: eas
+        run: |
+          if [ -n "$EXPO_TOKEN" ]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+            echo "EAS cloud build will run because EXPO_TOKEN is configured."
+          else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::EXPO_TOKEN secret is not set. Skipping EAS cloud build. To enable it, add an Expo access token as the EXPO_TOKEN repository secret."
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
-          node-version: 24
+          node-version: 20
           cache: 'npm'
 
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
       - name: Setup Expo and EAS
-        if: env.EXPO_TOKEN != ''
+        if: steps.eas.outputs.has_token == 'true'
         uses: expo/expo-github-action@eab7a230208c952974db8c3245cfd78402c7b385 # v9
         with:
           expo-version: latest
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Install dependencies
-        run: npm ci
-
       - name: Build APK
-        if: env.EXPO_TOKEN != ''
+        if: steps.eas.outputs.has_token == 'true'
         run: |
           echo "Starting EAS Build..."
           eas build --platform ${{ inputs.platform }} --profile ${{ inputs.profile }} --non-interactive --no-wait
-          
+
       - name: Build Report
+        if: always()
         run: |
-          echo "## 📱 EAS Build Started!" > build-status.txt
+          if [ "${{ steps.eas.outputs.has_token }}" == "true" ]; then
+            echo "## 📱 EAS Build Started!" > build-status.txt
+            echo "" >> build-status.txt
+            echo "- **Platform:** ${{ inputs.platform }}" >> build-status.txt
+            echo "- **Profile:** ${{ inputs.profile }}" >> build-status.txt
+            echo "" >> build-status.txt
+            echo "Check your Expo dashboard for progress and download:" >> build-status.txt
+            echo "https://expo.dev/" >> build-status.txt
+          else
+            echo "## ⚠️ EAS Build Skipped" > build-status.txt
+            echo "" >> build-status.txt
+            echo "EXPO_TOKEN secret is not configured in this repository, so the cloud build was skipped." >> build-status.txt
+            echo "" >> build-status.txt
+            echo "To enable EAS cloud builds:" >> build-status.txt
+            echo "1. Create an Expo access token at https://expo.dev/settings/access-tokens" >> build-status.txt
+            echo "2. Add it as the EXPO_TOKEN repository secret at Settings > Secrets and variables > Actions" >> build-status.txt
+            echo "" >> build-status.txt
+            echo "See BUILD_APK.md and GITHUB_BUILD.md for more details."
+          fi
           echo "" >> build-status.txt
-          echo "Check your Expo dashboard for progress and download:" >> build-status.txt
-          echo "https://expo.dev/" >> build-status.txt
-          echo "" >> build-status.txt
-          echo "### OR Build Locally!" >> build-status.txt
+          echo "### Build Locally" >> build-status.txt
           echo "See BUILD_APK.md for instructions on how to build locally!" >> build-status.txt
-          
+
       - name: Upload Report
+        if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: build-info
           path: build-status.txt
           retention-days: 30
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ "${{ steps.eas.outputs.has_token }}" == "true" ]; then
+            echo "## 📱 EAS Build Started" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "- **Platform:** ${{ inputs.platform }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "- **Profile:** ${{ inputs.profile }}" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Monitor progress at https://expo.dev/" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "## ⚠️ EAS Build Skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "EXPO_TOKEN secret is not configured." >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "To enable cloud builds, add an Expo access token as the EXPO_TOKEN repository secret." >> "$GITHUB_STEP_SUMMARY"
+            echo "See BUILD_APK.md and GITHUB_BUILD.md for details." >> "$GITHUB_STEP_SUMMARY"
+          fi
