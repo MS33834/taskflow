@@ -81,7 +81,7 @@ jobs:
           merge-multiple: true
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@053f9b74638557590800a301da1ba82351507e2c # v3.8.1
+        uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
 
       - name: Sign release artifacts
         working-directory: release-assets
@@ -97,7 +97,7 @@ jobs:
 
       - name: Generate checksums
         working-directory: release-assets
-        run: sha256sum * > SHA256SUMS.txt
+        run: find . -maxdepth 1 -type f -exec sha256sum {} + > SHA256SUMS.txt
 
       - name: Sign checksums
         working-directory: release-assets
