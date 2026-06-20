@@ -5,13 +5,55 @@ import { IPC_CHANNELS } from '../../shared/constants';
 import { createBackup, restoreBackup, BACKUP_FILE_EXTENSION, type BackupResult } from '../services/backupService';
 import { loadSettingsFromDatabase } from '../services/securitySettingsState';
 
+/**
+ * 将用户传入的默认文件名清洗为纯文件名，防止通过 ../ 或绝对路径
+ * 把备份文件写到用户文档目录之外（IPC 路径遍历）。
+ */
+function sanitizeBackupFileName(input?: string): string {
+  if (!input || !input.trim()) {
+    return '';
+  }
+
+  // 去掉控制字符（0x00-0x1F、0x7F）、空字节和路径分隔符，统一替换为下划线。
+  // 使用逐字符过滤代替正则中的控制字符字面量，避免 ESLint no-control-regex 报错，
+  // 同时防止渲染进程传入异常字符导致底层路径解析或日志输出出现不可预期行为。
+  let cleaned = input
+    .split('')
+    .map((char) => {
+      const code = char.charCodeAt(0);
+      if (code <= 0x1f || code === 0x7f || char === '\0') {
+        return '';
+      }
+      if (char === '\\' || char === '/') {
+        return '_';
+      }
+      return char;
+    })
+    .join('')
+    .trim();
+
+  // 拒绝 '.'、'..' 等可能导致 path.join 逃逸的保留名
+  if (!cleaned || cleaned === '.' || cleaned === '..') {
+    return '';
+  }
+
+  // 确保最终只是单个文件名，不含任何目录层级
+  const baseName = path.basename(cleaned);
+  if (!baseName || baseName === '.' || baseName === '..') {
+    return '';
+  }
+
+  return baseName;
+}
+
 export function registerBackupChannels(): void {
   ipcMain.handle(IPC_CHANNELS.BACKUP.EXPORT, async (_, defaultFileName?: string): Promise<BackupResult> => {
     try {
+      const safeFileName = sanitizeBackupFileName(defaultFileName);
       const { filePath } = await dialog.showSaveDialog({
         defaultPath: path.join(
           app.getPath('documents'),
-          defaultFileName || `taskflow-backup-${formatDate(new Date())}.${BACKUP_FILE_EXTENSION}`
+          safeFileName || `taskflow-backup-${formatDate(new Date())}.${BACKUP_FILE_EXTENSION}`
         ),
         filters: [{ name: 'TaskFlow 备份', extensions: [BACKUP_FILE_EXTENSION] }],
       });

@@ -1,6 +1,10 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  clearStoredAuth,
+  setStoredAuth,
+} from '../utils/secureStorage';
+import {
   createTask as apiCreateTask,
   createProject as apiCreateProject,
   createCategory as apiCreateCategory,
@@ -786,12 +790,18 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   login: (user, token) => {
     set({ user, isAuthenticated: true });
-    AsyncStorage.setItem(STORAGE_KEYS.USER, JSON.stringify({ user, token }));
+    // 优先使用 expo-secure-store（iOS Keychain / Android Keystore）保存 token；
+    // 未安装时内部回退到 AsyncStorage，并在加载时通过同一封装读取。
+    setStoredAuth(user, token).catch((error) => {
+      console.warn('Failed to persist auth securely:', error);
+    });
   },
 
   logout: () => {
     set({ user: null, isAuthenticated: false });
-    AsyncStorage.removeItem(STORAGE_KEYS.USER);
+    clearStoredAuth().catch((error) => {
+      console.warn('Failed to clear stored auth:', error);
+    });
   },
 
   // Pomodoro sessions
@@ -2131,9 +2141,14 @@ export const useAppStore = create<AppStore>((set, get) => ({
     const template = get().templates.find((t) => t.id === templateId);
     if (!template) return null;
 
+    // 对模板变量 key 做正则转义，防止 key 中的特殊字符被解析为正则元字符，
+    // 避免 ReDoS（灾难性回溯）与意外替换行为。
+    const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
     let content = deepClone(template.content);
     Object.entries(variables).forEach(([key, value]) => {
-      content = JSON.parse(JSON.stringify(content).replace(new RegExp(`{{${key}}}`, 'g'), String(value)));
+      const placeholder = `{{${key}}}`;
+      content = JSON.parse(JSON.stringify(content).replace(new RegExp(escapeRegExp(placeholder), 'g'), String(value)));
     });
 
     return content;
@@ -2454,7 +2469,37 @@ export const useAppStore = create<AppStore>((set, get) => ({
 
   importData: async (data: string) => {
     try {
-      const importData = JSON.parse(data);
+      const parsed = JSON.parse(data);
+
+      // 基础校验：导入数据必须是对象，且关键字段为数组，防止原型污染或异常输入导致状态崩溃。
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error('导入数据必须是对象');
+      }
+
+      const MAX_IMPORT_ITEMS = 10000;
+      const assertArray = (value: unknown, name: string): boolean => {
+        if (value === undefined) return true;
+        if (!Array.isArray(value)) {
+          throw new Error(`导入数据字段 ${name} 必须是数组`);
+        }
+        if (value.length > MAX_IMPORT_ITEMS) {
+          throw new Error(`导入数据字段 ${name} 超过最大允许数量 ${MAX_IMPORT_ITEMS}`);
+        }
+        return true;
+      };
+
+      assertArray(parsed.tasks, 'tasks');
+      assertArray(parsed.projects, 'projects');
+      assertArray(parsed.categories, 'categories');
+      assertArray(parsed.tags, 'tags');
+      assertArray(parsed.views, 'views');
+      assertArray(parsed.goals, 'goals');
+      assertArray(parsed.habits, 'habits');
+      assertArray(parsed.notes, 'notes');
+
+      // 校验通过后恢复原有的 any 行为，避免破坏已有的宽松类型推断。
+      const importData = parsed as Record<string, any>;
+
       if (importData.tasks) {
         set({ tasks: importData.tasks.map((t: Record<string, unknown>) => ({
           ...t,

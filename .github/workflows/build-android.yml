@@ -39,12 +39,6 @@ jobs:
       - name: Verify TypeScript
         run: npx tsc --noEmit
 
-      - name: Setup EAS
-        if: env.EXPO_TOKEN != ''
-        run: |
-          # 配置 EAS
-          echo "EXPO_TOKEN=${{ secrets.EXPO_TOKEN }}" >> $GITHUB_ENV
-
       - name: Build APK (Preview)
         if: env.EXPO_TOKEN != ''
         run: |

@@ -1,6 +1,7 @@
 """插件管理 API"""
 import hashlib
 import hmac
+import sys
 from pathlib import Path
 from typing import List, Optional
 
@@ -25,6 +26,33 @@ class LoadPluginRequest(BaseModel):
     name: str
     module_path: str
     expected_hash: Optional[str] = None
+
+
+def _validate_plugin_name(name: str) -> None:
+    """校验插件名称不会覆盖系统/内置模块，且为合法标识符。
+
+    插件名会作为 ``sys.modules`` 的键以及 pluggy 注册名使用，若与内置模块
+    或已加载的第三方模块重名，可能导致模块表污染或意外的导入行为。
+    """
+    import keyword
+
+    if not name or not name.isidentifier():
+        raise ValueError("插件名称必须是合法的 Python 标识符")
+
+    if name.startswith("_"):
+        raise ValueError("插件名称不能以 '_' 开头")
+
+    if keyword.iskeyword(name):
+        raise ValueError("插件名称不能是 Python 关键字")
+
+    # 禁止与标准库/已加载模块重名，防止 sys.modules 被覆盖
+    if name in sys.modules:
+        raise ValueError(f"插件名称与已加载模块冲突: {name}")
+
+    # 禁止 pluggy 内部已注册名称覆盖（后续 load_plugin 会再次注册，
+    # 这里先拒绝同名插件，避免一个插件加载后覆盖另一个插件的状态）
+    if name in plugin_manager.list_plugins():
+        raise ValueError(f"插件 {name} 已经加载")
 
 
 def _resolve_plugin_path(module_path: str) -> Path:
@@ -80,6 +108,7 @@ async def load_plugin(request: LoadPluginRequest):
         import importlib.util
         import sys
 
+        _validate_plugin_name(request.name)
         target_path = _resolve_plugin_path(request.module_path)
         _verify_plugin_hash(target_path, request.expected_hash)
 
