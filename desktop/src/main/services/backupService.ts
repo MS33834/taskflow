@@ -13,6 +13,8 @@ import { loadVerifier } from './authStorage';
 export const BACKUP_FILE_EXTENSION = 'taskflow-backup';
 export const BACKUP_VERSION = 2;
 
+const MIN_PASSWORD_LENGTH = 8;
+
 export interface BackupResult {
   success: boolean;
   message?: string;
@@ -27,16 +29,6 @@ interface BackupPayload {
     categories: unknown[];
     security_settings: unknown[];
   };
-}
-
-interface LegacyBackupPayload {
-  version: number;
-  exportedAt: string;
-  auth: {
-    salt: string;
-    hash: string;
-  };
-  tables: BackupPayload['tables'];
 }
 
 interface BackupMetadata {
@@ -74,6 +66,16 @@ const ALLOWED_COLUMNS: Record<(typeof TABLE_NAMES)[number], Set<string>> = {
 };
 
 const METADATA_LENGTH_BYTES = 4;
+
+function validatePassword(password: string): { valid: boolean; message?: string } {
+  if (!password || password.length < MIN_PASSWORD_LENGTH) {
+    return {
+      valid: false,
+      message: `密码长度不能少于 ${MIN_PASSWORD_LENGTH} 个字符`,
+    };
+  }
+  return { valid: true };
+}
 
 function buildBackupFile(encryptedPayload: Buffer, metadata: BackupMetadata): Buffer {
   const metaBuffer = Buffer.from(JSON.stringify(metadata), 'utf8');
@@ -135,8 +137,16 @@ export function restoreBackup(
   password: string,
   newPassword?: string
 ): BackupResult {
-  if (!password) {
-    return { success: false, message: '需要解锁密码才能恢复备份' };
+  const passwordCheck = validatePassword(password);
+  if (!passwordCheck.valid) {
+    return { success: false, message: passwordCheck.message };
+  }
+
+  if (newPassword !== undefined) {
+    const newPasswordCheck = validatePassword(newPassword);
+    if (!newPasswordCheck.valid) {
+      return { success: false, message: newPasswordCheck.message };
+    }
   }
 
   const parsed = readBackupMetadata(encryptedBackup);
@@ -145,7 +155,12 @@ export function restoreBackup(
     return restoreV2Backup(parsed.metadata, parsed.encrypted, password, newPassword);
   }
 
-  return restoreLegacyBackup(encryptedBackup, password);
+  // V1 备份在 payload 中明文保存 auth.salt 与 auth.hash，存在离线暴力破解风险，
+  // 已于当前版本停止支持。请使用 V2 备份或重新导出数据。
+  return {
+    success: false,
+    message: '不支持的旧版备份格式（V1）。请使用新版备份文件或重新导出数据。',
+  };
 }
 
 function restoreV2Backup(
@@ -184,38 +199,6 @@ function restoreV2Backup(
   }
 
   if (payload.version !== BACKUP_VERSION) {
-    return { success: false, message: `不支持的备份版本: ${payload.version}` };
-  }
-
-  if (!payload.tables || !TABLE_NAMES.every((name) => Array.isArray(payload.tables[name]))) {
-    return { success: false, message: '备份文件格式不正确' };
-  }
-
-  restoreTables(payload.tables);
-  return { success: true, message: '数据恢复成功' };
-}
-
-function restoreLegacyBackup(encryptedBackup: Buffer, password: string): BackupResult {
-  if (!hasVerifier()) {
-    return {
-      success: false,
-      message: '旧版本备份需要在已设置解锁密码的环境中恢复',
-    };
-  }
-
-  if (!verifyPassword(password)) {
-    return { success: false, message: '解锁密码不正确' };
-  }
-
-  let payload: LegacyBackupPayload;
-  try {
-    const decrypted = decryptWithPassword(encryptedBackup, password);
-    payload = JSON.parse(decrypted);
-  } catch {
-    return { success: false, message: '无法解密备份，请确认使用正确的解锁密码' };
-  }
-
-  if (payload.version !== 1) {
     return { success: false, message: `不支持的备份版本: ${payload.version}` };
   }
 

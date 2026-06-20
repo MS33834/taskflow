@@ -35,9 +35,9 @@ TaskFlow 正在积极满足 [OpenSSF Best Practices Badge](https://www.bestpract
 | 禁止 force push | ✅ | `main` 分支保护已启用 `allow_force_pushes=false` |
 | 要求 PR review | ✅ | `required_pull_request_reviews[required_approving_review_count]=1` |
 | 要求 status check | ✅ | 要求 `Lint`、`Backend Tests & Fuzz`、`Verify Project Setup` 均通过，详见 [branch-protection-setup.md](./branch-protection-setup.md) |
-| 禁止管理员绕过 | ⏳ | 当前 `enforce_admins=false`；待运行 [branch-protection-setup.md](./branch-protection-setup.md) 中的 `gh` 命令设置为 `true` |
+| 禁止管理员绕过 | ✅ | `enforce_admins=true` 已启用 |
 
-> 所有变更必须通过 Pull Request 合并，详见 [CONTRIBUTING.md](../../CONTRIBUTING.md)。
+> 所有变更必须通过 Pull Request 合并，详见 [CONTRIBUTING.md](../../CONTRIBUTING.md) 与 [branch-protection-setup.md](./branch-protection-setup.md)。
 
 ## 待完成事项
 

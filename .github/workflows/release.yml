@@ -80,6 +80,19 @@ jobs:
           path: release-assets
           merge-multiple: true
 
+      # 统一产物文件名：electron-builder 在 Windows 上可能生成带空格的文件名，
+      # 而 artifact 上传/下载过程中空格可能被替换为点号，导致 SHA256SUMS 与实际 asset 不一致。
+      - name: Normalize artifact filenames
+        working-directory: release-assets
+        run: |
+          for f in *; do
+            [ -f "$f" ] || continue
+            normalized="$(echo "$f" | tr ' ' '.')"
+            if [ "$f" != "$normalized" ]; then
+              mv -i "$f" "$normalized"
+            fi
+          done
+
       - name: Install cosign
         uses: sigstore/cosign-installer@d7d6bc7722e3daa8354c50bcb52f4837da5e9b6a # v3.8.1
 

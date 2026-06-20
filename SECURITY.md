@@ -14,8 +14,7 @@ The following versions of TaskFlow are currently supported with security updates
 If you discover a security vulnerability in TaskFlow, please report it responsibly.
 
 - **Do not** open a public issue for security vulnerabilities.
-- Email the maintainer at [security-taskflow@example.com](mailto:security-taskflow@example.com) with details.
-  <!-- 注意：security-taskflow@example.com 仅为示例邮箱，正式项目上线前请替换为真实可用的安全团队邮箱。 -->
+- Email the maintainer at [security@ms33834.dev](mailto:security@ms33834.dev) with details.
 - Include steps to reproduce, affected versions, and any suggested fixes.
 
 We aim to respond within 7 days and release a patch within 30 days for confirmed vulnerabilities.

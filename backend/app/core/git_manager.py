@@ -10,7 +10,7 @@ import pygit2
 
 from app.config import settings
 from app.utils.logger import logger
-from app.utils.validator import _safe_join, validate_file_path, validate_git_url
+from app.utils.validator import validate_file_path, validate_git_url
 
 
 @dataclass
@@ -85,28 +85,51 @@ class GitManager:
 
         logger.info(f"开始克隆仓库: {validated_url} -> {repo_path}")
 
+        # 在克隆前通过全局 Git 配置禁用钩子执行，防止恶意仓库的
+        # post-checkout 等钩子在 checkout 阶段触发 RCE。
+        import tempfile
+
+        git_config_global = os.environ.get("GIT_CONFIG_GLOBAL")
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".gitconfig", delete=False
+        ) as cfg:
+            cfg.write("[core]\n\thooksPath = /dev/null\n")
+            temp_git_config = cfg.name
+
+        os.environ["GIT_CONFIG_GLOBAL"] = temp_git_config
+
         try:
-            # 使用回调函数显示进度
-            class CloneProgress(pygit2.RemoteCallbacks):
-                def transfer_progress(self, stats):
-                    if stats.received_objects > 0:
-                        pct = stats.received_objects / stats.total_objects * 100
-                        logger.debug(f"克隆进度: {pct:.1f}%")
+            try:
+                # 使用回调函数显示进度
+                class CloneProgress(pygit2.RemoteCallbacks):
+                    def transfer_progress(self, stats):
+                        if stats.received_objects > 0:
+                            pct = stats.received_objects / stats.total_objects * 100
+                            logger.debug(f"克隆进度: {pct:.1f}%")
 
-            pygit2.clone_repository(
-                validated_url,
-                str(repo_path),
-                callbacks=CloneProgress()
-            )
+                pygit2.clone_repository(
+                    validated_url,
+                    str(repo_path),
+                    callbacks=CloneProgress()
+                )
 
-            # 打开仓库并禁用本地钩子执行
-            repo = pygit2.Repository(str(repo_path))
-            self._disable_hooks(repo)
-            self._check_hooks_directory(repo_path)
+                # 打开仓库并禁用本地钩子执行
+                repo = pygit2.Repository(str(repo_path))
+                self._disable_hooks(repo)
+                self._check_hooks_directory(repo_path)
 
-            logger.info(f"仓库克隆成功: {repo_path}")
-            return repo_path
-
+                logger.info(f"仓库克隆成功: {repo_path}")
+                return repo_path
+            finally:
+                # 恢复原始环境变量
+                if git_config_global is None:
+                    os.environ.pop("GIT_CONFIG_GLOBAL", None)
+                else:
+                    os.environ["GIT_CONFIG_GLOBAL"] = git_config_global
+                try:
+                    os.unlink(temp_git_config)
+                except OSError:
+                    pass
         except Exception as e:
             logger.error(f"克隆仓库失败: {e}")
             # 清理失败的克隆：目录名已校验，直接位于 workspace 下

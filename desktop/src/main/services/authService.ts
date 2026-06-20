@@ -6,6 +6,8 @@ import { loadVerifier, saveVerifier } from './authStorage';
 let masterKey: Buffer | null = null;
 let autoLockTimer: NodeJS.Timeout | null = null;
 
+const MIN_PASSWORD_LENGTH = 8;
+
 export function isUnlocked(): boolean {
   return masterKey !== null;
 }
@@ -46,13 +48,26 @@ export function decryptWithPassword(ciphertext: Buffer, password: string): strin
   return decrypt(ciphertext, key);
 }
 
+function validatePassword(password: string): void {
+  if (!password || password.length < MIN_PASSWORD_LENGTH) {
+    throw new Error(`密码长度不能少于 ${MIN_PASSWORD_LENGTH} 个字符`);
+  }
+}
+
 export function setupPassword(password: string): void {
+  validatePassword(password);
   const salt = generateSalt();
   const hash = hashPassword(password, salt);
   saveVerifier(salt, hash);
 }
 
 export function unlock(password: string): boolean {
+  try {
+    validatePassword(password);
+  } catch {
+    return false;
+  }
+
   const verifier = loadVerifier();
 
   if (!verifier) {

@@ -7,7 +7,6 @@
 
 注意：该方案仅适用于后端绑定在 127.0.0.1 的本地单用户场景。
 """
-import os
 import secrets
 import tempfile
 from pathlib import Path
@@ -36,6 +35,18 @@ def generate_api_token() -> str:
     return secrets.token_urlsafe(32)
 
 
+_MIN_TOKEN_ENTROPY_BYTES = 32
+
+
+def _validate_token_entropy(token: str) -> None:
+    """校验外部注入的 token 具有足够熵值，防止使用短 token 或常见字符串。"""
+    if not token or len(token.encode("utf-8")) < _MIN_TOKEN_ENTROPY_BYTES:
+        raise ValueError(
+            f"API token 长度至少为 {_MIN_TOKEN_ENTROPY_BYTES} 字节，"
+            "请使用 secrets.token_urlsafe(32) 或等价高熵源生成"
+        )
+
+
 def get_or_create_api_token() -> str:
     """获取当前 API token；如未初始化则生成新的内存 token。
 
@@ -45,6 +56,7 @@ def get_or_create_api_token() -> str:
       应负责通过环境变量将该 token 传递给后端。
     - 仅在显式配置了 TASKFLOW_API_TOKEN_FILE 时才会把 token 写入文件，用于
       需要固定文件路径的特殊部署场景；此时仍建议配合严格的文件权限控制。
+    - 外部注入的 token 会被校验熵值，过短的 token 将触发启动失败。
     """
     global _API_TOKEN
     if _API_TOKEN is not None:
@@ -52,6 +64,7 @@ def get_or_create_api_token() -> str:
 
     # 优先从 settings.api_token 读取，这是推荐的安全用法
     if settings.api_token:
+        _validate_token_entropy(settings.api_token)
         _API_TOKEN = settings.api_token
         logger.info("API token 已从配置加载")
         return _API_TOKEN
