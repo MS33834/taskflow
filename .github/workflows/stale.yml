@@ -23,7 +23,7 @@ jobs:
           egress-policy: audit
 
       - name: Run stale
-        uses: actions/stale@5c658c458affa5e0b5e7b18c31291a4631a59c64 # v9.1.0
+        uses: actions/stale@5bef64f19d7facfb25b37b414482c7164d639639 # v9.1.0
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           days-before-stale: 60
