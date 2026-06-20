@@ -8,7 +8,7 @@ import pygit2
 
 from app.config import settings
 from app.utils.logger import logger
-from app.utils.validator import validate_file_path, validate_git_url
+from app.utils.validator import _safe_join, validate_file_path, validate_git_url
 
 
 @dataclass
@@ -44,8 +44,8 @@ class GitManager:
         if not name:
             name = validated_url.split('/')[-1].replace('.git', '')
         
-        repo_path = self.workspace / name
-        
+        repo_path = _safe_join(self.workspace, name)
+
         if repo_path.exists():
             raise ValueError(f"仓库目录已存在: {repo_path}")
         

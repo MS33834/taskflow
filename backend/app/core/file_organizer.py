@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.file import FileMetadata
 from app.utils.logger import logger
-from app.utils.validator import validate_category, validate_file_path
+from app.utils.validator import _safe_join, validate_category, validate_file_path
 
 
 class FileOrganizer:
@@ -121,9 +121,11 @@ class FileOrganizer:
             category = self.classify_file(source_path)
         
         category = validate_category(category)
-        
-        # 创建分类目录
-        category_dir = target_base / category
+        if category is None:
+            category = "other"
+
+        # 创建分类目录（使用安全拼接，防止 category 中的路径注入）
+        category_dir = _safe_join(target_base, category)
         category_dir.mkdir(parents=True, exist_ok=True)
         
         # 移动文件
