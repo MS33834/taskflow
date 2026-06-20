@@ -1,4 +1,6 @@
 """Git 仓库管理器"""
+import os
+import shutil
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,7 +37,24 @@ class GitManager:
     def __init__(self, workspace: Path):
         self.workspace = workspace.resolve()
         self.workspace.mkdir(parents=True, exist_ok=True)
-    
+
+    def _disable_hooks(self, repo: pygit2.Repository) -> None:
+        """禁用仓库钩子执行。"""
+        repo.config["core.hooksPath"] = os.devnull
+
+    def _check_hooks_directory(self, repo_path: Path) -> None:
+        """防御性检查克隆仓库的 .git/hooks 目录是否包含异常可执行文件。"""
+        hooks_dir = repo_path / ".git" / "hooks"
+        if not hooks_dir.exists():
+            return
+
+        for hook_file in hooks_dir.iterdir():
+            if hook_file.is_file() and os.access(hook_file, os.X_OK):
+                raise ValueError(
+                    "发现异常可执行钩子文件，可能存在远程代码执行风险: "
+                    f"{hook_file.name}"
+                )
+
     def clone_repository(self, url: str, name: Optional[str] = None) -> Path:
         """克隆 Git 仓库"""
         validated_url = validate_git_url(url)
@@ -64,15 +83,19 @@ class GitManager:
                 str(repo_path),
                 callbacks=CloneProgress()
             )
-            
+
+            # 打开仓库并禁用本地钩子执行
+            repo = pygit2.Repository(str(repo_path))
+            self._disable_hooks(repo)
+            self._check_hooks_directory(repo_path)
+
             logger.info(f"仓库克隆成功: {repo_path}")
             return repo_path
-            
+
         except Exception as e:
             logger.error(f"克隆仓库失败: {e}")
             # 清理失败的克隆
             if repo_path.exists():
-                import shutil
                 shutil.rmtree(repo_path)
             raise
     
@@ -140,7 +163,10 @@ class GitManager:
     def pull_repository(self, repo_path: Path) -> Dict[str, Any]:
         """拉取远程更新"""
         repo = self.open_repository(repo_path)
-        
+
+        # 确保本地钩子被禁用，防止 fetch/merge 阶段执行远程/本地钩子
+        self._disable_hooks(repo)
+
         if repo.head_is_unborn:
             raise ValueError("仓库没有初始提交")
         
