@@ -8,21 +8,34 @@ class ValidationError(Exception):
     pass
 
 
-def validate_file_path(path: str) -> Path:
-    """校验文件路径合法性"""
+def validate_file_path(path: str, base_dir: Optional[Path] = None) -> Path:
+    """校验文件路径合法性
+
+    如果提供 base_dir，则要求解析后的路径必须位于 base_dir 之内，
+    防止目录遍历攻击。
+    """
     if not path or not path.strip():
         raise ValidationError("文件路径不能为空")
-    
+
     # 检查危险字符
     dangerous_chars = ['..', '~', '$', '`', '|', '&', ';']
     for char in dangerous_chars:
         if char in path:
             raise ValidationError(f"文件路径包含非法字符: {char}")
-    
+
     try:
-        return Path(path).resolve()
+        resolved = Path(path).resolve()
     except Exception as e:
         raise ValidationError(f"无效的文件路径: {e}")
+
+    if base_dir is not None:
+        base_resolved = base_dir.resolve()
+        try:
+            resolved.relative_to(base_resolved)
+        except ValueError as e:
+            raise ValidationError(f"文件路径超出允许范围: {e}")
+
+    return resolved
 
 
 def validate_git_url(url: str) -> str:

@@ -6,12 +6,17 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.core.file_organizer import FileOrganizer
 from app.database import get_db
 from app.models.file import FileMetadata
 from app.utils.logger import logger
 
 router = APIRouter(prefix="/files", tags=["files"])
+
+# 限制文件操作在此目录内，防止目录遍历
+FILE_STORAGE_ROOT = Path(settings.git_workspace).resolve().parent / "uploads"
+FILE_STORAGE_ROOT.mkdir(parents=True, exist_ok=True)
 
 
 class FileResponse(BaseModel):
@@ -50,7 +55,7 @@ async def list_files(
     db: AsyncSession = Depends(get_db)
 ):
     """获取文件列表"""
-    organizer = FileOrganizer(db)
+    organizer = FileOrganizer(db, base_dir=FILE_STORAGE_ROOT)
     files = await organizer.search_files(
         keyword=keyword,
         category=category,
@@ -66,7 +71,7 @@ async def scan_directory(
     db: AsyncSession = Depends(get_db)
 ):
     """扫描目录并导入文件元数据"""
-    organizer = FileOrganizer(db)
+    organizer = FileOrganizer(db, base_dir=FILE_STORAGE_ROOT)
     
     try:
         files = await organizer.scan_directory(
@@ -92,7 +97,7 @@ async def organize_file(
     db: AsyncSession = Depends(get_db)
 ):
     """归档文件"""
-    organizer = FileOrganizer(db)
+    organizer = FileOrganizer(db, base_dir=FILE_STORAGE_ROOT)
     
     try:
         metadata = await organizer.organize_file(

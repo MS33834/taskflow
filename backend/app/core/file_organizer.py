@@ -13,7 +13,7 @@ from app.utils.validator import validate_category, validate_file_path
 
 class FileOrganizer:
     """文件自动归档管理器"""
-    
+
     # 默认分类规则
     DEFAULT_CATEGORIES = {
         "code": [
@@ -26,9 +26,10 @@ class FileOrganizer:
         "config": [".env", ".toml", ".ini", ".cfg", ".conf"],
         "archive": [".zip", ".tar", ".gz", ".rar", ".7z"],
     }
-    
-    def __init__(self, db: AsyncSession):
+
+    def __init__(self, db: AsyncSession, base_dir: Optional[Path] = None):
         self.db = db
+        self.base_dir = base_dir.resolve() if base_dir else None
     
     def classify_file(self, file_path: Path) -> str:
         """根据文件扩展名自动分类"""
@@ -44,8 +45,8 @@ class FileOrganizer:
         self, directory: Path, recursive: bool = True
     ) -> List[FileMetadata]:
         """扫描目录，创建文件元数据"""
-        dir_path = validate_file_path(str(directory))
-        
+        dir_path = validate_file_path(str(directory), base_dir=self.base_dir)
+
         if not dir_path.exists():
             raise ValueError(f"目录不存在: {dir_path}")
         
@@ -62,8 +63,8 @@ class FileOrganizer:
     
     async def create_file_metadata(self, file_path: Path) -> FileMetadata:
         """创建文件元数据"""
-        path = validate_file_path(str(file_path))
-        
+        path = validate_file_path(str(file_path), base_dir=self.base_dir)
+
         if not path.exists():
             raise ValueError(f"文件不存在: {path}")
         
@@ -109,9 +110,9 @@ class FileOrganizer:
         self, source: Path, target_dir: Path, category: Optional[str] = None
     ) -> FileMetadata:
         """归档文件到目标目录"""
-        source_path = validate_file_path(str(source))
-        target_base = validate_file_path(str(target_dir))
-        
+        source_path = validate_file_path(str(source), base_dir=self.base_dir)
+        target_base = validate_file_path(str(target_dir), base_dir=self.base_dir)
+
         if not source_path.exists():
             raise ValueError(f"源文件不存在: {source_path}")
         

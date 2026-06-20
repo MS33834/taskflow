@@ -78,8 +78,8 @@ class GitManager:
     
     def open_repository(self, path: Path) -> pygit2.Repository:
         """打开本地仓库"""
-        repo_path = validate_file_path(str(path))
-        
+        repo_path = validate_file_path(str(path), base_dir=self.workspace)
+
         if not repo_path.exists():
             raise ValueError(f"仓库路径不存在: {repo_path}")
         

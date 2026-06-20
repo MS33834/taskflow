@@ -13,8 +13,7 @@ function normalize(key: string): string {
     .replace(/\s+/g, '')
     .replace(/cmd|command|meta/g, 'mod')
     .replace(/control|ctrl/g, 'mod')
-    .replace(/option|alt/g, 'alt')
-    .replace(/shift/g, 'shift');
+    .replace(/option|alt/g, 'alt');
 }
 
 function eventToCombo(e: KeyboardEvent): string {
