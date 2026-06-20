@@ -1,11 +1,22 @@
 """API 集成测试"""
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+
+from app.core import security
 from app.database import Base, get_db
 from app.main import app
+
+TEST_API_TOKEN = "test-token-for-integration"
+
+
+@pytest.fixture(autouse=True)
+def fixed_api_token(monkeypatch):
+    """固定测试用 API token，避免受本地临时文件影响。"""
+    monkeypatch.setenv("TASKFLOW_API_TOKEN", TEST_API_TOKEN)
+    monkeypatch.setattr(security, "_API_TOKEN", None)
 
 
 @pytest_asyncio.fixture
@@ -14,11 +25,11 @@ async def db_session():
     engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    
+
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     async with async_session() as session:
         yield session
-    
+
     await engine.dispose()
 
 
@@ -27,12 +38,18 @@ async def client(db_session):
     """创建测试客户端"""
     async def override_get_db():
         yield db_session
-    
+
     app.dependency_overrides[get_db] = override_get_db
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def auth_headers():
+    """返回包含认证 token 的请求头"""
+    return {"Authorization": f"Bearer {TEST_API_TOKEN}"}
 
 
 @pytest.mark.asyncio
@@ -55,38 +72,58 @@ async def test_root(client):
 
 
 @pytest.mark.asyncio
-async def test_list_files_empty(client):
+async def test_list_files_empty(client, auth_headers):
     """测试获取空文件列表"""
-    response = await client.get("/api/v1/files/")
+    response = await client.get("/api/v1/files/", headers=auth_headers)
     assert response.status_code == 200
     assert response.json() == []
 
 
 @pytest.mark.asyncio
-async def test_git_status_invalid_path(client):
+async def test_git_status_invalid_path(client, auth_headers):
     """测试获取无效路径的 Git 状态"""
-    response = await client.get("/api/v1/git/status/nonexistent")
+    response = await client.get(
+        "/api/v1/git/status/nonexistent", headers=auth_headers
+    )
     assert response.status_code == 400
 
 
 @pytest.mark.asyncio
-async def test_git_commits_invalid_path(client):
+async def test_git_commits_invalid_path(client, auth_headers):
     """测试获取无效路径的提交记录"""
-    response = await client.get("/api/v1/git/commits/nonexistent")
+    response = await client.get(
+        "/api/v1/git/commits/nonexistent", headers=auth_headers
+    )
     assert response.status_code == 400
 
 
 @pytest.mark.asyncio
-async def test_file_not_found(client):
+async def test_file_not_found(client, auth_headers):
     """测试获取不存在的文件"""
-    response = await client.get("/api/v1/files/99999")
+    response = await client.get("/api/v1/files/99999", headers=auth_headers)
     assert response.status_code == 404
     assert "文件不存在" in response.json()["detail"]
 
 
 @pytest.mark.asyncio
-async def test_delete_file_not_found(client):
+async def test_delete_file_not_found(client, auth_headers):
     """测试删除不存在的文件"""
-    response = await client.delete("/api/v1/files/99999")
+    response = await client.delete("/api/v1/files/99999", headers=auth_headers)
     assert response.status_code == 404
     assert "文件不存在" in response.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_api_v1_requires_auth(client):
+    """测试 /api/v1/* 接口未提供 token 时返回 401"""
+    response = await client.get("/api/v1/files/")
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_api_v1_rejects_invalid_token(client):
+    """测试 /api/v1/* 接口提供错误 token 时返回 401"""
+    response = await client.get(
+        "/api/v1/files/", headers={"Authorization": "Bearer invalid-token"}
+    )
+    assert response.status_code == 401
