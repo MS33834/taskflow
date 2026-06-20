@@ -4,6 +4,15 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch:
+    inputs:
+      base-ref:
+        description: 'Base ref for comparison'
+        required: true
+        default: 'main'
+      head-ref:
+        description: 'Head ref for comparison'
+        required: true
+        default: 'HEAD'
 
 permissions:
   contents: read
@@ -29,3 +38,5 @@ jobs:
           fail-on-severity: high
           comment-summary-in-pr: always
           deny-licenses: GPL-3.0, AGPL-3.0
+          base-ref: ${{ inputs.base-ref || github.base_ref || 'main' }}
+          head-ref: ${{ inputs.head-ref || github.head_ref || 'HEAD' }}
