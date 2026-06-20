@@ -1,6 +1,5 @@
 import { getDatabase } from './dbService';
-import { getMasterKey } from './authService';
-import { encrypt, decrypt } from './cryptoService';
+import { encryptWithMasterKey, decryptWithMasterKey } from './authService';
 import { loadVerifier, saveVerifier } from './authStorage';
 
 export const BACKUP_FILE_EXTENSION = 'taskflow-backup';
@@ -56,9 +55,6 @@ const ALLOWED_COLUMNS: Record<(typeof TABLE_NAMES)[number], Set<string>> = {
 };
 
 export function createBackup(): Buffer {
-  const key = getMasterKey();
-  if (!key) throw new Error('Application is locked');
-
   const verifier = loadVerifier();
   if (!verifier) throw new Error('Authentication verifier not found');
 
@@ -80,16 +76,13 @@ export function createBackup(): Buffer {
     tables,
   };
 
-  return encrypt(JSON.stringify(payload), key);
+  return encryptWithMasterKey(JSON.stringify(payload));
 }
 
 export function restoreBackup(encryptedBackup: Buffer): BackupResult {
-  const key = getMasterKey();
-  if (!key) throw new Error('Application is locked');
-
   let payload: BackupPayload;
   try {
-    const decrypted = decrypt(encryptedBackup, key);
+    const decrypted = decryptWithMasterKey(encryptedBackup);
     payload = JSON.parse(decrypted);
   } catch {
     return { success: false, message: '无法解密备份，请确认使用正确的解锁密码' };

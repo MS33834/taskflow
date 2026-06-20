@@ -1,7 +1,6 @@
 import { randomUUID } from 'crypto';
 import { getDatabase } from '../services/dbService';
-import { getMasterKey } from '../services/authService';
-import { encrypt, decrypt } from '../services/cryptoService';
+import { encryptWithMasterKey, decryptWithMasterKey } from '../services/authService';
 import type { VaultItem, VaultField } from '../../shared/types';
 
 export function listVaultItems(): VaultItem[] {
@@ -60,24 +59,18 @@ export function deleteVaultItem(id: string): void {
 }
 
 function serializeFields(fields: VaultField[]): string {
-  const key = getMasterKey();
-  if (!key) throw new Error('Not unlocked');
-
   const encryptedFields = fields.map((field) => ({
     ...field,
-    value: field.isSensitive ? encrypt(field.value, key).toString('base64') : field.value,
+    value: field.isSensitive ? encryptWithMasterKey(field.value).toString('base64') : field.value,
   }));
   return JSON.stringify(encryptedFields);
 }
 
 function parseVaultItem(row: any): VaultItem {
-  const key = getMasterKey();
-  if (!key) throw new Error('Not unlocked');
-
   const fields: VaultField[] = JSON.parse(row.fields || '[]');
   const decryptedFields = fields.map((field) => ({
     ...field,
-    value: field.isSensitive ? decrypt(Buffer.from(field.value, 'base64'), key) : field.value,
+    value: field.isSensitive ? decryptWithMasterKey(Buffer.from(field.value, 'base64')) : field.value,
   }));
 
   return {
