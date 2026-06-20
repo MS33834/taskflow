@@ -4,6 +4,9 @@
 
 A local-first, cross-platform task manager built with React Native + Expo.
 
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/MS33834/taskflow/badge)](https://api.securityscorecards.dev/projects/github.com/MS33834/taskflow)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/%PROJECT_ID%/badge)](https://www.bestpractices.dev/projects/%PROJECT_ID%)
+
 [Project intro](https://ms33834.github.io/taskflow/) · [Report a bug](https://github.com/MS33834/taskflow/issues) · [Request a feature](https://github.com/MS33834/taskflow/issues)
 
 </div>
