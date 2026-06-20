@@ -2,7 +2,7 @@
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
 from app.core.git_manager import git_manager
@@ -65,7 +65,7 @@ async def get_git_status(repo_path: str):
 @router.get("/commits/{repo_path:path}", response_model=List[GitCommitResponse])
 async def get_recent_commits(
     repo_path: str,
-    limit: int = 10
+    limit: int = Query(10, ge=1, le=100, description="返回最近提交数量，最大 100"),
 ):
     """获取最近的提交记录"""
     try:

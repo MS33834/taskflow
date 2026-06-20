@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
@@ -31,8 +31,22 @@ class FileResponse(BaseModel):
     size_bytes: int
     created_at: str
     updated_at: str
-    
+
     model_config = {"from_attributes": True}
+
+    @field_validator("file_path", mode="before")
+    @classmethod
+    def _relative_file_path(cls, value: str) -> str:
+        """将绝对路径转为相对于存储根目录的路径，避免泄露服务器文件系统布局。"""
+        if not isinstance(value, str):
+            return value
+        try:
+            path = Path(value)
+            if path.is_absolute():
+                return str(path.relative_to(FILE_STORAGE_ROOT))
+        except ValueError:
+            pass
+        return value
 
 
 class ScanRequest(BaseModel):

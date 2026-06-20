@@ -1,4 +1,6 @@
 > **注意**：本仓库以 GitHub（https://github.com/MS33834/taskflow）为主仓，GitCode 为镜像。请确认此 PR 是提交到 GitHub 主仓的。
+>
+> **必须**：本仓库禁止直接向 `main` 分支 push，所有代码变更必须通过 Pull Request，并至少需要 1 个 approving review。
 
 ## What
 
@@ -19,6 +21,16 @@
 - [ ] Existing tests pass
 - [ ] Added tests for new behaviour
 - [ ] Manually verified in dev / staging
+
+## Security self-check
+
+- [ ] Dependencies are pinned (lockfile updated if packages changed)
+- [ ] New tests added for new behaviour, especially security-relevant code
+- [ ] SECURITY.md or other security docs updated if reporting/response process changed
+- [ ] No secrets, tokens, credentials, or `.env` files committed
+- [ ] I ran `gitleaks` locally (or confirmed CI will run it)
+- [ ] Known vulnerabilities assessed and documented if accepted
+- [ ] This PR targets a feature branch, not `main` via direct push
 
 ## Risk & rollout
 

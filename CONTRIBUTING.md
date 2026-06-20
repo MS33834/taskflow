@@ -1,57 +1,17 @@
-## 仓库说明
+# Contributing to TaskFlow
 
-**本仓库以 GitHub 为主仓，GitCode 为镜像。**
+感谢你的贡献！本仓库对代码合并方式有强制要求，请在提交前阅读完整指南。
 
-- 主仓库地址：https://github.com/MS33834/taskflow
-- GitCode 镜像：https://gitcode.com/badhope/taskflow
+## 必须遵守的合并规则
 
-请直接在 **GitHub 主仓** 提交 Issue 和 Pull Request。GitCode 仅用于代码镜像，不处理 Issue/PR。
+- **禁止直接向 `main` 分支 push。**
+- 所有代码变更必须通过 **Pull Request** 提交。
+- 每个 Pull Request 必须获得 **至少 1 个 approving review** 才能合并。
+- 必须填写 PR 模板中的安全自检清单。
 
----
+## 更多细节
 
-# Contributing
+- 代码风格、分支命名、Conventional Commits、安全注意事项等详见 [.github/CONTRIBUTING.md](.github/CONTRIBUTING.md)。
+- 发现安全漏洞请遵循 [SECURITY.md](SECURITY.md) 中的私有披露流程，不要开公开 issue。
 
-Want to send a PR? Cool. Here's the flow.
-
-## Before you start
-
-- **Open an issue first** if the change is non-trivial. I don't want you
-  to spend a weekend on something I'd have asked you to do differently.
-- Read the code that's already there. I try to keep it boring and
-  consistent. If you're adding a new pattern, it should fit.
-- Look at the README for how to install / run / test. Use the lockfile
-  that's checked in; don't regenerate it.
-
-## Local checks
-
-Run whatever the project has: `pnpm test`, `pytest`, `cargo test`, etc.
-If linter / formatter configs are checked in, run them too. CI will
-catch what you missed, but a green push is faster than a red one.
-
-## Commit messages
-
-I don't enforce Conventional Commits. Subject, blank line, body, done.
-If a commit fixes an issue, mention the issue number. Don't bother with
-emoji or "WIP" prefixes.
-
-## Pull requests
-
-- Fill the PR template. One paragraph in the body is fine; screenshots
-  help for UI.
-- Keep the diff small. Squash before merging unless the history matters.
-- I'll review roughly in order of arrival. If CI is green and the change
-  does what the description says, I'll merge. I might push back on
-  architecture; that's not personal.
-- Don't commit secrets, generated build output, large binaries, or
-  someone else's code without a license.
-
-## What I won't merge
-
-- Drive-by refactors that don't fix a real problem.
-- New dependencies for trivial reasons.
-- Anything that breaks the existing API without a heads-up first.
-
-## License
-
-By contributing, you agree your contribution is licensed under the same
-license as the rest of the project. See [`LICENSE`](./LICENSE).
+提交 PR 即表示你同意你的贡献将按照本仓库的许可证进行授权。

@@ -86,12 +86,22 @@ export function lock(): void {
   }
 }
 
+const MIN_AUTO_LOCK_MINUTES = 1;
+const MAX_AUTO_LOCK_MINUTES = 120;
+
 export function resetAutoLock(minutes: number): void {
   if (autoLockTimer) clearTimeout(autoLockTimer);
-  if (minutes <= 0) return;
+
+  // 限制自动锁定时间在合理范围，防止渲染进程传入极大/极小值导致定时器异常或拒绝服务
+  const safeMinutes = Math.max(
+    MIN_AUTO_LOCK_MINUTES,
+    Math.min(MAX_AUTO_LOCK_MINUTES, Math.floor(Number(minutes) || 0))
+  );
+  if (safeMinutes <= 0) return;
+
   autoLockTimer = setTimeout(() => {
     lock();
-  }, minutes * 60 * 1000);
+  }, safeMinutes * 60 * 1000);
 }
 
 export function scheduleClipboardClear(seconds: number): void {
