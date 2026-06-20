@@ -10,7 +10,8 @@ from app.core import security
 from app.database import Base, get_db
 from app.main import app
 
-TEST_API_TOKEN = "test-token-for-integration"
+# 使用高熵测试 token，匹配生产环境对 API token 长度的校验
+TEST_API_TOKEN = "tF8kQ2mP9vX4nL7bR5wJ3cY6hA1sE0dU4iO2pK5lN8jH3gF7qT9zC6xV2yB5"
 
 
 @pytest.fixture(autouse=True)

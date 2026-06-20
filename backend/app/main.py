@@ -47,13 +47,14 @@ app = FastAPI(
     openapi_url=openapi_url,
 )
 
-# 配置 CORS：从环境变量读取允许来源，生产环境禁止 "*" 与 allow_credentials 同时启用
+# 配置 CORS：从环境变量读取允许来源，禁止 "*" 与 allow_credentials 同时启用
+# 通配符来源与凭证同时开启会导致任意恶意网站发起跨域请求并携带浏览器凭证。
 _origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 allow_credentials = True
-if "*" in _origins and not settings.debug:
+if "*" in _origins:
     allow_credentials = False
     logger.warning(
-        "CORS 配置包含通配符且未启用 DEBUG，已自动禁用 allow_credentials"
+        "CORS 配置包含通配符来源，已自动禁用 allow_credentials 以防止 CSRF 风险"
     )
 
 app.add_middleware(
