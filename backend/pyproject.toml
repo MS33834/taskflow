@@ -8,18 +8,18 @@ version = "0.1.0"
 description = "TaskFlow backend service with plugin system"
 requires-python = ">=3.11"
 dependencies = [
-    "fastapi>=0.109.0",
+    "fastapi>=0.109.1",
     "uvicorn[standard]>=0.27.0",
-    "langchain-core>=0.1.0",
-    "langchain-openai>=0.0.5",
-    "langchain-community>=0.0.10",
+    "langchain-core>=1.3.3",
+    "langchain-openai>=1.1.14",
+    "langchain-community>=0.3.27",
     "pygit2>=1.13.0",
     "pluggy>=1.3.0",
     "pydantic>=2.5.0",
     "pydantic-settings>=2.1.0",
     "aiosqlite>=0.19.0",
     "sqlalchemy>=2.0.0",
-    "python-dotenv>=1.0.0",
+    "python-dotenv>=1.2.2",
 ]
 
 [project.optional-dependencies]
