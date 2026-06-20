@@ -20,7 +20,12 @@ async def lifespan(app: FastAPI):
     logger.info(
         f"TaskFlow backend started on {settings.api_host}:{settings.api_port}"
     )
-    logger.info(f"API token file: {token_file}")
+    if settings.api_token_file is not None:
+        logger.info(f"API token file: {token_file}")
+    else:
+        logger.info(
+            "API token is kept in memory. Pass it to clients via API_TOKEN env var."
+        )
     logger.info(f"Health check: http://{settings.api_host}:{settings.api_port}/health")
     _ = token
     yield

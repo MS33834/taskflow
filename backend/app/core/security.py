@@ -12,6 +12,7 @@ import secrets
 import tempfile
 from pathlib import Path
 
+from app.config import settings
 from app.utils.logger import logger
 
 _API_TOKEN: str | None = None
@@ -22,12 +23,11 @@ def _token_file_path() -> Path:
     """返回 token 文件路径。
 
     优先级：
-    1. TASKFLOW_API_TOKEN_FILE 环境变量
+    1. API_TOKEN_FILE / settings.api_token_file
     2. 系统临时目录下的 taskflow_api_token.txt
     """
-    env_path = os.getenv("TASKFLOW_API_TOKEN_FILE")
-    if env_path:
-        return Path(env_path).resolve()
+    if settings.api_token_file is not None:
+        return settings.api_token_file.resolve()
     return Path(tempfile.gettempdir()) / "taskflow_api_token.txt"
 
 
@@ -37,35 +37,40 @@ def generate_api_token() -> str:
 
 
 def get_or_create_api_token() -> str:
-    """获取当前 API token；如未初始化则生成并持久化到临时文件。"""
+    """获取当前 API token；如未初始化则生成新的内存 token。
+
+    安全设计：
+    - 默认从环境变量 TASKFLOW_API_TOKEN 读取，避免在磁盘上明文存储 token。
+    - 若未设置环境变量，则在内存中生成随机 token；调用方（如桌面端启动器）
+      应负责通过环境变量将该 token 传递给后端。
+    - 仅在显式配置了 TASKFLOW_API_TOKEN_FILE 时才会把 token 写入文件，用于
+      需要固定文件路径的特殊部署场景；此时仍建议配合严格的文件权限控制。
+    """
     global _API_TOKEN
     if _API_TOKEN is not None:
         return _API_TOKEN
 
-    # 允许通过环境变量显式注入固定 token
-    env_token = os.getenv("TASKFLOW_API_TOKEN")
-    if env_token:
-        _API_TOKEN = env_token
-        logger.info("API token 已从 TASKFLOW_API_TOKEN 环境变量加载")
+    # 优先从 settings.api_token 读取，这是推荐的安全用法
+    if settings.api_token:
+        _API_TOKEN = settings.api_token
+        logger.info("API token 已从配置加载")
         return _API_TOKEN
 
-    token_file = _token_file_path()
-    if token_file.exists():
-        try:
-            _API_TOKEN = token_file.read_text(encoding="utf-8").strip()
-            if _API_TOKEN:
-                logger.info(f"API token 已从已有文件加载: {token_file}")
-                return _API_TOKEN
-        except OSError:
-            pass
-
+    # 生成内存 token；不默认写入磁盘，避免 clear-text storage 风险
     _API_TOKEN = generate_api_token()
-    token_file.write_text(_API_TOKEN, encoding="utf-8")
-    try:
-        token_file.chmod(0o600)
-    except OSError:
-        logger.warning(f"无法设置 token 文件权限: {token_file}")
-    logger.info(f"已生成新的 API token 并写入: {token_file}")
+
+    # 仅在显式配置文件路径时才持久化
+    if settings.api_token_file is not None:
+        token_file = settings.api_token_file.resolve()
+        try:
+            token_file.write_text(_API_TOKEN, encoding="utf-8")
+            token_file.chmod(0o600)
+            logger.info(f"已生成新的 API token 并写入: {token_file}")
+        except OSError as exc:
+            logger.warning(f"无法写入 token 文件: {exc}")
+    else:
+        logger.info("已生成新的内存 API token；请通过 API_TOKEN 环境变量传递给客户端")
+
     return _API_TOKEN
 
 

@@ -5,6 +5,7 @@ from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
+from app.config import settings
 from app.core import security
 from app.database import Base, get_db
 from app.main import app
@@ -15,7 +16,8 @@ TEST_API_TOKEN = "test-token-for-integration"
 @pytest.fixture(autouse=True)
 def fixed_api_token(monkeypatch):
     """固定测试用 API token，避免受本地临时文件影响。"""
-    monkeypatch.setenv("TASKFLOW_API_TOKEN", TEST_API_TOKEN)
+    monkeypatch.setattr(settings, "api_token", TEST_API_TOKEN)
+    monkeypatch.setattr(settings, "api_token_file", None)
     monkeypatch.setattr(security, "_API_TOKEN", None)
 
 

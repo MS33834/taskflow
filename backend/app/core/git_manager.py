@@ -94,9 +94,10 @@ class GitManager:
 
         except Exception as e:
             logger.error(f"克隆仓库失败: {e}")
-            # 清理失败的克隆
-            if repo_path.exists():
-                shutil.rmtree(repo_path)
+            # 清理失败的克隆：重新校验路径必须位于 workspace 内
+            safe_repo_path = _safe_join(self.workspace, repo_path.name)
+            if safe_repo_path.exists():
+                shutil.rmtree(safe_repo_path)
             raise
     
     def open_repository(self, path: Path) -> pygit2.Repository:
