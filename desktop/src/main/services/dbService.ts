@@ -8,7 +8,8 @@ export function getDbPath(): string {
   if (process.env.TASKFLOW_DB_PATH) {
     return process.env.TASKFLOW_DB_PATH;
   }
-  return path.join(os.tmpdir(), 'taskflow-test.db');
+  // 为每个 fork 进程使用独立测试数据库文件，避免并行测试互相覆盖/删除。
+  return path.join(os.tmpdir(), `taskflow-test-${process.pid}.db`);
 }
 
 export function openDatabase(key: Buffer): Database.Database {
