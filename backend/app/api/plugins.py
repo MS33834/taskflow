@@ -1,9 +1,13 @@
 """插件管理 API"""
-from typing import List
+import hashlib
+import hmac
+from pathlib import Path
+from typing import List, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from app.config import settings
 from app.plugins.manager import plugin_manager
 from app.utils.logger import logger
 
@@ -20,6 +24,41 @@ class LoadPluginRequest(BaseModel):
     """加载插件请求"""
     name: str
     module_path: str
+    expected_hash: Optional[str] = None
+
+
+def _resolve_plugin_path(module_path: str) -> Path:
+    """将插件路径限制在配置白名单目录内。"""
+    plugins_dir = settings.plugins_dir.resolve()
+    plugins_dir.mkdir(parents=True, exist_ok=True)
+
+    candidate = Path(module_path)
+    if candidate.is_absolute():
+        target = candidate.resolve()
+    else:
+        target = (plugins_dir / module_path).resolve()
+
+    try:
+        target.relative_to(plugins_dir)
+    except ValueError as exc:
+        raise ValueError(
+            f"插件路径必须位于允许的目录内: {plugins_dir}"
+        ) from exc
+
+    if not target.is_file():
+        raise ValueError(f"插件文件不存在: {target}")
+
+    return target
+
+
+def _verify_plugin_hash(file_path: Path, expected_hash: Optional[str]) -> None:
+    """校验插件文件 SHA-256 哈希。"""
+    if not expected_hash:
+        return
+
+    actual_hash = hashlib.sha256(file_path.read_bytes()).hexdigest()
+    if not hmac.compare_digest(actual_hash.lower(), expected_hash.strip().lower()):
+        raise ValueError("插件文件 SHA-256 哈希校验失败")
 
 
 @router.get("/", response_model=List[PluginResponse])
@@ -38,22 +77,25 @@ async def load_plugin(request: LoadPluginRequest):
     try:
         import importlib.util
         import sys
-        
+
+        target_path = _resolve_plugin_path(request.module_path)
+        _verify_plugin_hash(target_path, request.expected_hash)
+
         # 动态加载模块
         spec = importlib.util.spec_from_file_location(
-            request.name, 
-            request.module_path
+            request.name,
+            str(target_path),
         )
         if spec is None or spec.loader is None:
-            raise ValueError(f"无法加载模块: {request.module_path}")
-        
+            raise ValueError(f"无法加载模块: {target_path}")
+
         module = importlib.util.module_from_spec(spec)
         sys.modules[request.name] = module
         spec.loader.exec_module(module)
-        
+
         # 加载插件
         plugin_manager.load_plugin(request.name, module)
-        
+
         return {
             "status": "success",
             "message": f"插件 {request.name} 加载成功"
