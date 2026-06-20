@@ -127,10 +127,16 @@ class FileOrganizer:
         # 创建分类目录（使用安全拼接，防止 category 中的路径注入）
         category_dir = _safe_join(target_base, category)
         category_dir.mkdir(parents=True, exist_ok=True)
-        
+
+        # 安全清洗目标文件名：仅允许字母、数字、下划线、连字符、点
+        import re
+        safe_name = source_path.name
+        if not safe_name or not re.match(r"^[\w\-\.]+$", safe_name):
+            raise ValueError(f"源文件名包含非法字符: {safe_name}")
+
         # 移动文件
-        target_path = category_dir / source_path.name
-        
+        target_path = category_dir / safe_name
+
         # 处理文件名冲突
         counter = 1
         original_target = target_path
@@ -139,7 +145,7 @@ class FileOrganizer:
             suffix = original_target.suffix
             target_path = category_dir / f"{stem}_{counter}{suffix}"
             counter += 1
-        
+
         import shutil
         shutil.move(str(source_path), str(target_path))
         logger.info(f"文件已归档: {source_path} -> {target_path}")

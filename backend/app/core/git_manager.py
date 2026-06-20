@@ -55,21 +55,36 @@ class GitManager:
                     f"{hook_file.name}"
                 )
 
+    @staticmethod
+    def _sanitize_repo_name(name: str) -> str:
+        """校验并返回安全的仓库目录名（仅允许字母、数字、下划线、连字符、点）。"""
+        import re
+
+        safe = name.strip()
+        if not safe:
+            raise ValueError("仓库名称不能为空")
+        if ".." in safe or "/" in safe or "\\" in safe:
+            raise ValueError("仓库名称包含非法字符")
+        if not re.match(r"^[\w\-\.]+$", safe):
+            raise ValueError("仓库名称只能包含字母、数字、下划线、连字符和点")
+        return safe
+
     def clone_repository(self, url: str, name: Optional[str] = None) -> Path:
         """克隆 Git 仓库"""
         validated_url = validate_git_url(url)
-        
-        # 生成仓库名称
+
+        # 生成仓库名称，并做安全校验
         if not name:
             name = validated_url.split('/')[-1].replace('.git', '')
-        
-        repo_path = _safe_join(self.workspace, name)
+        name = self._sanitize_repo_name(name)
+
+        repo_path = self.workspace / name
 
         if repo_path.exists():
             raise ValueError(f"仓库目录已存在: {repo_path}")
-        
+
         logger.info(f"开始克隆仓库: {validated_url} -> {repo_path}")
-        
+
         try:
             # 使用回调函数显示进度
             class CloneProgress(pygit2.RemoteCallbacks):
@@ -77,7 +92,7 @@ class GitManager:
                     if stats.received_objects > 0:
                         pct = stats.received_objects / stats.total_objects * 100
                         logger.debug(f"克隆进度: {pct:.1f}%")
-            
+
             pygit2.clone_repository(
                 validated_url,
                 str(repo_path),
@@ -94,10 +109,9 @@ class GitManager:
 
         except Exception as e:
             logger.error(f"克隆仓库失败: {e}")
-            # 清理失败的克隆：重新校验路径必须位于 workspace 内
-            safe_repo_path = _safe_join(self.workspace, repo_path.name)
-            if safe_repo_path.exists():
-                shutil.rmtree(safe_repo_path)
+            # 清理失败的克隆：目录名已校验，直接位于 workspace 下
+            if repo_path.exists():
+                shutil.rmtree(repo_path)
             raise
     
     def open_repository(self, path: Path) -> pygit2.Repository:

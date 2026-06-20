@@ -28,17 +28,24 @@ class LoadPluginRequest(BaseModel):
 
 
 def _resolve_plugin_path(module_path: str) -> Path:
-    """将插件路径限制在配置白名单目录内。"""
-    from app.utils.validator import _safe_join
+    """将插件路径限制在配置白名单目录内。
+
+    仅允许 plugins_dir 下的纯文件名（禁止子目录与路径分隔符），
+    避免用户输入直接流入文件系统 API 的 sink。
+    """
+    import re
 
     plugins_dir = settings.plugins_dir.resolve()
     plugins_dir.mkdir(parents=True, exist_ok=True)
 
-    # 拒绝绝对路径：插件必须从白名单目录内按相对路径指定
-    if Path(module_path).is_absolute():
-        raise ValueError("插件路径不能为绝对路径，必须相对于 plugins_dir")
+    # 安全清洗：插件路径只能是纯文件名，禁止目录分隔符与向上逃逸
+    filename = Path(module_path).name
+    if not filename or filename != module_path or not re.match(r"^[\w\-\.]+\.py$", filename):
+        raise ValueError("插件路径必须为 plugins_dir 下的纯 Python 文件名")
+    if ".." in filename or "/" in filename or "\\" in filename:
+        raise ValueError("插件路径包含非法字符")
 
-    target = _safe_join(plugins_dir, module_path)
+    target = plugins_dir / filename
 
     if not target.is_file():
         raise ValueError(f"插件文件不存在: {target}")
