@@ -1,3 +1,14 @@
+## 仓库说明
+
+**本仓库以 GitHub 为主仓，GitCode 为镜像。**
+
+- 主仓库地址：https://github.com/MS33834/taskflow
+- GitCode 镜像：https://gitcode.com/badhope/taskflow
+
+请直接在 **GitHub 主仓** 提交 Issue 和 Pull Request。GitCode 仅用于代码镜像，不处理 Issue/PR。
+
+---
+
 # Contributing
 
 Want to send a PR? Cool. Here's the flow.
