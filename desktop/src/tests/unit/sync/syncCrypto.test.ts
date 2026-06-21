@@ -121,13 +121,7 @@ describe('syncCrypto', () => {
     expect(key1.equals(key3)).toBe(false);
   });
 
-  it('returns null when encrypted key is loaded without safeStorage', () => {
-    const key = generateSyncMasterKey();
-    saveSyncMasterKey(key, testKeyPath);
-    vi.mocked(safeStorage.isEncryptionAvailable).mockReturnValue(false);
-    expect(loadSyncMasterKey(testKeyPath)).toBeNull();
-    vi.mocked(safeStorage.isEncryptionAvailable).mockReturnValue(true);
-  });
+
 
   it('computes matching shared secrets only with the correct key pair', () => {
     const alice = generateEcdhKeyPair();
@@ -155,5 +149,37 @@ describe('syncCrypto', () => {
     const encrypted = encryptSessionMessage(plaintext, key);
     const decrypted = decryptSessionMessage(encrypted, key);
     expect(decrypted.toString()).toBe('hello session');
+  });
+
+  it('refuses to save the master key when safeStorage is unavailable', () => {
+    vi.mocked(safeStorage.isEncryptionAvailable).mockReturnValue(false);
+    expect(() => saveSyncMasterKey(generateSyncMasterKey(), testKeyPath)).toThrow(
+      'safeStorage is not available'
+    );
+    vi.mocked(safeStorage.isEncryptionAvailable).mockReturnValue(true);
+  });
+
+  it('throws when loading an encrypted key without safeStorage', () => {
+    const key = generateSyncMasterKey();
+    saveSyncMasterKey(key, testKeyPath);
+    vi.mocked(safeStorage.isEncryptionAvailable).mockReturnValue(false);
+    expect(() => loadSyncMasterKey(testKeyPath)).toThrow('safeStorage is not available');
+    vi.mocked(safeStorage.isEncryptionAvailable).mockReturnValue(true);
+  });
+
+  it('throws when loading a plaintext key file', () => {
+    fs.writeFileSync(testKeyPath, JSON.stringify({ encrypted: false, key: 'deadbeef' }));
+    expect(() => loadSyncMasterKey(testKeyPath)).toThrow('Plaintext sync master key file found');
+  });
+
+  it('throws when loading a corrupt key file', () => {
+    fs.writeFileSync(testKeyPath, 'not-valid-json');
+    expect(() => loadSyncMasterKey(testKeyPath)).toThrow('Corrupt sync master key file');
+  });
+
+  it('writes the key file with restricted permissions', () => {
+    saveSyncMasterKey(generateSyncMasterKey(), testKeyPath);
+    const stats = fs.statSync(testKeyPath);
+    expect(stats.mode & 0o777).toBe(0o600);
   });
 });

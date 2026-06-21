@@ -9,7 +9,10 @@ import {
   getSyncRecordsForTable,
   getSyncRecordManifest,
   getSyncRecordById,
-  upsertSyncDevice,
+  registerSyncDevice,
+  updateSyncDeviceLastSeen,
+  getSyncDevice,
+  removeSyncDevice,
   listSyncDevices,
   getSyncState,
   incrementSyncClock,
@@ -66,8 +69,8 @@ describe('syncStorage', () => {
     expect(manifest[0].updatedAt).toBe(now);
   });
 
-  it('upserts and lists sync devices', () => {
-    upsertSyncDevice({
+  it('registers and lists sync devices', () => {
+    registerSyncDevice({
       deviceId: 'device-1',
       publicKey: 'pubkey-1',
       name: 'Laptop',
@@ -109,7 +112,7 @@ describe('syncStorage', () => {
     const manifest = getSyncRecordManifest('tasks');
     const item = manifest.find((m) => m.recordId === '3');
     expect(item).toBeDefined();
-    expect(item!.hash).toBe(createHash('sha256').update(payload).digest('hex'));
+    expect(item!.hash).toBe(createHash('sha256').update(payload.toString('base64')).digest('hex'));
   });
 
   it('keeps the newer record when an older version conflicts', () => {
@@ -164,9 +167,9 @@ describe('syncStorage', () => {
     expect(getSyncRecordById(id)!.version).toBe(2);
   });
 
-  it('updates device lastSeenAt on upsert', () => {
+  it('updates device lastSeenAt without changing public key', () => {
     const now = Date.now();
-    upsertSyncDevice({
+    registerSyncDevice({
       deviceId: 'device-2',
       publicKey: 'pubkey-2',
       name: 'Phone',
@@ -175,16 +178,47 @@ describe('syncStorage', () => {
     });
 
     const later = now + 1000;
-    upsertSyncDevice({
-      deviceId: 'device-2',
-      publicKey: 'pubkey-2',
-      name: 'Phone',
+    updateSyncDeviceLastSeen('device-2', later);
+
+    const device = getSyncDevice('device-2');
+    expect(device).not.toBeNull();
+    expect(device!.lastSeenAt).toBe(later);
+    expect(device!.publicKey).toBe('pubkey-2');
+  });
+
+  it('changes public key when re-pairing a device', () => {
+    const now = Date.now();
+    registerSyncDevice({
+      deviceId: 'device-3',
+      publicKey: 'pubkey-3',
+      name: 'Tablet',
       pairedAt: now,
-      lastSeenAt: later,
     });
 
-    const devices = listSyncDevices();
-    expect(devices[0].lastSeenAt).toBe(later);
+    registerSyncDevice({
+      deviceId: 'device-3',
+      publicKey: 'pubkey-3-new',
+      name: 'Tablet',
+      pairedAt: now,
+    });
+
+    const device = getSyncDevice('device-3');
+    expect(device).not.toBeNull();
+    expect(device!.publicKey).toBe('pubkey-3-new');
+  });
+
+  it('removes a device', () => {
+    registerSyncDevice({
+      deviceId: 'device-4',
+      publicKey: 'pubkey-4',
+      name: 'Watch',
+      pairedAt: Date.now(),
+    });
+
+    expect(getSyncDevice('device-4')).not.toBeNull();
+    removeSyncDevice('device-4');
+    expect(getSyncDevice('device-4')).toBeNull();
+    expect(listSyncDevices()).toHaveLength(0);
   });
 
   it('prevents SQL injection through table name parameter', () => {

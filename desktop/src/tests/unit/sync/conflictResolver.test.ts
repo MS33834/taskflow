@@ -20,9 +20,17 @@ describe('conflictResolver', () => {
     expect(resolveConflict(local, remote)).toBe('remote');
   });
 
-  it('returns conflict when timestamps and versions are equal', () => {
-    const local: SyncVersion = { id: 'tasks:1:v1', updatedAt: 1000, version: 1 };
-    const remote: SyncVersion = { id: 'tasks:1:v1', updatedAt: 1000, version: 1 };
-    expect(resolveConflict(local, remote)).toBe('conflict');
+  it('picks local when timestamps, versions are equal and local id is lexicographically smaller', () => {
+    const local: SyncVersion = { id: 'tasks:1:a', updatedAt: 1000, version: 1 };
+    const remote: SyncVersion = { id: 'tasks:1:b', updatedAt: 1000, version: 1 };
+    expect(resolveConflict(local, remote)).toBe('local');
+  });
+
+  it('picks remote when timestamps, versions are equal and remote id is lexicographically smaller', () => {
+    const local: SyncVersion = { id: 'tasks:1:b', updatedAt: 1000, version: 1 };
+    const remote: SyncVersion = { id: 'tasks:1:a', updatedAt: 1000, version: 1 };
+    expect(resolveConflict(local, remote)).toBe('remote');
   });
 });
+
+

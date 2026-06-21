@@ -29,49 +29,110 @@ export function generateDeviceIdentity(name: string): DeviceIdentity {
   return identity;
 }
 
-function saveDeviceIdentity(identity: DeviceIdentity): void {
-  const filePath = getIdentityPath();
-  const dir = path.dirname(filePath);
+export function saveDeviceIdentity(identity: DeviceIdentity, filePath?: string): void {
+  const targetPath = filePath ?? getIdentityPath();
+  const dir = path.dirname(targetPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error('safeStorage is not available; refusing to write plaintext device identity');
+  }
 
   const payload = {
     deviceId: identity.deviceId,
     name: identity.name,
     publicKeyPem: identity.publicKeyPem,
-    privateKeyPem: safeStorage.isEncryptionAvailable()
-      ? safeStorage.encryptString(identity.privateKeyPem).toString('base64')
-      : identity.privateKeyPem,
-    encrypted: safeStorage.isEncryptionAvailable(),
+    privateKeyPem: safeStorage.encryptString(identity.privateKeyPem).toString('base64'),
+    encrypted: true,
   };
-  fs.writeFileSync(filePath, JSON.stringify(payload));
+  fs.writeFileSync(targetPath, JSON.stringify(payload), { mode: 0o600 });
 }
 
-export function loadDeviceIdentity(): DeviceIdentity | null {
-  const filePath = getIdentityPath();
-  if (!fs.existsSync(filePath)) return null;
+export function loadDeviceIdentity(filePath?: string): DeviceIdentity | null {
+  const targetPath = filePath ?? getIdentityPath();
+  if (!fs.existsSync(targetPath)) return null;
 
+  let raw: {
+    encrypted?: boolean;
+    deviceId?: string;
+    name?: string;
+    publicKeyPem?: string;
+    privateKeyPem?: string;
+  };
   try {
-    const raw = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    if (raw.encrypted && !safeStorage.isEncryptionAvailable()) {
-      return null;
+    raw = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
+  } catch {
+    throw new Error(`Corrupt device identity file: ${targetPath}`);
+  }
+
+  if (raw.encrypted) {
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error('safeStorage is not available; cannot decrypt device identity');
     }
-    const privateKeyPem = raw.encrypted
-      ? safeStorage.decryptString(Buffer.from(raw.privateKeyPem, 'base64'))
-      : raw.privateKeyPem;
+    if (
+      typeof raw.deviceId !== 'string' ||
+      typeof raw.name !== 'string' ||
+      typeof raw.publicKeyPem !== 'string' ||
+      typeof raw.privateKeyPem !== 'string'
+    ) {
+      throw new Error(`Corrupt device identity file: ${targetPath}`);
+    }
+    const privateKeyPem = safeStorage.decryptString(Buffer.from(raw.privateKeyPem, 'base64'));
     return {
       deviceId: raw.deviceId,
       name: raw.name,
       publicKeyPem: raw.publicKeyPem,
       privateKeyPem,
     };
-  } catch {
-    return null;
   }
+
+  throw new Error('Plaintext device identity file found; refusing to load');
+}
+
+function readAsn1Length(buf: Buffer, offset: number): { length: number; bytesRead: number } {
+  let length = buf[offset];
+  if ((length & 0x80) === 0) {
+    return { length, bytesRead: 1 };
+  }
+  const numBytes = length & 0x7f;
+  length = 0;
+  for (let i = 0; i < numBytes; i++) {
+    length = (length << 8) | buf[offset + 1 + i];
+  }
+  return { length, bytesRead: 1 + numBytes };
+}
+
+function extractRawPublicKeyFromSpki(spkiDer: Buffer): Buffer {
+  let offset = 0;
+  if (spkiDer[offset++] !== 0x30) {
+    throw new Error('Invalid SPKI: expected SEQUENCE');
+  }
+  const { length: outerLength, bytesRead: outerBytes } = readAsn1Length(spkiDer, offset);
+  offset += outerBytes;
+  const outerEnd = offset + outerLength;
+
+  if (spkiDer[offset++] !== 0x30) {
+    throw new Error('Invalid SPKI: expected AlgorithmIdentifier SEQUENCE');
+  }
+  const { length: algoLength, bytesRead: algoBytes } = readAsn1Length(spkiDer, offset);
+  offset += algoBytes + algoLength;
+
+  if (offset >= outerEnd || spkiDer[offset++] !== 0x03) {
+    throw new Error('Invalid SPKI: expected BIT STRING');
+  }
+  const { length: bitStrLength, bytesRead: bitStrBytes } = readAsn1Length(spkiDer, offset);
+  offset += bitStrBytes;
+
+  if (spkiDer[offset++] !== 0x00) {
+    throw new Error('Invalid SPKI BIT STRING: expected zero unused bits');
+  }
+
+  return spkiDer.subarray(offset, offset + bitStrLength - 1);
 }
 
 export function getDeviceFingerprint(publicKeyPem: string): string {
   const spkiDer = createPublicKey(publicKeyPem).export({ type: 'spki', format: 'der' }) as Buffer;
-  const rawPublicKey = spkiDer.subarray(spkiDer.length - 32);
+  const rawPublicKey = extractRawPublicKeyFromSpki(spkiDer);
   return createHash('sha256').update(rawPublicKey).digest('hex').slice(0, 16);
 }
 

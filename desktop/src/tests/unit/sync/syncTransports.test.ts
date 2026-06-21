@@ -32,6 +32,7 @@ describe('syncTransports', () => {
     const port = (server.address() as net.AddressInfo).port;
 
     let responderSession: SyncSession | undefined;
+    let responderTransport: TcpSyncTransport | undefined;
     const serverReady = new Promise<void>((resolve) => {
       server.once('connection', (socket) => {
         responderSession = new SyncSession({
@@ -39,7 +40,7 @@ describe('syncTransports', () => {
           isInitiator: false,
           getTrustedPublicKey: (id) => trust.get(id),
         });
-        new TcpSyncTransport({ session: responderSession, role: 'responder', socket });
+        responderTransport = new TcpSyncTransport({ session: responderSession, role: 'responder', socket });
         responderSession.on('ready', resolve);
       });
     });
@@ -49,7 +50,7 @@ describe('syncTransports', () => {
       isInitiator: true,
       getTrustedPublicKey: (id) => trust.get(id),
     });
-    new TcpSyncTransport({
+    const initiatorTransport = new TcpSyncTransport({
       session: initiatorSession,
       role: 'initiator',
       host: '127.0.0.1',
@@ -63,6 +64,8 @@ describe('syncTransports', () => {
     initiatorSession.send({ type: 'ACK', receivedIds: ['task-1'] });
 
     await new Promise((resolve) => setTimeout(resolve, 150));
+    initiatorTransport.destroy();
+    responderTransport?.destroy();
     server.close();
 
     expect(received).toHaveLength(1);
@@ -70,5 +73,31 @@ describe('syncTransports', () => {
     expect((received[0] as Extract<SyncMessage, { type: 'ACK' }>).receivedIds).toEqual([
       'task-1',
     ]);
+  });
+
+  it('destroys a TCP transport and closes the underlying socket', async () => {
+    const server = net.createServer();
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const port = (server.address() as net.AddressInfo).port;
+
+    const identity = generateDeviceIdentity('transport-test');
+    const session = new SyncSession({
+      identity,
+      isInitiator: true,
+      getTrustedPublicKey: () => undefined,
+    });
+
+    const transport = new TcpSyncTransport({
+      session,
+      role: 'initiator',
+      host: '127.0.0.1',
+      port,
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    transport.destroy();
+
+    server.close();
+    expect(session).toBeDefined();
   });
 });

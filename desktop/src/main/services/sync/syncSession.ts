@@ -176,7 +176,7 @@ export class SyncSession extends EventEmitter {
     };
     const offer: OfferMessage = {
       type: 'OFFER',
-      encryptedPayload: Buffer.from(JSON.stringify(payload)).toString('base64'),
+      signedPayload: Buffer.from(JSON.stringify(payload)).toString('base64'),
     };
     this.state = 'offered';
     this.emitHandshake(offer);
@@ -193,7 +193,7 @@ export class SyncSession extends EventEmitter {
       throw new Error('Peer identity not established');
     }
 
-    const peerEcdhPublic = this.verifyAndExtractEcdhKey(msg.encryptedPayload);
+    const peerEcdhPublic = this.verifyAndExtractEcdhKey(msg.signedPayload);
     this.ecdhKeyPair = generateEcdhKeyPair();
     this.computeSessionKeys(peerEcdhPublic, 'responder');
 
@@ -204,7 +204,7 @@ export class SyncSession extends EventEmitter {
     };
     const answer: AnswerMessage = {
       type: 'ANSWER',
-      encryptedPayload: Buffer.from(JSON.stringify(payload)).toString('base64'),
+      signedPayload: Buffer.from(JSON.stringify(payload)).toString('base64'),
     };
     this.state = 'ready';
     this.emitHandshake(answer);
@@ -222,7 +222,7 @@ export class SyncSession extends EventEmitter {
       throw new Error('Peer identity not established');
     }
 
-    const peerEcdhPublic = this.verifyAndExtractEcdhKey(msg.encryptedPayload);
+    const peerEcdhPublic = this.verifyAndExtractEcdhKey(msg.signedPayload);
     this.computeSessionKeys(peerEcdhPublic, 'initiator');
     this.state = 'ready';
     this.emit('ready');
@@ -301,6 +301,12 @@ export class SyncSession extends EventEmitter {
   }
 }
 
+function writeLengthPrefixed(buf: Buffer): Buffer {
+  const len = Buffer.allocUnsafe(4);
+  len.writeUInt32BE(buf.length, 0);
+  return Buffer.concat([len, buf]);
+}
+
 function buildSignedData(
   deviceId: string,
   peerDeviceId: string,
@@ -309,10 +315,10 @@ function buildSignedData(
   ecdhPublicKeyPem: string
 ): Buffer {
   return Buffer.concat([
-    Buffer.from(deviceId, 'utf8'),
-    Buffer.from(peerDeviceId, 'utf8'),
-    Buffer.from(nonce, 'utf8'),
-    Buffer.from(peerNonce, 'utf8'),
-    Buffer.from(ecdhPublicKeyPem, 'utf8'),
+    writeLengthPrefixed(Buffer.from(deviceId, 'utf8')),
+    writeLengthPrefixed(Buffer.from(peerDeviceId, 'utf8')),
+    writeLengthPrefixed(Buffer.from(nonce, 'utf8')),
+    writeLengthPrefixed(Buffer.from(peerNonce, 'utf8')),
+    writeLengthPrefixed(Buffer.from(ecdhPublicKeyPem, 'utf8')),
   ]);
 }
