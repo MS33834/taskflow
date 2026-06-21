@@ -1,4 +1,6 @@
+import { createHash } from 'crypto';
 import { getDatabase } from '../dbService';
+import { resolveConflict, SyncVersion, ConflictResult } from './conflictResolver';
 
 export interface SyncRecord {
   id: string;
@@ -31,8 +33,25 @@ export interface SyncState {
   lastSyncAt: number | null;
 }
 
-export function insertSyncRecord(record: SyncRecord): void {
+function toSyncVersion(record: SyncRecord): SyncVersion {
+  return {
+    id: record.id,
+    updatedAt: record.updatedAt,
+    version: record.version,
+  };
+}
+
+export function insertSyncRecord(record: SyncRecord): ConflictResult {
   const db = getDatabase();
+  const existing = getSyncRecordById(record.id);
+
+  if (existing) {
+    const result = resolveConflict(toSyncVersion(existing), toSyncVersion(record));
+    if (result === 'local' || result === 'conflict') {
+      return result;
+    }
+  }
+
   const stmt = db.prepare(`
     INSERT INTO sync_records (id, table_name, record_id, version, encrypted_payload, updated_at, deleted)
     VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -51,6 +70,7 @@ export function insertSyncRecord(record: SyncRecord): void {
     record.updatedAt,
     record.deleted
   );
+  return 'remote';
 }
 
 export function getSyncRecordsForTable(tableName: string): SyncRecord[] {
@@ -64,8 +84,8 @@ export function getSyncRecordsForTable(tableName: string): SyncRecord[] {
 export function getSyncRecordManifest(tableName?: string): SyncRecordManifestItem[] {
   const db = getDatabase();
   const sql = tableName
-    ? 'SELECT id, record_id, version, updated_at FROM sync_records WHERE table_name = ?'
-    : 'SELECT id, record_id, version, updated_at FROM sync_records';
+    ? 'SELECT id, record_id, version, updated_at, encrypted_payload FROM sync_records WHERE table_name = ?'
+    : 'SELECT id, record_id, version, updated_at, encrypted_payload FROM sync_records';
   const stmt = db.prepare(sql);
   const rows = tableName ? stmt.all(tableName) : stmt.all();
   return rows.map((row: any) => ({
@@ -73,7 +93,7 @@ export function getSyncRecordManifest(tableName?: string): SyncRecordManifestIte
     recordId: row.record_id,
     version: row.version,
     updatedAt: row.updated_at,
-    hash: row.id,
+    hash: createHash('sha256').update(row.encrypted_payload).digest('hex'),
   }));
 }
 
@@ -146,8 +166,10 @@ export function getSyncState(): SyncState {
 export function incrementSyncClock(): number {
   const db = getDatabase();
   ensureSyncState();
-  db.prepare('UPDATE sync_state SET local_clock = local_clock + 1 WHERE id = 1').run();
-  return getSyncState().localClock;
+  const row = db
+    .prepare('UPDATE sync_state SET local_clock = local_clock + 1 WHERE id = 1 RETURNING local_clock')
+    .get() as { local_clock: number };
+  return row.local_clock;
 }
 
 export function updateLastSyncAt(timestamp: number): void {

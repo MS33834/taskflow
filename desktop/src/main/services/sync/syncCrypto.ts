@@ -52,7 +52,8 @@ export function loadSyncMasterKey(filePath?: string): Buffer | null {
 
   try {
     const raw = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
-    if (raw.encrypted && safeStorage.isEncryptionAvailable()) {
+    if (raw.encrypted) {
+      if (!safeStorage.isEncryptionAvailable()) return null;
       const decrypted = safeStorage.decryptString(Buffer.from(raw.key, 'base64'));
       return Buffer.from(decrypted, 'hex');
     }
@@ -63,6 +64,9 @@ export function loadSyncMasterKey(filePath?: string): Buffer | null {
 }
 
 export function encryptSyncRecord(payload: SyncRecordPayload, smk: Buffer): Buffer {
+  if (!Buffer.isBuffer(smk) || smk.length !== SYNC_KEY_LENGTH) {
+    throw new Error('Invalid sync master key');
+  }
   const iv = randomBytes(SYNC_RECORD_IV_LENGTH);
   const cipher = createCipheriv('aes-256-gcm', smk, iv);
   const plaintext = Buffer.from(JSON.stringify(payload), 'utf8');
@@ -72,6 +76,13 @@ export function encryptSyncRecord(payload: SyncRecordPayload, smk: Buffer): Buff
 }
 
 export function decryptSyncRecord(ciphertext: Buffer, smk: Buffer): SyncRecordPayload {
+  if (!Buffer.isBuffer(smk) || smk.length !== SYNC_KEY_LENGTH) {
+    throw new Error('Invalid sync master key');
+  }
+  const minLength = SYNC_RECORD_IV_LENGTH + SYNC_RECORD_AUTH_TAG_LENGTH + 1;
+  if (!Buffer.isBuffer(ciphertext) || ciphertext.length < minLength) {
+    throw new Error('Invalid sync record ciphertext');
+  }
   const iv = ciphertext.subarray(0, SYNC_RECORD_IV_LENGTH);
   const authTag = ciphertext.subarray(
     SYNC_RECORD_IV_LENGTH,
