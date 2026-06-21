@@ -59,3 +59,51 @@ export function clearVerifier(): void {
     fs.unlinkSync(filePath);
   }
 }
+
+function getBiometricKeyPath(): string {
+  return path.join(app.getPath('userData'), 'taskflow-biometric-key.json');
+}
+
+export function loadBiometricKey(): Buffer | null {
+  const filePath = getBiometricKeyPath();
+  if (!fs.existsSync(filePath)) return null;
+
+  try {
+    const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    if (data.encrypted && safeStorage.isEncryptionAvailable()) {
+      return Buffer.from(safeStorage.decryptString(Buffer.from(data.key, 'base64')), 'hex');
+    }
+    return Buffer.from(data.key, 'hex');
+  } catch {
+    return null;
+  }
+}
+
+export function saveBiometricKey(key: Buffer): void {
+  const filePath = getBiometricKeyPath();
+  const userDataDir = path.dirname(filePath);
+  if (!fs.existsSync(userDataDir)) {
+    fs.mkdirSync(userDataDir, { recursive: true });
+  }
+
+  if (safeStorage.isEncryptionAvailable()) {
+    const data = {
+      encrypted: true,
+      key: safeStorage.encryptString(key.toString('hex')).toString('base64'),
+    };
+    fs.writeFileSync(filePath, JSON.stringify(data));
+  } else {
+    const data = {
+      encrypted: false,
+      key: key.toString('hex'),
+    };
+    fs.writeFileSync(filePath, JSON.stringify(data));
+  }
+}
+
+export function clearBiometricKey(): void {
+  const filePath = getBiometricKeyPath();
+  if (fs.existsSync(filePath)) {
+    fs.unlinkSync(filePath);
+  }
+}

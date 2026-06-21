@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Switch } from '../components/common/Switch';
 import { Button } from '../components/common/Button';
 import { useThemeStore, type ThemeMode } from '../store/themeStore';
 import { useSecuritySettingsStore } from '../store/securitySettingsStore';
 import { useTaskStore } from '../store/taskStore';
 import { useVaultStore } from '../store/vaultStore';
+import type { SecuritySettings } from '../../shared/types';
 
 const themeLabels: Record<ThemeMode, string> = {
   light: '浅色',
@@ -19,10 +20,61 @@ export function SettingsPage() {
   const { fetch: fetchVault } = useVaultStore();
   const [isBusy, setIsBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const available = await window.taskflowAPI.biometric.isAvailable();
+      const enabled = await window.taskflowAPI.biometric.isEnabled();
+      if (mounted) {
+        setBiometricAvailable(available);
+        setBiometricEnabled(enabled);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [settings.lockMethod]);
 
   const showFeedback = (message: string) => {
     setFeedback(message);
     setTimeout(() => setFeedback(null), 4000);
+  };
+
+  const handleLockMethodChange = async (method: SecuritySettings['lockMethod']) => {
+    if (method === settings.lockMethod) return;
+
+    if (method === 'biometric') {
+      if (!biometricAvailable) {
+        showFeedback('当前设备不支持生物识别');
+        return;
+      }
+      const password = window.prompt('启用生物识别需要先验证主密码');
+      if (!password) return;
+
+      setIsBusy(true);
+      try {
+        const success = await window.taskflowAPI.biometric.enable(password);
+        if (!success) {
+          showFeedback('密码验证失败，无法启用生物识别');
+          return;
+        }
+        await update({ lockMethod: 'biometric' });
+        setBiometricEnabled(true);
+        showFeedback('生物识别已启用');
+      } finally {
+        setIsBusy(false);
+      }
+      return;
+    }
+
+    if (settings.lockMethod === 'biometric') {
+      await window.taskflowAPI.biometric.disable();
+      setBiometricEnabled(false);
+    }
+    await update({ lockMethod: method });
   };
 
   const handleExport = async () => {
@@ -84,6 +136,27 @@ export function SettingsPage() {
         <div>
           <h2 className="mb-3 font-medium text-slate-800 dark:text-slate-100">安全</h2>
           <div className="space-y-3">
+            <div>
+              <p className="mb-2 text-sm text-slate-700 dark:text-slate-300">解锁方式</p>
+              <div className="flex flex-wrap gap-2">
+                {(['password', 'biometric'] as const).map((method) => (
+                  <Button
+                    key={method}
+                    variant={settings.lockMethod === method ? 'primary' : 'secondary'}
+                    size="sm"
+                    onClick={() => handleLockMethodChange(method)}
+                    disabled={isBusy || (method === 'biometric' && !biometricAvailable)}
+                  >
+                    {method === 'password' ? '主密码' : '生物识别'}
+                  </Button>
+                ))}
+              </div>
+              {settings.lockMethod === 'biometric' && !biometricEnabled && (
+                <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                  生物识别尚未录入，请选择后按提示验证主密码以启用。
+                </p>
+              )}
+            </div>
             <Switch
               label="5 分钟无操作自动锁定"
               checked={settings.autoLockMinutes > 0}

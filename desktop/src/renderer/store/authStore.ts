@@ -4,6 +4,7 @@ interface AuthState {
   isUnlocked: boolean;
   isLoading: boolean;
   unlock: (password: string) => Promise<boolean>;
+  unlockWithBiometric: () => Promise<boolean>;
   lock: () => void;
   checkStatus: () => Promise<void>;
 }
@@ -13,6 +14,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: true,
   unlock: async (password) => {
     const success = await window.taskflowAPI.auth.unlock(password);
+    set({ isUnlocked: success });
+    return success;
+  },
+  unlockWithBiometric: async () => {
+    const success = await window.taskflowAPI.biometric.unlock();
     set({ isUnlocked: success });
     return success;
   },

@@ -14,6 +14,13 @@ const api = {
     isUnlocked: () => ipcRenderer.invoke(IPC_CHANNELS.AUTH.IS_UNLOCKED),
     hasVerifier: () => ipcRenderer.invoke(IPC_CHANNELS.AUTH.HAS_VERIFIER),
   },
+  biometric: {
+    isAvailable: () => ipcRenderer.invoke(IPC_CHANNELS.BIOMETRIC.AVAILABLE),
+    isEnabled: () => ipcRenderer.invoke(IPC_CHANNELS.BIOMETRIC.ENABLED),
+    unlock: () => ipcRenderer.invoke(IPC_CHANNELS.BIOMETRIC.UNLOCK),
+    enable: (password: string) => ipcRenderer.invoke(IPC_CHANNELS.BIOMETRIC.ENABLE, password),
+    disable: () => ipcRenderer.invoke(IPC_CHANNELS.BIOMETRIC.DISABLE),
+  },
   tasks: {
     list: () => ipcRenderer.invoke(IPC_CHANNELS.TASKS.LIST),
     create: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) =>

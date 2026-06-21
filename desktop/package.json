@@ -28,6 +28,7 @@
   "devDependencies": {
     "@eslint/js": "^8.57.0",
     "@types/better-sqlite3": "^7.6.10",
+    "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
