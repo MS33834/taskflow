@@ -139,35 +139,43 @@ export function isBiometricEnabled(): boolean {
 }
 
 export async function unlockWithBiometric(): Promise<boolean> {
-  if (!isBiometricAvailable()) return false;
+  try {
+    if (!(await isBiometricAvailable())) return false;
 
-  const key = loadBiometricKey();
-  if (!key) return false;
+    const key = loadBiometricKey();
+    if (!key) return false;
 
-  const approved = await promptBiometric('解锁 TaskFlow');
-  if (!approved) return false;
+    const approved = await promptBiometric('解锁 TaskFlow');
+    if (!approved) return false;
 
-  masterKey = key;
-  openDatabase(key);
-  runMigrations();
-  return true;
-}
-
-export function enableBiometric(password: string): boolean {
-  if (!isBiometricAvailable()) return false;
-
-  const verifier = loadVerifier();
-  if (!verifier) return false;
-
-  const salt = Buffer.from(verifier.salt, 'hex');
-  const expectedHash = Buffer.from(verifier.hash, 'hex');
-  if (!hashPassword(password, salt).equals(expectedHash)) {
+    masterKey = key;
+    openDatabase(key);
+    runMigrations();
+    return true;
+  } catch {
     return false;
   }
+}
 
-  const { key } = deriveKey(password, salt);
-  saveBiometricKey(key);
-  return true;
+export async function enableBiometric(password: string): Promise<boolean> {
+  try {
+    if (!(await isBiometricAvailable())) return false;
+
+    const verifier = loadVerifier();
+    if (!verifier) return false;
+
+    const salt = Buffer.from(verifier.salt, 'hex');
+    const expectedHash = Buffer.from(verifier.hash, 'hex');
+    if (!hashPassword(password, salt).equals(expectedHash)) {
+      return false;
+    }
+
+    const { key } = deriveKey(password, salt);
+    saveBiometricKey(key);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function disableBiometric(): void {

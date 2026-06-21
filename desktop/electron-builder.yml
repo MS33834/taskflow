@@ -5,6 +5,10 @@ directories:
 files:
   - dist/**/*
   - package.json
+asarUnpack:
+  - node_modules/@nodert-win10-rs4/windows.security.credentials.ui/**/*.node
+npmRebuild: true
+buildDependenciesFromSource: false
 mac:
   category: public.app-category.productivity
   target: dmg

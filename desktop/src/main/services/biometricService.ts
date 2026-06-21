@@ -1,32 +1,23 @@
 import { systemPreferences } from 'electron';
 
-/**
- * Minimal type shape of the NodeRT wrapper for
- * Windows.Security.Credentials.UI (Windows Hello).
- *
- * The module is loaded dynamically so that builds on macOS/Linux do not
- * depend on the native Windows binary being present.
- */
-type WindowsBiometricModule = {
-  UserConsentVerifier: {
-    checkAvailabilityAsync: (
-      callback: (err: Error | null, result: number) => void
-    ) => void;
-    requestVerificationAsync: (
-      message: string,
-      callback: (err: Error | null, result: number) => void
-    ) => void;
-  };
-  UserConsentVerifierAvailability: { available: number; [key: string]: number };
-  UserConsentVerificationResult: { verified: number; [key: string]: number };
-};
+type WindowsBiometricModule = typeof import('@nodert-win10-rs4/windows.security.credentials.ui');
+
+function isWindowsBiometricModule(value: unknown): value is WindowsBiometricModule {
+  if (value === null || typeof value !== 'object') return false;
+  const module = value as Record<string, unknown>;
+  const verifier = module.UserConsentVerifier;
+  if (verifier === null || typeof verifier !== 'object') return false;
+  const { checkAvailabilityAsync, requestVerificationAsync } = verifier as Record<string, unknown>;
+  return typeof checkAvailabilityAsync === 'function' && typeof requestVerificationAsync === 'function';
+}
 
 async function loadWindowsBiometricModule(): Promise<WindowsBiometricModule | null> {
   if (process.platform !== 'win32') return null;
 
   try {
     const module = await import('@nodert-win10-rs4/windows.security.credentials.ui');
-    return module as unknown as WindowsBiometricModule;
+    if (!isWindowsBiometricModule(module)) return null;
+    return module;
   } catch {
     // Module not installed or failed to load on this Windows machine.
     return null;

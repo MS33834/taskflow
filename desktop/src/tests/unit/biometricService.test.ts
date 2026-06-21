@@ -115,6 +115,15 @@ describe('biometricService', () => {
       const result = await promptBiometric('unlock');
       expect(result).toBe(false);
     });
+
+    it('promptBiometric returns false when verification result is not verified', async () => {
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+      windowsMockFns.requestVerificationAsync.mockImplementation((_, cb) =>
+        cb(null, 1)
+      );
+      const result = await promptBiometric('unlock');
+      expect(result).toBe(false);
+    });
   });
 
   describe('unsupported platforms', () => {
