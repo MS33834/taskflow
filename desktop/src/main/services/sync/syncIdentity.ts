@@ -1,4 +1,4 @@
-import { generateKeyPairSync, createHash, sign, verify } from 'crypto';
+import { generateKeyPairSync, createHash, sign, verify, createPublicKey } from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { app, safeStorage } from 'electron';
@@ -52,6 +52,9 @@ export function loadDeviceIdentity(): DeviceIdentity | null {
 
   try {
     const raw = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    if (raw.encrypted && !safeStorage.isEncryptionAvailable()) {
+      return null;
+    }
     const privateKeyPem = raw.encrypted
       ? safeStorage.decryptString(Buffer.from(raw.privateKeyPem, 'base64'))
       : raw.privateKeyPem;
@@ -67,7 +70,9 @@ export function loadDeviceIdentity(): DeviceIdentity | null {
 }
 
 export function getDeviceFingerprint(publicKeyPem: string): string {
-  return createHash('sha256').update(publicKeyPem).digest('hex').slice(0, 16);
+  const spkiDer = createPublicKey(publicKeyPem).export({ type: 'spki', format: 'der' }) as Buffer;
+  const rawPublicKey = spkiDer.subarray(spkiDer.length - 32);
+  return createHash('sha256').update(rawPublicKey).digest('hex').slice(0, 16);
 }
 
 export function signMessage(message: Buffer, privateKeyPem: string): Buffer {
@@ -79,5 +84,9 @@ export function verifySignature(
   signature: Buffer,
   publicKeyPem: string
 ): boolean {
-  return verify(null, message, publicKeyPem, signature);
+  try {
+    return verify(null, message, publicKeyPem, signature);
+  } catch {
+    return false;
+  }
 }
