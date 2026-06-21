@@ -1,7 +1,14 @@
 import { clipboard } from 'electron';
 import { deriveKey, generateSalt, hashPassword, encrypt, decrypt } from './cryptoService';
 import { openDatabase, closeDatabase, runMigrations } from './dbService';
-import { loadVerifier, saveVerifier } from './authStorage';
+import {
+  loadVerifier,
+  saveVerifier,
+  loadBiometricKey,
+  saveBiometricKey,
+  clearBiometricKey,
+} from './authStorage';
+import { isBiometricAvailable, promptBiometric } from './biometricService';
 
 let masterKey: Buffer | null = null;
 let autoLockTimer: NodeJS.Timeout | null = null;
@@ -125,4 +132,44 @@ export function scheduleClipboardClear(seconds: number): void {
       clipboard.clear();
     }
   }, seconds * 1000);
+}
+
+export function isBiometricEnabled(): boolean {
+  return loadBiometricKey() !== null;
+}
+
+export async function unlockWithBiometric(): Promise<boolean> {
+  if (!isBiometricAvailable()) return false;
+
+  const key = loadBiometricKey();
+  if (!key) return false;
+
+  const approved = await promptBiometric('解锁 TaskFlow');
+  if (!approved) return false;
+
+  masterKey = key;
+  openDatabase(key);
+  runMigrations();
+  return true;
+}
+
+export function enableBiometric(password: string): boolean {
+  if (!isBiometricAvailable()) return false;
+
+  const verifier = loadVerifier();
+  if (!verifier) return false;
+
+  const salt = Buffer.from(verifier.salt, 'hex');
+  const expectedHash = Buffer.from(verifier.hash, 'hex');
+  if (!hashPassword(password, salt).equals(expectedHash)) {
+    return false;
+  }
+
+  const { key } = deriveKey(password, salt);
+  saveBiometricKey(key);
+  return true;
+}
+
+export function disableBiometric(): void {
+  clearBiometricKey();
 }

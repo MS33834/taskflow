@@ -5,6 +5,7 @@ import { unlock, lock, isUnlocked, hasVerifier, scheduleClipboardClear } from '.
 import { registerTaskChannels } from './ipc/taskChannels';
 import { registerVaultChannels } from './ipc/vaultChannels';
 import { registerBackupChannels } from './ipc/backupChannels';
+import { registerBiometricChannels } from './ipc/biometricChannels';
 import { initializeSecuritySettings } from './repositories/securitySettingsRepository';
 import {
   getCurrentSettings,
@@ -55,6 +56,7 @@ app.whenReady().then(() => {
   registerTaskChannels();
   registerVaultChannels();
   registerBackupChannels();
+  registerBiometricChannels();
 });
 
 app.on('window-all-closed', () => {
