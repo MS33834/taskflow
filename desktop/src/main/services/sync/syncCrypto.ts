@@ -125,3 +125,46 @@ export function computeSharedSecret(privateKeyPem: string, publicKeyPem: string)
     publicKey: createPublicKey(publicKeyPem),
   });
 }
+
+const SESSION_IV_LENGTH = 12;
+const SESSION_AUTH_TAG_LENGTH = 16;
+
+export interface SessionKeys {
+  sendKey: Buffer;
+  receiveKey: Buffer;
+}
+
+export function deriveSessionKeys(
+  sharedSecret: Buffer,
+  salt: Buffer,
+  role: 'initiator' | 'responder',
+  info: string = HKDF_INFO
+): SessionKeys {
+  const peerRole = role === 'initiator' ? 'responder' : 'initiator';
+  const sendInfo = `${info}|${role}->${peerRole}`;
+  const receiveInfo = `${info}|${peerRole}->${role}`;
+  return {
+    sendKey: Buffer.from(hkdfSync('sha256', sharedSecret, salt, sendInfo, SYNC_KEY_LENGTH)),
+    receiveKey: Buffer.from(hkdfSync('sha256', sharedSecret, salt, receiveInfo, SYNC_KEY_LENGTH)),
+  };
+}
+
+export function encryptSessionMessage(plaintext: Buffer, key: Buffer): Buffer {
+  const iv = randomBytes(SESSION_IV_LENGTH);
+  const cipher = createCipheriv('aes-256-gcm', key, iv);
+  const encrypted = Buffer.concat([cipher.update(plaintext), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+  return Buffer.concat([iv, authTag, encrypted]);
+}
+
+export function decryptSessionMessage(ciphertext: Buffer, key: Buffer): Buffer {
+  const iv = ciphertext.subarray(0, SESSION_IV_LENGTH);
+  const authTag = ciphertext.subarray(
+    SESSION_IV_LENGTH,
+    SESSION_IV_LENGTH + SESSION_AUTH_TAG_LENGTH
+  );
+  const encrypted = ciphertext.subarray(SESSION_IV_LENGTH + SESSION_AUTH_TAG_LENGTH);
+  const decipher = createDecipheriv('aes-256-gcm', key, iv);
+  decipher.setAuthTag(authTag);
+  return Buffer.concat([decipher.update(encrypted), decipher.final()]);
+}
