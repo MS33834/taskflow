@@ -114,7 +114,7 @@ export class FrameParser extends EventEmitter {
 
   feed(chunk: Buffer): void {
     this.buffer = Buffer.concat([this.buffer, chunk]);
-    while (true) {
+    for (;;) {
       if (this.buffer.length < 5) return;
 
       const mode = this.buffer[0] as FrameMode;
