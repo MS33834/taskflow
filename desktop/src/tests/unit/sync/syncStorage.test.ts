@@ -14,6 +14,7 @@ import {
   getSyncState,
   incrementSyncClock,
   updateLastSyncAt,
+  getSyncRecordsByIds,
 } from '../../../main/services/sync/syncStorage';
 
 const testDbPath = path.join(os.tmpdir(), `taskflow-sync-storage-test-${Date.now()}.db`);
@@ -195,5 +196,59 @@ describe('syncStorage', () => {
     const now = Date.now();
     updateLastSyncAt(now);
     expect(getSyncState().lastSyncAt).toBe(now);
+  });
+
+  it('retrieves records by ids', () => {
+    insertSyncRecord({
+      id: 'tasks:5:v1',
+      tableName: 'tasks',
+      recordId: '5',
+      version: 1,
+      encryptedPayload: Buffer.from('encrypted-data'),
+      updatedAt: Date.now(),
+      deleted: 0,
+    });
+    insertSyncRecord({
+      id: 'tasks:6:v1',
+      tableName: 'tasks',
+      recordId: '6',
+      version: 1,
+      encryptedPayload: Buffer.from('encrypted-data'),
+      updatedAt: Date.now(),
+      deleted: 0,
+    });
+
+    const records = getSyncRecordsByIds(['tasks:5:v1', 'tasks:6:v1']);
+    expect(records).toHaveLength(2);
+    expect(records.map((r) => r.recordId).sort()).toEqual(['5', '6']);
+  });
+
+  it('reads from an explicit database instance', () => {
+    const otherDbPath = path.join(
+      os.tmpdir(),
+      `taskflow-sync-storage-other-${Date.now()}.db`
+    );
+    if (fs.existsSync(otherDbPath)) fs.unlinkSync(otherDbPath);
+    const otherDb = openDatabase(testKey, otherDbPath);
+    runMigrations();
+    insertSyncRecord(
+      {
+        id: 'tasks:7:v1',
+        tableName: 'tasks',
+        recordId: '7',
+        version: 1,
+        encryptedPayload: Buffer.from('encrypted-data'),
+        updatedAt: Date.now(),
+        deleted: 0,
+      },
+      otherDb
+    );
+
+    const records = getSyncRecordsByIds(['tasks:7:v1'], otherDb);
+    expect(records).toHaveLength(1);
+    expect(records[0].recordId).toBe('7');
+
+    closeDatabase();
+    fs.unlinkSync(otherDbPath);
   });
 });

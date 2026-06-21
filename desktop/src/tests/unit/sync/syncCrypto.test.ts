@@ -11,6 +11,9 @@ import {
   deriveSessionKey,
   generateEcdhKeyPair,
   computeSharedSecret,
+  deriveSessionKeys,
+  encryptSessionMessage,
+  decryptSessionMessage,
 } from '../../../main/services/sync/syncCrypto';
 
 const testKeyPath = path.join(os.tmpdir(), `taskflow-smk-test-${Date.now()}.key`);
@@ -133,5 +136,24 @@ describe('syncCrypto', () => {
     const sharedAliceBob = computeSharedSecret(alice.privateKeyPem, bob.publicKeyPem);
     const sharedAliceEve = computeSharedSecret(alice.privateKeyPem, eve.publicKeyPem);
     expect(sharedAliceEve.equals(sharedAliceBob)).toBe(false);
+  });
+
+  it('derives different send/receive session keys', () => {
+    const shared = Buffer.alloc(32, 0xab);
+    const salt = Buffer.alloc(16, 0x12);
+    const initiatorKeys = deriveSessionKeys(shared, salt, 'initiator');
+    const responderKeys = deriveSessionKeys(shared, salt, 'responder');
+    expect(initiatorKeys.sendKey.equals(responderKeys.receiveKey)).toBe(true);
+    expect(initiatorKeys.receiveKey.equals(responderKeys.sendKey)).toBe(true);
+    expect(initiatorKeys.sendKey.equals(initiatorKeys.receiveKey)).toBe(false);
+    expect(initiatorKeys.sendKey.length).toBe(32);
+  });
+
+  it('encrypts and decrypts a session message', () => {
+    const key = generateSyncMasterKey();
+    const plaintext = Buffer.from('hello session');
+    const encrypted = encryptSessionMessage(plaintext, key);
+    const decrypted = decryptSessionMessage(encrypted, key);
+    expect(decrypted.toString()).toBe('hello session');
   });
 });
