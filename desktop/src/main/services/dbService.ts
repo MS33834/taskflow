@@ -11,9 +11,9 @@ export function getDbPath(): string {
   return path.join(os.tmpdir(), 'taskflow-test.db');
 }
 
-export function openDatabase(key: Buffer): Database.Database {
-  const dbPath = getDbPath();
-  db = new Database(dbPath);
+export function openDatabase(key: Buffer, dbPath?: string): Database.Database {
+  const resolvedPath = dbPath ?? getDbPath();
+  db = new Database(resolvedPath);
 
   // Enable SQLCipher-compatible encryption using better-sqlite3-multiple-ciphers.
   // The key is provided as a 64-character hex string representing 32 bytes.
