@@ -1,10 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   serializeMessage,
   deserializeMessage,
   encodeFrame,
   FrameParser,
   WireSyncRecord,
+  MAX_FRAME_SIZE,
+  isHelloMessage,
+  isOfferMessage,
+  isBatchMessage,
 } from '../../../main/services/sync/syncMessages';
 
 describe('syncMessages', () => {
@@ -57,5 +61,44 @@ describe('syncMessages', () => {
     expect(frames[0].payload).toBe('hello');
     expect(frames[1].mode).toBe(1);
     expect(frames[1].payload).toBe('world');
+  });
+
+  it('emits an error and clears the buffer for oversized frames', () => {
+    const parser = new FrameParser();
+    const errorHandler = vi.fn();
+    parser.on('error', errorHandler);
+
+    const oversized = Buffer.allocUnsafe(5 + MAX_FRAME_SIZE + 1);
+    oversized[0] = 0;
+    oversized.writeUInt32BE(MAX_FRAME_SIZE + 1, 1);
+    parser.feed(oversized);
+
+    expect(errorHandler).toHaveBeenCalledTimes(1);
+    expect(errorHandler.mock.calls[0][0].message).toContain('maximum size');
+  });
+
+  it('rejects malformed JSON', () => {
+    expect(() => deserializeMessage(Buffer.from('not json', 'utf8'))).toThrow('invalid JSON');
+  });
+
+  it('rejects messages with missing required fields', () => {
+    const buf = Buffer.from(JSON.stringify({ type: 'HELLO', deviceId: 'x' }), 'utf8');
+    expect(() => deserializeMessage(buf)).toThrow('Invalid sync message');
+  });
+
+  it('rejects messages with invalid field types', () => {
+    const buf = Buffer.from(
+      JSON.stringify({ type: 'REQUEST', recordIds: [1, 2] }),
+      'utf8'
+    );
+    expect(() => deserializeMessage(buf)).toThrow('Invalid sync message');
+  });
+
+  it('validates message shape with type guards', () => {
+    expect(isHelloMessage({ type: 'HELLO', deviceId: 'a', publicKey: 'b', nonce: 'c' })).toBe(true);
+    expect(isHelloMessage({ type: 'HELLO', deviceId: 'a' })).toBe(false);
+    expect(isOfferMessage({ type: 'OFFER', signedPayload: 'payload' })).toBe(true);
+    expect(isOfferMessage({ type: 'OFFER', encryptedPayload: 'payload' })).toBe(false);
+    expect(isBatchMessage({ type: 'BATCH', records: [] })).toBe(true);
   });
 });

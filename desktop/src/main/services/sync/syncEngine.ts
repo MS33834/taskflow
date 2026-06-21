@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import { createHash } from 'crypto';
 import Database from 'better-sqlite3-multiple-ciphers';
 import { SyncSession } from './syncSession';
 import {
@@ -50,6 +51,9 @@ export interface SyncEngineOptions {
   tables: string[];
 }
 
+export const MAX_RECORDS_PER_BATCH = 500;
+export const MAX_REQUEST_IDS = 500;
+
 export class SyncEngine extends EventEmitter {
   private session: SyncSession;
   private store: SyncStore;
@@ -59,6 +63,7 @@ export class SyncEngine extends EventEmitter {
   private pendingAcks = new Set<string>();
   private localManifestSent = false;
   private remoteManifestReceived = false;
+  private remoteManifestHashes = new Map<string, string>();
 
   constructor(opts: SyncEngineOptions) {
     super();
@@ -124,8 +129,10 @@ export class SyncEngine extends EventEmitter {
       }
     }
 
+    this.remoteManifestHashes.clear();
     const missing: string[] = [];
     for (const remote of msg.records) {
+      this.remoteManifestHashes.set(remote.id, remote.hash);
       const local = localMap.get(remote.id);
       if (
         !local ||
@@ -146,6 +153,14 @@ export class SyncEngine extends EventEmitter {
 
   private handleRequest(msg: RequestMessage): void {
     if (msg.recordIds.length === 0) return;
+    if (msg.recordIds.length > MAX_REQUEST_IDS) {
+      this.session.send({
+        type: 'ERROR',
+        code: 'REQUEST_TOO_LARGE',
+        message: `Request contains ${msg.recordIds.length} ids, maximum is ${MAX_REQUEST_IDS}`,
+      });
+      return;
+    }
     const records = this.store.getRecordsByIds(msg.recordIds);
     const wireRecords: WireSyncRecord[] = records.map((r) => ({
       id: r.id,
@@ -161,8 +176,29 @@ export class SyncEngine extends EventEmitter {
   }
 
   private handleBatch(msg: BatchMessage): void {
+    if (msg.records.length > MAX_RECORDS_PER_BATCH) {
+      this.emit(
+        'error',
+        new Error(
+          `Batch contains ${msg.records.length} records, maximum is ${MAX_RECORDS_PER_BATCH}`
+        )
+      );
+      return;
+    }
+
     const receivedIds: string[] = [];
     for (const wire of msg.records) {
+      const expectedHash = this.remoteManifestHashes.get(wire.id);
+      const actualHash = createHash('sha256').update(wire.encryptedPayload).digest('hex');
+      if (expectedHash !== undefined && expectedHash !== actualHash) {
+        this.emit(
+          'error',
+          new Error(`Hash mismatch for record ${wire.id}; skipping corrupted record`)
+        );
+        this.pendingRequests.delete(wire.id);
+        continue;
+      }
+
       const record: SyncRecord = {
         id: wire.id,
         tableName: wire.tableName,

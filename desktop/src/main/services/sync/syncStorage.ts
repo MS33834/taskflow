@@ -52,7 +52,7 @@ export function insertSyncRecord(record: SyncRecord, db?: Database.Database): Co
 
   if (existing) {
     const result = resolveConflict(toSyncVersion(existing), toSyncVersion(record));
-    if (result === 'local' || result === 'conflict') {
+    if (result === 'local') {
       return result;
     }
   }
@@ -98,7 +98,7 @@ export function getSyncRecordManifest(tableName?: string, db?: Database.Database
     recordId: row.record_id,
     version: row.version,
     updatedAt: row.updated_at,
-    hash: createHash('sha256').update(row.encrypted_payload).digest('hex'),
+    hash: createHash('sha256').update(row.encrypted_payload.toString('base64')).digest('hex'),
   }));
 }
 
@@ -129,7 +129,7 @@ function rowToSyncRecord(row: any): SyncRecord {
   };
 }
 
-export function upsertSyncDevice(
+export function registerSyncDevice(
   device: Omit<SyncDevice, 'lastSeenAt'> & { lastSeenAt?: number },
   db?: Database.Database
 ): void {
@@ -140,6 +140,7 @@ export function upsertSyncDevice(
     ON CONFLICT(device_id) DO UPDATE SET
       public_key = excluded.public_key,
       name = excluded.name,
+      paired_at = excluded.paired_at,
       last_seen_at = excluded.last_seen_at
   `);
   stmt.run(
@@ -149,6 +150,36 @@ export function upsertSyncDevice(
     device.pairedAt,
     device.lastSeenAt ?? null
   );
+}
+
+export function updateSyncDeviceLastSeen(
+  deviceId: string,
+  timestamp: number,
+  db?: Database.Database
+): void {
+  const resolvedDb = resolveDb(db);
+  const stmt = resolvedDb.prepare('UPDATE sync_devices SET last_seen_at = ? WHERE device_id = ?');
+  stmt.run(timestamp, deviceId);
+}
+
+export function getSyncDevice(deviceId: string, db?: Database.Database): SyncDevice | null {
+  const resolvedDb = resolveDb(db);
+  const stmt = resolvedDb.prepare('SELECT * FROM sync_devices WHERE device_id = ?');
+  const row = stmt.get(deviceId) as any;
+  if (!row) return null;
+  return {
+    deviceId: row.device_id,
+    publicKey: row.public_key,
+    name: row.name,
+    pairedAt: row.paired_at,
+    lastSeenAt: row.last_seen_at,
+  };
+}
+
+export function removeSyncDevice(deviceId: string, db?: Database.Database): void {
+  const resolvedDb = resolveDb(db);
+  const stmt = resolvedDb.prepare('DELETE FROM sync_devices WHERE device_id = ?');
+  stmt.run(deviceId);
 }
 
 export function listSyncDevices(db?: Database.Database): SyncDevice[] {

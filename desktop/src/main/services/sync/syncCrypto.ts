@@ -34,33 +34,40 @@ export function saveSyncMasterKey(key: Buffer, filePath?: string): void {
   const dir = path.dirname(targetPath);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
-  if (safeStorage.isEncryptionAvailable()) {
-    const data = {
-      encrypted: true,
-      key: safeStorage.encryptString(key.toString('hex')).toString('base64'),
-    };
-    fs.writeFileSync(targetPath, JSON.stringify(data));
-  } else {
-    const data = { encrypted: false, key: key.toString('hex') };
-    fs.writeFileSync(targetPath, JSON.stringify(data));
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error('safeStorage is not available; refusing to write plaintext master key');
   }
+
+  const data = {
+    encrypted: true,
+    key: safeStorage.encryptString(key.toString('hex')).toString('base64'),
+  };
+  fs.writeFileSync(targetPath, JSON.stringify(data), { mode: 0o600 });
 }
 
 export function loadSyncMasterKey(filePath?: string): Buffer | null {
   const targetPath = filePath ?? getSyncMasterKeyPath();
   if (!fs.existsSync(targetPath)) return null;
 
+  let raw: { encrypted?: boolean; key?: string };
   try {
-    const raw = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
-    if (raw.encrypted) {
-      if (!safeStorage.isEncryptionAvailable()) return null;
-      const decrypted = safeStorage.decryptString(Buffer.from(raw.key, 'base64'));
-      return Buffer.from(decrypted, 'hex');
-    }
-    return Buffer.from(raw.key, 'hex');
+    raw = JSON.parse(fs.readFileSync(targetPath, 'utf8'));
   } catch {
-    return null;
+    throw new Error(`Corrupt sync master key file: ${targetPath}`);
   }
+
+  if (raw.encrypted) {
+    if (!safeStorage.isEncryptionAvailable()) {
+      throw new Error('safeStorage is not available; cannot decrypt sync master key');
+    }
+    if (typeof raw.key !== 'string') {
+      throw new Error(`Corrupt sync master key file: ${targetPath}`);
+    }
+    const decrypted = safeStorage.decryptString(Buffer.from(raw.key, 'base64'));
+    return Buffer.from(decrypted, 'hex');
+  }
+
+  throw new Error('Plaintext sync master key file found; refusing to load');
 }
 
 export function encryptSyncRecord(payload: SyncRecordPayload, smk: Buffer): Buffer {

@@ -2,9 +2,11 @@ import { describe, it, expect, vi } from 'vitest';
 import os from 'os';
 import fs from 'fs';
 import path from 'path';
+import { createPublicKey, createHash } from 'crypto';
 import {
   generateDeviceIdentity,
   loadDeviceIdentity,
+  saveDeviceIdentity,
   getDeviceFingerprint,
   signMessage,
   verifySignature,
@@ -70,12 +72,7 @@ describe('syncIdentity', () => {
     expect(loadDeviceIdentity()).toBeNull();
   });
 
-  it('returns null when encrypted identity is loaded without safeStorage', () => {
-    generateDeviceIdentity('device-e');
-    vi.mocked(safeStorage.isEncryptionAvailable).mockReturnValue(false);
-    expect(loadDeviceIdentity()).toBeNull();
-    vi.mocked(safeStorage.isEncryptionAvailable).mockReturnValue(true);
-  });
+
 
   it('rejects signatures from a different device', () => {
     const alice = generateDeviceIdentity('alice');
@@ -98,5 +95,53 @@ describe('syncIdentity', () => {
     const fp2 = getDeviceFingerprint(identity.publicKeyPem);
     expect(fp1).toBe(fp2);
     expect(fp1).toMatch(/^[0-9a-f]{16}$/);
+  });
+
+  it('matches fingerprint computed from the raw public key bytes in the SPKI', () => {
+    const identity = generateDeviceIdentity('device-h');
+    const spkiDer = createPublicKey(identity.publicKeyPem).export({ type: 'spki', format: 'der' }) as Buffer;
+    const raw = spkiDer.subarray(spkiDer.length - 32);
+    const expected = createHash('sha256').update(raw).digest('hex').slice(0, 16);
+    expect(getDeviceFingerprint(identity.publicKeyPem)).toBe(expected);
+  });
+
+  it('refuses to save identity when safeStorage is unavailable', () => {
+    const identity = generateDeviceIdentity('device-i');
+    vi.mocked(safeStorage.isEncryptionAvailable).mockReturnValue(false);
+    expect(() => saveDeviceIdentity(identity)).toThrow('safeStorage is not available');
+    vi.mocked(safeStorage.isEncryptionAvailable).mockReturnValue(true);
+  });
+
+  it('throws when loading encrypted identity without safeStorage', () => {
+    generateDeviceIdentity('device-j');
+    vi.mocked(safeStorage.isEncryptionAvailable).mockReturnValue(false);
+    expect(() => loadDeviceIdentity()).toThrow('safeStorage is not available');
+    vi.mocked(safeStorage.isEncryptionAvailable).mockReturnValue(true);
+  });
+
+  it('throws when loading a plaintext identity file', () => {
+    const identityPath = path.join(os.tmpdir(), `taskflow-device-identity-plain-${Date.now()}.json`);
+    fs.writeFileSync(
+      identityPath,
+      JSON.stringify({ encrypted: false, privateKeyPem: 'secret', deviceId: 'x', name: 'x', publicKeyPem: 'y' })
+    );
+    expect(() => loadDeviceIdentity(identityPath)).toThrow('Plaintext device identity file found');
+    fs.rmSync(identityPath, { force: true });
+  });
+
+  it('throws when loading a corrupt identity file', () => {
+    const identityPath = path.join(os.tmpdir(), `taskflow-device-identity-corrupt-${Date.now()}.json`);
+    fs.writeFileSync(identityPath, 'not-json');
+    expect(() => loadDeviceIdentity(identityPath)).toThrow('Corrupt device identity file');
+    fs.rmSync(identityPath, { force: true });
+  });
+
+  it('writes identity file with restricted permissions', () => {
+    const identityPath = path.join(os.tmpdir(), `taskflow-device-identity-mode-${Date.now()}.json`);
+    const identity = generateDeviceIdentity('device-k');
+    saveDeviceIdentity(identity, identityPath);
+    const stats = fs.statSync(identityPath);
+    expect(stats.mode & 0o777).toBe(0o600);
+    fs.rmSync(identityPath, { force: true });
   });
 });
