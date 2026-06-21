@@ -88,5 +88,32 @@ export function runMigrations(): void {
       screenshot_protection INTEGER DEFAULT 0,
       privacy_mode_enabled INTEGER DEFAULT 0
     );
+
+    CREATE TABLE IF NOT EXISTS sync_records (
+      id TEXT PRIMARY KEY,
+      table_name TEXT NOT NULL,
+      record_id TEXT NOT NULL,
+      version INTEGER NOT NULL DEFAULT 1,
+      encrypted_payload BLOB NOT NULL,
+      updated_at INTEGER NOT NULL,
+      deleted INTEGER DEFAULT 0
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_sync_records_table_record ON sync_records(table_name, record_id);
+    CREATE INDEX IF NOT EXISTS idx_sync_records_updated_at ON sync_records(updated_at);
+
+    CREATE TABLE IF NOT EXISTS sync_state (
+      id INTEGER PRIMARY KEY CHECK (id = 1),
+      local_clock INTEGER NOT NULL DEFAULT 0,
+      last_sync_at INTEGER
+    );
+
+    CREATE TABLE IF NOT EXISTS sync_devices (
+      device_id TEXT PRIMARY KEY,
+      public_key TEXT NOT NULL,
+      name TEXT,
+      paired_at INTEGER NOT NULL,
+      last_seen_at INTEGER
+    );
   `);
 }
