@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import os from 'os';
-import { once } from 'events';
+import { once, EventEmitter } from 'events';
 import { createHash } from 'crypto';
-import { SyncEngine, SyncStore } from '../../../main/services/sync/syncEngine';
+import { SyncEngine, SyncStore, MAX_RECORDS_PER_BATCH } from '../../../main/services/sync/syncEngine';
 import { SyncSession } from '../../../main/services/sync/syncSession';
 import { generateDeviceIdentity } from '../../../main/services/sync/syncIdentity';
 import { SyncRecord, SyncRecordManifestItem } from '../../../main/services/sync/syncStorage';
@@ -46,6 +46,18 @@ function createMemoryStore(initial: SyncRecord[] = []): SyncStore {
 function wireSessions(a: SyncSession, b: SyncSession): void {
   a.on('sendFrame', (mode, payload) => b.feedRawFrame(mode, payload));
   b.on('sendFrame', (mode, payload) => a.feedRawFrame(mode, payload));
+}
+
+class MockSyncSession extends EventEmitter {
+  send = vi.fn((_msg: SyncMessage) => {});
+
+  isReady(): boolean {
+    return true;
+  }
+
+  close(): void {
+    this.emit('close');
+  }
 }
 
 describe('syncEngine', () => {
@@ -292,5 +304,123 @@ describe('syncEngine', () => {
     const [err] = await errorPromise;
     expect((err as Error).message).toContain('Hash mismatch');
     expect(store.getRecordById(recordId)).toBeNull();
+  });
+
+  it('acks received records even when the local record wins the conflict', () => {
+    const id = 'tasks:1:v1';
+    const localRecord: SyncRecord = {
+      id,
+      tableName: 'tasks',
+      recordId: '1',
+      version: 2,
+      encryptedPayload: Buffer.from('newer'),
+      updatedAt: 2000,
+      deleted: 0,
+    };
+    const store = createMemoryStore([localRecord]);
+    const session = new MockSyncSession();
+    const engine = new SyncEngine({
+      session: session as unknown as SyncSession,
+      smk: Buffer.alloc(32),
+      store,
+      tables: ['tasks'],
+    });
+    engine.start();
+
+    const remotePayload = Buffer.from('older');
+    const remoteHash = createHash('sha256')
+      .update(remotePayload.toString('base64'))
+      .digest('hex');
+    session.emit('message', {
+      type: 'MANIFEST',
+      records: [{ id, updatedAt: 1000, hash: remoteHash }],
+    });
+    session.emit('message', {
+      type: 'BATCH',
+      records: [
+        {
+          id,
+          tableName: 'tasks',
+          recordId: '1',
+          version: 1,
+          encryptedPayload: remotePayload.toString('base64'),
+          updatedAt: 1000,
+          deleted: 0,
+        },
+      ],
+    });
+
+    expect(session.send).toHaveBeenCalledWith({ type: 'ACK', receivedIds: [id] });
+    expect(store.getRecordById(id)!.encryptedPayload.toString()).toBe('newer');
+  });
+
+  it('sends the manifest only once', () => {
+    const session = new MockSyncSession();
+    const engine = new SyncEngine({
+      session: session as unknown as SyncSession,
+      smk: Buffer.alloc(32),
+      store: createMemoryStore([]),
+      tables: ['tasks'],
+    });
+    engine.start();
+    engine.start();
+
+    const manifests = session.send.mock.calls.filter(([msg]) => (msg as SyncMessage).type === 'MANIFEST');
+    expect(manifests).toHaveLength(1);
+  });
+
+  it('emits complete only once', async () => {
+    const session = new MockSyncSession();
+    const engine = new SyncEngine({
+      session: session as unknown as SyncSession,
+      smk: Buffer.alloc(32),
+      store: createMemoryStore([]),
+      tables: ['tasks'],
+    });
+    const handler = vi.fn();
+    engine.on('complete', handler);
+
+    engine.start();
+    session.emit('message', { type: 'MANIFEST', records: [] });
+    session.emit('message', { type: 'ACK', receivedIds: [] });
+
+    await Promise.resolve();
+    expect(handler).toHaveBeenCalledTimes(1);
+
+    session.emit('message', { type: 'ACK', receivedIds: [] });
+    await Promise.resolve();
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends requested records in batches bounded by MAX_RECORDS_PER_BATCH', () => {
+    const records: SyncRecord[] = Array.from({ length: MAX_RECORDS_PER_BATCH }, (_, i) => ({
+      id: `tasks:${i}:v1`,
+      tableName: 'tasks',
+      recordId: `${i}`,
+      version: 1,
+      encryptedPayload: Buffer.from(`payload-${i}`),
+      updatedAt: 1000,
+      deleted: 0,
+    }));
+    const store = createMemoryStore(records);
+    const session = new MockSyncSession();
+    const engine = new SyncEngine({
+      session: session as unknown as SyncSession,
+      smk: Buffer.alloc(32),
+      store,
+      tables: ['tasks'],
+    });
+    engine.start();
+
+    const ids = records.map((r) => r.id);
+    session.emit('message', { type: 'REQUEST', recordIds: ids });
+
+    const batches = session.send.mock.calls
+      .filter(([msg]) => (msg as SyncMessage).type === 'BATCH')
+      .map(([msg]) => msg as Extract<SyncMessage, { type: 'BATCH' }>);
+
+    expect(batches).toHaveLength(1);
+    expect(batches[0].records).toHaveLength(MAX_RECORDS_PER_BATCH);
+    expect(batches[0].records.map((r) => r.id)).toEqual(ids);
   });
 });

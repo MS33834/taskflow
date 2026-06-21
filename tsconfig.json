@@ -28,7 +28,8 @@
     "dist",
     ".expo",
     "desktop",
-    "backend"
+    "backend",
+    "relay"
   ],
   "extends": "expo/tsconfig.base"
 }

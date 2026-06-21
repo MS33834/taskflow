@@ -1,0 +1,29 @@
+{
+  "name": "@taskflow/relay",
+  "version": "0.1.0",
+  "description": "TaskFlow 2.0 self-hosted sync relay server",
+  "main": "dist/index.js",
+  "bin": "dist/index.js",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.0.0",
+    "@types/supertest": "^7.2.0",
+    "@types/ws": "^8.5.12",
+    "supertest": "^7.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^4.1.9"
+  }
+}

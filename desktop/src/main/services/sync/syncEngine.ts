@@ -64,6 +64,7 @@ export class SyncEngine extends EventEmitter {
   private localManifestSent = false;
   private remoteManifestReceived = false;
   private remoteManifestHashes = new Map<string, string>();
+  private completed = false;
 
   constructor(opts: SyncEngineOptions) {
     super();
@@ -85,6 +86,7 @@ export class SyncEngine extends EventEmitter {
   }
 
   private sendManifest(): void {
+    if (this.localManifestSent) return;
     const records: ManifestRecordItem[] = [];
     for (const table of this.tables) {
       records.push(
@@ -171,8 +173,11 @@ export class SyncEngine extends EventEmitter {
       updatedAt: r.updatedAt,
       deleted: r.deleted,
     }));
-    for (const r of records) this.pendingAcks.add(r.id);
-    this.session.send({ type: 'BATCH', records: wireRecords });
+    for (let i = 0; i < wireRecords.length; i += MAX_RECORDS_PER_BATCH) {
+      const chunk = wireRecords.slice(i, i + MAX_RECORDS_PER_BATCH);
+      for (const r of chunk) this.pendingAcks.add(r.id);
+      this.session.send({ type: 'BATCH', records: chunk });
+    }
   }
 
   private handleBatch(msg: BatchMessage): void {
@@ -195,7 +200,8 @@ export class SyncEngine extends EventEmitter {
           'error',
           new Error(`Hash mismatch for record ${wire.id}; skipping corrupted record`)
         );
-        this.pendingRequests.delete(wire.id);
+        // Keep the pending request so the sync cannot falsely complete with a
+        // corrupted/missing record. The caller is expected to retry or investigate.
         continue;
       }
 
@@ -223,8 +229,8 @@ export class SyncEngine extends EventEmitter {
 
       if (apply) {
         this.store.insertRecord(record);
-        receivedIds.push(record.id);
       }
+      receivedIds.push(record.id);
       this.pendingRequests.delete(record.id);
     }
 
@@ -243,12 +249,14 @@ export class SyncEngine extends EventEmitter {
   }
 
   private checkComplete(): void {
+    if (this.completed) return;
     if (
       this.localManifestSent &&
       this.remoteManifestReceived &&
       this.pendingRequests.size === 0 &&
       this.pendingAcks.size === 0
     ) {
+      this.completed = true;
       this.store.updateLastSyncAt(Date.now());
       this.emit('complete');
     }

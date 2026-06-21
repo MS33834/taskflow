@@ -182,6 +182,10 @@ export function removeSyncDevice(deviceId: string, db?: Database.Database): void
   stmt.run(deviceId);
 }
 
+export function getTrustedPublicKey(deviceId: string, db?: Database.Database): string | undefined {
+  return getSyncDevice(deviceId, db)?.publicKey;
+}
+
 export function listSyncDevices(db?: Database.Database): SyncDevice[] {
   const resolvedDb = resolveDb(db);
   const stmt = resolvedDb.prepare('SELECT * FROM sync_devices ORDER BY paired_at DESC');

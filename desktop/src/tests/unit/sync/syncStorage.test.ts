@@ -18,6 +18,7 @@ import {
   incrementSyncClock,
   updateLastSyncAt,
   getSyncRecordsByIds,
+  getTrustedPublicKey,
 } from '../../../main/services/sync/syncStorage';
 
 const testDbPath = path.join(os.tmpdir(), `taskflow-sync-storage-test-${Date.now()}.db`);
@@ -219,6 +220,17 @@ describe('syncStorage', () => {
     removeSyncDevice('device-4');
     expect(getSyncDevice('device-4')).toBeNull();
     expect(listSyncDevices()).toHaveLength(0);
+  });
+
+  it('reads trusted public key from registered device', () => {
+    registerSyncDevice({
+      deviceId: 'trusted-device',
+      publicKey: 'pubkey-trusted',
+      name: 'Phone',
+      pairedAt: Date.now(),
+    });
+    expect(getTrustedPublicKey('trusted-device')).toBe('pubkey-trusted');
+    expect(getTrustedPublicKey('missing-device')).toBeUndefined();
   });
 
   it('prevents SQL injection through table name parameter', () => {
