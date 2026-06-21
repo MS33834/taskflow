@@ -132,7 +132,7 @@ export function listSyncDevices(): SyncDevice[] {
 export function getSyncState(): SyncState {
   const db = getDatabase();
   const stmt = db.prepare('SELECT local_clock, last_sync_at FROM sync_state WHERE id = 1');
-  const row = stmt.get();
+  const row = stmt.get() as { local_clock: number; last_sync_at: number | null } | undefined;
   if (!row) {
     db.prepare('INSERT INTO sync_state (id, local_clock, last_sync_at) VALUES (1, 0, NULL)').run();
     return { localClock: 0, lastSyncAt: null };
