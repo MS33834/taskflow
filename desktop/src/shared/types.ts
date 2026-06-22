@@ -53,9 +53,25 @@ export interface SyncState {
   lastSyncAt: number | null;
 }
 
+export type PeerState =
+  | 'connecting'
+  | 'handshaking'
+  | 'syncing'
+  | 'idle'
+  | 'error'
+  | 'closed';
+
+export interface SyncPeerInfo {
+  deviceId: string;
+  state: PeerState;
+  lastSyncAt: number | null;
+  error: string | null;
+}
+
 export interface SyncStatusInfo {
   state: 'idle' | 'syncing' | 'error';
   lastSyncAt: number | null;
   targetDeviceId?: string;
   error: string | null;
+  peers?: SyncPeerInfo[];
 }

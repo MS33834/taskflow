@@ -15,6 +15,7 @@ export function SyncSettingsPanel() {
     pairingCode,
     dialogMode,
     error,
+    peers,
     fetch,
     setEnabled,
     setRelayUrl,
@@ -24,6 +25,7 @@ export function SyncSettingsPanel() {
     setDialogMode,
     clearError,
     setStateFromPush,
+    setPeers,
   } = useSyncStore();
 
   useEffect(() => {
@@ -38,6 +40,15 @@ export function SyncSettingsPanel() {
       unsubscribe();
     };
   }, [setStateFromPush]);
+
+  useEffect(() => {
+    const unsubscribe = window.taskflowAPI.sync.onPeerStateChanged((nextPeers) => {
+      setPeers(nextPeers);
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [setPeers]);
 
   if (isLoading) {
     return <p className="text-sm text-slate-500 dark:text-slate-400">加载同步设置...</p>;
@@ -76,7 +87,7 @@ export function SyncSettingsPanel() {
 
           <div>
             <h3 className="mb-2 text-sm font-medium text-slate-800 dark:text-slate-100">已配对设备</h3>
-            <DeviceList devices={devices} onRemove={removeDevice} />
+            <DeviceList devices={devices} peers={peers} onRemove={removeDevice} />
           </div>
         </>
       )}

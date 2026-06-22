@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import os from 'os';
 import path from 'path';
 import fs from 'fs';
-import { registerSyncIpc, notifySyncStateChanged } from '../../../main/ipc/syncChannels';
+import { registerSyncIpc, notifySyncStateChanged, notifySyncPeerStateChanged } from '../../../main/ipc/syncChannels';
 import { getSyncSettingsPath, setSyncSettings } from '../../../main/services/sync/syncSettingsState';
 import { generateDeviceIdentity } from '../../../main/services/sync/syncIdentity';
 import { registerSyncDevice } from '../../../main/services/sync/syncStorage';
@@ -178,5 +178,15 @@ describe('syncChannels', () => {
   it('broadcasts state changes to renderer', () => {
     notifySyncStateChanged();
     expect(sentMessages[IPC_CHANNELS.SYNC.ON_STATE_CHANGED]).toHaveLength(1);
+  });
+
+  it('broadcasts peer state changes to renderer', () => {
+    const peers = [
+      { deviceId: 'peer-a', state: 'syncing' as const, lastSyncAt: null, error: null },
+      { deviceId: 'peer-b', state: 'idle' as const, lastSyncAt: 1_000, error: null },
+    ];
+    notifySyncPeerStateChanged(peers);
+    expect(sentMessages[IPC_CHANNELS.SYNC.ON_PEER_STATE_CHANGED]).toHaveLength(1);
+    expect(sentMessages[IPC_CHANNELS.SYNC.ON_PEER_STATE_CHANGED]![0]).toEqual([peers]);
   });
 });

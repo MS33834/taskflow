@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import { IPC_CHANNELS } from '../shared/constants';
-import type { Task, VaultItem, SecuritySettings, SyncState } from '../shared/types';
+import type { Task, VaultItem, SecuritySettings, SyncState, SyncPeerInfo } from '../shared/types';
 
 type AppEventChannel = 'app:lock' | 'app:newTask' | 'app:togglePrivacy';
 type EventCallback = () => void;
@@ -62,6 +62,11 @@ const api = {
       const listener = (_event: IpcRendererEvent, state: SyncState) => callback(state);
       ipcRenderer.on(IPC_CHANNELS.SYNC.ON_STATE_CHANGED, listener);
       return () => ipcRenderer.off(IPC_CHANNELS.SYNC.ON_STATE_CHANGED, listener);
+    },
+    onPeerStateChanged: (callback: (peers: SyncPeerInfo[]) => void) => {
+      const listener = (_event: IpcRendererEvent, peers: SyncPeerInfo[]) => callback(peers);
+      ipcRenderer.on(IPC_CHANNELS.SYNC.ON_PEER_STATE_CHANGED, listener);
+      return () => ipcRenderer.off(IPC_CHANNELS.SYNC.ON_PEER_STATE_CHANGED, listener);
     },
   },
   app: {
