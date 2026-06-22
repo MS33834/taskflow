@@ -111,9 +111,16 @@ export function runMigrations(): void {
     CREATE TABLE IF NOT EXISTS sync_devices (
       device_id TEXT PRIMARY KEY,
       public_key TEXT NOT NULL,
-      name TEXT,
+      name,
       paired_at INTEGER NOT NULL,
-      last_seen_at INTEGER
+      last_seen_at
     );
   `);
+
+  const columnExists = database
+    .prepare("SELECT 1 FROM pragma_table_info('sync_records') WHERE name = ?")
+    .get('device_version');
+  if (!columnExists) {
+    database.exec("ALTER TABLE sync_records ADD COLUMN device_version TEXT DEFAULT '{}'");
+  }
 }

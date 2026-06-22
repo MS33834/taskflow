@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import Database from 'better-sqlite3-multiple-ciphers';
 import { getDatabase } from '../dbService';
-import { resolveConflict, SyncVersion, ConflictResult } from './conflictResolver';
+import { resolveConflict, SyncVersion, ConflictResult, VersionVector } from './conflictResolver';
 
 export interface SyncRecord {
   id: string;
@@ -11,6 +11,7 @@ export interface SyncRecord {
   encryptedPayload: Buffer;
   updatedAt: number;
   deleted: number;
+  deviceVersion: VersionVector;
 }
 
 export interface SyncRecordManifestItem {
@@ -43,6 +44,7 @@ function toSyncVersion(record: SyncRecord): SyncVersion {
     id: record.id,
     updatedAt: record.updatedAt,
     version: record.version,
+    deviceVersion: record.deviceVersion,
   };
 }
 
@@ -57,14 +59,16 @@ export function insertSyncRecord(record: SyncRecord, db?: Database.Database): Co
     }
   }
 
+  const deviceVersionJson = JSON.stringify(record.deviceVersion ?? {});
   const stmt = resolvedDb.prepare(`
-    INSERT INTO sync_records (id, table_name, record_id, version, encrypted_payload, updated_at, deleted)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO sync_records (id, table_name, record_id, version, encrypted_payload, updated_at, deleted, device_version)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET
       version = excluded.version,
       encrypted_payload = excluded.encrypted_payload,
       updated_at = excluded.updated_at,
-      deleted = excluded.deleted
+      deleted = excluded.deleted,
+      device_version = excluded.device_version
   `);
   stmt.run(
     record.id,
@@ -73,7 +77,8 @@ export function insertSyncRecord(record: SyncRecord, db?: Database.Database): Co
     record.version,
     record.encryptedPayload,
     record.updatedAt,
-    record.deleted
+    record.deleted,
+    deviceVersionJson
   );
   return 'remote';
 }
@@ -126,7 +131,18 @@ function rowToSyncRecord(row: any): SyncRecord {
     encryptedPayload: row.encrypted_payload,
     updatedAt: row.updated_at,
     deleted: row.deleted,
+    deviceVersion: parseDeviceVersion(row.device_version),
   };
+}
+
+function parseDeviceVersion(value: unknown): VersionVector {
+  if (typeof value !== 'string') return {};
+  try {
+    const parsed = JSON.parse(value);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
 }
 
 export function registerSyncDevice(

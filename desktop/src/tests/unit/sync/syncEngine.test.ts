@@ -82,6 +82,7 @@ describe('syncEngine', () => {
       encryptedPayload: Buffer.from('encrypted-task'),
       updatedAt: 1000,
       deleted: 0,
+      deviceVersion: {},
     };
 
     const storeA = createMemoryStore([record]);
@@ -136,6 +137,7 @@ describe('syncEngine', () => {
       encryptedPayload: Buffer.from('older'),
       updatedAt: 1000,
       deleted: 0,
+      deviceVersion: {},
     };
     const remoteRecord: SyncRecord = {
       id: 'tasks:1:v1',
@@ -145,6 +147,7 @@ describe('syncEngine', () => {
       encryptedPayload: Buffer.from('newer'),
       updatedAt: 2000,
       deleted: 0,
+      deviceVersion: {},
     };
 
     const storeA = createMemoryStore([remoteRecord]);
@@ -317,6 +320,7 @@ describe('syncEngine', () => {
       encryptedPayload: Buffer.from('newer'),
       updatedAt: 2000,
       deleted: 0,
+      deviceVersion: {},
     };
     const store = createMemoryStore([localRecord]);
     const session = new MockSyncSession();
@@ -402,6 +406,7 @@ describe('syncEngine', () => {
       encryptedPayload: Buffer.from(`payload-${i}`),
       updatedAt: 1000,
       deleted: 0,
+      deviceVersion: {},
     }));
     const store = createMemoryStore(records);
     const session = new MockSyncSession();

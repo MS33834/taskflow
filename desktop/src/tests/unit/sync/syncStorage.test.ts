@@ -45,6 +45,7 @@ describe('syncStorage', () => {
       encryptedPayload: Buffer.from('encrypted-data'),
       updatedAt: Date.now(),
       deleted: 0,
+      deviceVersion: {},
     });
 
     const records = getSyncRecordsForTable('tasks');
@@ -62,6 +63,7 @@ describe('syncStorage', () => {
       encryptedPayload: Buffer.from('encrypted-data'),
       updatedAt: now,
       deleted: 0,
+      deviceVersion: {},
     });
 
     const manifest = getSyncRecordManifest('tasks');
@@ -108,6 +110,7 @@ describe('syncStorage', () => {
       encryptedPayload: payload,
       updatedAt: Date.now(),
       deleted: 0,
+      deviceVersion: {},
     });
 
     const manifest = getSyncRecordManifest('tasks');
@@ -126,6 +129,7 @@ describe('syncStorage', () => {
       encryptedPayload: Buffer.from('newer'),
       updatedAt: 2000,
       deleted: 0,
+      deviceVersion: {},
     });
 
     const result = insertSyncRecord({
@@ -136,6 +140,7 @@ describe('syncStorage', () => {
       encryptedPayload: Buffer.from('older'),
       updatedAt: 1000,
       deleted: 0,
+      deviceVersion: {},
     });
 
     expect(result).toBe('local');
@@ -152,6 +157,7 @@ describe('syncStorage', () => {
       encryptedPayload: Buffer.from('older'),
       updatedAt: 1000,
       deleted: 0,
+      deviceVersion: {},
     });
 
     const result = insertSyncRecord({
@@ -162,6 +168,7 @@ describe('syncStorage', () => {
       encryptedPayload: Buffer.from('newer'),
       updatedAt: 2000,
       deleted: 0,
+      deviceVersion: {},
     });
 
     expect(result).toBe('remote');
@@ -253,6 +260,7 @@ describe('syncStorage', () => {
       encryptedPayload: Buffer.from('encrypted-data'),
       updatedAt: Date.now(),
       deleted: 0,
+      deviceVersion: {},
     });
     insertSyncRecord({
       id: 'tasks:6:v1',
@@ -262,6 +270,7 @@ describe('syncStorage', () => {
       encryptedPayload: Buffer.from('encrypted-data'),
       updatedAt: Date.now(),
       deleted: 0,
+      deviceVersion: {},
     });
 
     const records = getSyncRecordsByIds(['tasks:5:v1', 'tasks:6:v1']);
