@@ -6,6 +6,7 @@ import type { Task, VaultItem } from '../../../shared/types';
 export interface SyncRecordWriterOptions {
   smk: Buffer;
   db?: Database.Database;
+  deviceId?: string;
 }
 
 export function writeTaskSyncRecord(task: Task, opts: SyncRecordWriterOptions): void {
@@ -50,6 +51,9 @@ function writeRecord(
   const encryptedPayload = encryptSyncRecord(payload, opts.smk);
   const id = `${tableName}:${recordId}:v${version}`;
   const updatedAtMs = new Date(updatedAt).getTime();
+  const deviceVersion: Record<string, number> = opts.deviceId
+    ? { [opts.deviceId]: version }
+    : {};
   insertSyncRecord(
     {
       id,
@@ -59,6 +63,7 @@ function writeRecord(
       encryptedPayload,
       updatedAt: updatedAtMs,
       deleted: 0,
+      deviceVersion,
     },
     opts.db
   );
@@ -72,6 +77,9 @@ export function writeDeletedSyncRecord(
   const version = incrementSyncClock(opts.db);
   const encryptedPayload = encryptSyncRecord({ id: recordId, deleted: true }, opts.smk);
   const id = `${tableName}:${recordId}:v${version}`;
+  const deviceVersion: Record<string, number> = opts.deviceId
+    ? { [opts.deviceId]: version }
+    : {};
   insertSyncRecord(
     {
       id,
@@ -81,6 +89,7 @@ export function writeDeletedSyncRecord(
       encryptedPayload,
       updatedAt: Date.now(),
       deleted: 1,
+      deviceVersion,
     },
     opts.db
   );

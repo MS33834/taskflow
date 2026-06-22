@@ -22,7 +22,7 @@ import {
   updateLastSyncAt,
   listSyncDevices,
 } from './syncStorage';
-import { resolveConflict } from './conflictResolver';
+import { resolveConflict, ConflictResult } from './conflictResolver';
 import { applySyncRecord } from './syncRecordApplier';
 
 export interface SyncStore {
@@ -185,6 +185,7 @@ export class SyncEngine extends EventEmitter {
       encryptedPayload: r.encryptedPayload.toString('base64'),
       updatedAt: r.updatedAt,
       deleted: r.deleted,
+      deviceVersion: r.deviceVersion,
     }));
     for (let i = 0; i < wireRecords.length; i += MAX_RECORDS_PER_BATCH) {
       const chunk = wireRecords.slice(i, i + MAX_RECORDS_PER_BATCH);
@@ -226,23 +227,42 @@ export class SyncEngine extends EventEmitter {
         encryptedPayload: Buffer.from(wire.encryptedPayload, 'base64'),
         updatedAt: wire.updatedAt,
         deleted: wire.deleted,
+        deviceVersion: wire.deviceVersion ?? {},
       };
 
       const local = this.store.getRecordById(record.id);
       let apply = false;
+      let decision: ConflictResult = 'remote';
       if (!local) {
         apply = true;
       } else {
-        const decision = resolveConflict(
-          { id: local.id, updatedAt: local.updatedAt, version: local.version },
-          { id: record.id, updatedAt: record.updatedAt, version: record.version }
+        decision = resolveConflict(
+          {
+            id: local.id,
+            updatedAt: local.updatedAt,
+            version: local.version,
+            deviceVersion: local.deviceVersion,
+          },
+          {
+            id: record.id,
+            updatedAt: record.updatedAt,
+            version: record.version,
+            deviceVersion: record.deviceVersion,
+          }
         );
-        apply = decision === 'remote';
+        apply = decision === 'remote' || decision === 'concurrent';
       }
 
       if (apply) {
         this.store.insertRecord(record);
         this.store.applyRecord(record, this.smk);
+      }
+      if (decision === 'concurrent') {
+        this.emit('concurrentWrite', {
+          recordId: record.id,
+          localDeviceVersion: local?.deviceVersion ?? {},
+          remoteDeviceVersion: record.deviceVersion,
+        });
       }
       receivedIds.push(record.id);
       this.pendingRequests.delete(record.id);

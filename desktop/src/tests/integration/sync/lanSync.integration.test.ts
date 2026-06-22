@@ -75,6 +75,7 @@ describe('LAN sync integration', () => {
       encryptedPayload: encryptSyncRecord(taskPayload, dbKey),
       updatedAt: 1000,
       deleted: 0,
+      deviceVersion: {},
     };
     insertSyncRecord(record);
 

@@ -41,6 +41,7 @@ export interface WireSyncRecord {
   encryptedPayload: string;
   updatedAt: number;
   deleted: number;
+  deviceVersion?: Record<string, number>;
 }
 
 export interface BatchMessage {
@@ -150,18 +151,32 @@ export function isRequestMessage(msg: unknown): msg is RequestMessage {
   );
 }
 
+function isVersionVector(value: unknown): value is Record<string, number> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  return Object.entries(value).every(([k, v]) => typeof k === 'string' && typeof v === 'number');
+}
+
 export function isWireSyncRecord(record: unknown): record is WireSyncRecord {
-  return (
-    typeof record === 'object' &&
-    record !== null &&
-    typeof (record as WireSyncRecord).id === 'string' &&
-    typeof (record as WireSyncRecord).tableName === 'string' &&
-    typeof (record as WireSyncRecord).recordId === 'string' &&
-    typeof (record as WireSyncRecord).version === 'number' &&
-    typeof (record as WireSyncRecord).encryptedPayload === 'string' &&
-    typeof (record as WireSyncRecord).updatedAt === 'number' &&
-    typeof (record as WireSyncRecord).deleted === 'number'
-  );
+  if (
+    !(
+      typeof record === 'object' &&
+      record !== null &&
+      typeof (record as WireSyncRecord).id === 'string' &&
+      typeof (record as WireSyncRecord).tableName === 'string' &&
+      typeof (record as WireSyncRecord).recordId === 'string' &&
+      typeof (record as WireSyncRecord).version === 'number' &&
+      typeof (record as WireSyncRecord).encryptedPayload === 'string' &&
+      typeof (record as WireSyncRecord).updatedAt === 'number' &&
+      typeof (record as WireSyncRecord).deleted === 'number'
+    )
+  ) {
+    return false;
+  }
+  const deviceVersion = (record as WireSyncRecord).deviceVersion;
+  if (deviceVersion !== undefined && !isVersionVector(deviceVersion)) {
+    return false;
+  }
+  return true;
 }
 
 export function isBatchMessage(msg: unknown): msg is BatchMessage {

@@ -61,6 +61,7 @@ describe('syncRecordApplier', () => {
       encryptedPayload,
       updatedAt: Date.now(),
       deleted: 0,
+      deviceVersion: {},
     });
 
     applySyncRecord(
@@ -72,6 +73,7 @@ describe('syncRecordApplier', () => {
         encryptedPayload,
         updatedAt: Date.now(),
         deleted: 0,
+        deviceVersion: {},
       },
       { smk }
     );
@@ -102,6 +104,7 @@ describe('syncRecordApplier', () => {
         encryptedPayload,
         updatedAt: Date.now(),
         deleted: 1,
+        deviceVersion: {},
       },
       { smk }
     );
