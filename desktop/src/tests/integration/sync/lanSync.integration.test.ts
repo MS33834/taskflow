@@ -9,6 +9,7 @@ import { SyncSession } from '../../../main/services/sync/syncSession';
 import { TcpSyncTransport } from '../../../main/services/sync/syncTransports';
 import { SyncEngine, createDbSyncStore } from '../../../main/services/sync/syncEngine';
 import { insertSyncRecord } from '../../../main/services/sync/syncStorage';
+import { encryptSyncRecord } from '../../../main/services/sync/syncCrypto';
 
 vi.mock('electron', () => ({
   app: {
@@ -57,12 +58,21 @@ describe('LAN sync integration', () => {
 
     const dbA = openDatabase(dbKey, dbAPath);
     runMigrations();
+    const taskPayload = {
+      id: '1',
+      title: 'Test task',
+      priority: 'medium',
+      status: 'todo',
+      tagIds: [],
+      createdAt: '2024-01-01T00:00:00.000Z',
+      updatedAt: '2024-01-01T00:00:00.000Z',
+    };
     const record = {
       id: 'tasks:1:v1',
       tableName: 'tasks',
       recordId: '1',
       version: 1,
-      encryptedPayload: Buffer.from('encrypted-task-payload'),
+      encryptedPayload: encryptSyncRecord(taskPayload, dbKey),
       updatedAt: 1000,
       deleted: 0,
     };
