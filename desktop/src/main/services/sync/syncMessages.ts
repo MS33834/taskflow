@@ -59,6 +59,11 @@ export interface ErrorMessage {
   message: string;
 }
 
+export interface SmkTransferMessage {
+  type: 'SMK_TRANSFER';
+  encryptedSmk: string;
+}
+
 export type SyncMessage =
   | HelloMessage
   | OfferMessage
@@ -67,7 +72,8 @@ export type SyncMessage =
   | RequestMessage
   | BatchMessage
   | AckMessage
-  | ErrorMessage;
+  | ErrorMessage
+  | SmkTransferMessage;
 
 const MESSAGE_TYPES = [
   'HELLO',
@@ -78,7 +84,12 @@ const MESSAGE_TYPES = [
   'BATCH',
   'ACK',
   'ERROR',
+  'SMK_TRANSFER',
 ];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
 
 export function isHelloMessage(msg: unknown): msg is HelloMessage {
   return (
@@ -183,6 +194,10 @@ export function isErrorMessage(msg: unknown): msg is ErrorMessage {
   );
 }
 
+export function isSmkTransferMessage(msg: unknown): msg is SmkTransferMessage {
+  return isRecord(msg) && msg.type === 'SMK_TRANSFER' && typeof msg.encryptedSmk === 'string';
+}
+
 export function isSyncMessage(obj: unknown): obj is SyncMessage {
   if (
     !(
@@ -212,6 +227,8 @@ export function isSyncMessage(obj: unknown): obj is SyncMessage {
       return isAckMessage(obj);
     case 'ERROR':
       return isErrorMessage(obj);
+    case 'SMK_TRANSFER':
+      return isSmkTransferMessage(obj);
     default:
       return false;
   }
