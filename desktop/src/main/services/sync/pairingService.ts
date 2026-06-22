@@ -1,3 +1,4 @@
+import Database from 'better-sqlite3-multiple-ciphers';
 import { RelayClient } from './relayClient';
 import { type DeviceIdentity } from './syncIdentity';
 import { SyncSession } from './syncSession';
@@ -8,7 +9,7 @@ import {
   loadSyncMasterKey,
   saveSyncMasterKey,
 } from './syncCrypto';
-import { registerSyncDevice } from './syncStorage';
+import { registerSyncDevice, type SyncDevice } from './syncStorage';
 import { SmkTransferMessage } from './syncMessages';
 
 export interface PairingCodeResult {
@@ -23,6 +24,11 @@ export interface TokenStorage {
 
 export interface PairingResult {
   peerDeviceId: string;
+}
+
+export interface PairingOptions {
+  db?: Database.Database;
+  smkPath?: string;
 }
 
 const PAIRING_TIMEOUT_MS = 120_000;
@@ -46,7 +52,8 @@ export function respondToPairing(
   wsUrl: string,
   token: string,
   pairingCode: string,
-  identity: DeviceIdentity
+  identity: DeviceIdentity,
+  options?: PairingOptions
 ): Promise<PairingResult> {
   return new Promise((resolve, reject) => {
     const transport = new RelayTransport({
@@ -64,7 +71,7 @@ export function respondToPairing(
         const finish = createFinisher(resolve, reject, transport, timeout);
         session.once('ready', () => {
           try {
-            const smk = loadSyncMasterKey();
+            const smk = loadSmk(options?.smkPath);
             if (!smk) {
               throw new Error('sync master key not found');
             }
@@ -83,12 +90,15 @@ export function respondToPairing(
             if (!peer) {
               throw new Error('missing peer identity');
             }
-            registerSyncDevice({
-              deviceId: peer.deviceId,
-              publicKey: peer.publicKey,
-              name: `Device-${peer.deviceId.slice(0, 4)}`,
-              pairedAt: Date.now(),
-            });
+            registerDevice(
+              {
+                deviceId: peer.deviceId,
+                publicKey: peer.publicKey,
+                name: `Device-${peer.deviceId.slice(0, 4)}`,
+                pairedAt: Date.now(),
+              },
+              options?.db
+            );
 
             finish({ peerDeviceId: peer.deviceId }, undefined);
           } catch (err) {
@@ -108,7 +118,8 @@ export async function claimPairingCodeAndPair(
   relayUrl: string,
   identity: DeviceIdentity,
   code: string,
-  tokenStorage: TokenStorage
+  tokenStorage: TokenStorage,
+  options?: PairingOptions
 ): Promise<PairingResult> {
   const client = new RelayClient(relayUrl);
   const claim = await client.claimPairingCode(identity, code);
@@ -142,18 +153,21 @@ export async function claimPairingCodeAndPair(
               throw new Error('session keys not ready');
             }
             const smk = decryptSessionMessage(Buffer.from(msg.encryptedSmk, 'base64'), receiveKey);
-            saveSyncMasterKey(smk);
+            saveSmk(smk, options?.smkPath);
 
             const peer = session.getPeerIdentity();
             if (!peer) {
               throw new Error('missing peer identity');
             }
-            registerSyncDevice({
-              deviceId: peer.deviceId,
-              publicKey: peer.publicKey,
-              name: `Device-${peer.deviceId.slice(0, 4)}`,
-              pairedAt: Date.now(),
-            });
+            registerDevice(
+              {
+                deviceId: peer.deviceId,
+                publicKey: peer.publicKey,
+                name: `Device-${peer.deviceId.slice(0, 4)}`,
+                pairedAt: Date.now(),
+              },
+              options?.db
+            );
 
             finish({ peerDeviceId: peer.deviceId }, undefined);
           } catch (err) {
@@ -187,6 +201,26 @@ function createFinisher(
       reject(error);
     }
   };
+}
+
+function loadSmk(smkPath?: string): Buffer | null {
+  return smkPath ? loadSyncMasterKey(smkPath) : loadSyncMasterKey();
+}
+
+function saveSmk(smk: Buffer, smkPath?: string): void {
+  if (smkPath) {
+    saveSyncMasterKey(smk, smkPath);
+  } else {
+    saveSyncMasterKey(smk);
+  }
+}
+
+function registerDevice(device: Omit<SyncDevice, 'lastSeenAt'> & { lastSeenAt?: number }, db?: Database.Database): void {
+  if (db) {
+    registerSyncDevice(device, db);
+  } else {
+    registerSyncDevice(device);
+  }
 }
 
 function appendPairingCodeToUrl(wsUrl: string, pairingCode: string): string {
