@@ -44,5 +44,6 @@ export const IPC_CHANNELS = {
     SYNC_NOW: 'sync:syncNow',
     ON_STATE_CHANGED: 'sync:onStateChanged',
     ON_STATUS_CHANGED: 'sync:onStatusChanged',
+    ON_PEER_STATE_CHANGED: 'sync:onPeerStateChanged',
   },
 } as const;

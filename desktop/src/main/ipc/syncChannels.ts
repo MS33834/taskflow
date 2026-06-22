@@ -1,6 +1,6 @@
 import { ipcMain, BrowserWindow } from 'electron';
 import { IPC_CHANNELS } from '../../shared/constants';
-import type { SyncState } from '../../shared/types';
+import type { SyncState, SyncPeerInfo } from '../../shared/types';
 import {
   getSyncSettings,
   setSyncSettings,
@@ -83,6 +83,12 @@ export function notifySyncStateChanged(): void {
   const state = buildSyncState();
   for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send(IPC_CHANNELS.SYNC.ON_STATE_CHANGED, state);
+  }
+}
+
+export function notifySyncPeerStateChanged(peers: SyncPeerInfo[]): void {
+  for (const window of BrowserWindow.getAllWindows()) {
+    window.webContents.send(IPC_CHANNELS.SYNC.ON_PEER_STATE_CHANGED, peers);
   }
 }
 

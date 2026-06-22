@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { SyncState, SyncDeviceInfo } from '../../shared/types';
+import type { SyncState, SyncDeviceInfo, SyncPeerInfo, PeerState } from '../../shared/types';
 
 interface PairingCodeInfo {
   code: string;
@@ -11,6 +11,7 @@ interface SyncStoreState extends SyncState {
   pairingCode: PairingCodeInfo | null;
   dialogMode: 'none' | 'host' | 'join';
   error: string | null;
+  peers: SyncPeerInfo[];
   fetch: () => Promise<void>;
   setEnabled: (enabled: boolean) => Promise<void>;
   setRelayUrl: (url: string) => Promise<void>;
@@ -20,6 +21,7 @@ interface SyncStoreState extends SyncState {
   setDialogMode: (mode: 'none' | 'host' | 'join') => void;
   clearError: () => void;
   setStateFromPush: (state: SyncState) => void;
+  setPeers: (peers: SyncPeerInfo[]) => void;
 }
 
 export const useSyncStore = create<SyncStoreState>((set, get) => ({
@@ -31,6 +33,7 @@ export const useSyncStore = create<SyncStoreState>((set, get) => ({
   pairingCode: null,
   dialogMode: 'none',
   error: null,
+  peers: [],
 
   fetch: async () => {
     const state = await window.taskflowAPI.sync.getState();
@@ -90,6 +93,10 @@ export const useSyncStore = create<SyncStoreState>((set, get) => ({
   setStateFromPush: (state) => {
     set({ ...state, isLoading: false });
   },
+
+  setPeers: (peers) => {
+    set({ peers });
+  },
 }));
 
 export function formatLastSeen(timestamp: number | null): string {
@@ -103,4 +110,4 @@ export function formatLastSeen(timestamp: number | null): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
-export type { SyncDeviceInfo };
+export type { SyncDeviceInfo, SyncPeerInfo, PeerState };
