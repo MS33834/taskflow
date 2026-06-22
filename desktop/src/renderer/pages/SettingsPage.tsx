@@ -5,6 +5,7 @@ import { useThemeStore, type ThemeMode } from '../store/themeStore';
 import { useSecuritySettingsStore } from '../store/securitySettingsStore';
 import { useTaskStore } from '../store/taskStore';
 import { useVaultStore } from '../store/vaultStore';
+import { SyncSettingsPanel } from '../components/sync/SyncSettingsPanel';
 import type { SecuritySettings } from '../../shared/types';
 
 const themeLabels: Record<ThemeMode, string> = {
@@ -201,6 +202,10 @@ export function SettingsPage() {
           <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
             备份文件使用当前主密钥加密，仅能通过相同的解锁密码恢复。
           </p>
+        </div>
+        <div>
+          <h2 className="mb-3 font-medium text-slate-800 dark:text-slate-100">同步</h2>
+          <SyncSettingsPanel />
         </div>
       </div>
     </div>
