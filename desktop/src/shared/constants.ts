@@ -41,6 +41,8 @@ export const IPC_CHANNELS = {
     GENERATE_PAIRING_CODE: 'sync:generatePairingCode',
     CLAIM_PAIRING_CODE: 'sync:claimPairingCode',
     REMOVE_DEVICE: 'sync:removeDevice',
+    SYNC_NOW: 'sync:syncNow',
     ON_STATE_CHANGED: 'sync:onStateChanged',
+    ON_STATUS_CHANGED: 'sync:onStatusChanged',
   },
 } as const;
