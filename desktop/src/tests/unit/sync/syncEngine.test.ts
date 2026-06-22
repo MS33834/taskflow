@@ -38,6 +38,7 @@ function createMemoryStore(initial: SyncRecord[] = []): SyncStore {
       ids.map((id) => records.get(id)).filter((r): r is SyncRecord => !!r),
     getRecordById: (id) => records.get(id) ?? null,
     insertRecord: (r) => records.set(r.id, r),
+    applyRecord: () => {},
     listDevices: () => [],
     updateLastSyncAt: () => {},
   };

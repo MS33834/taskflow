@@ -23,12 +23,14 @@ import {
   listSyncDevices,
 } from './syncStorage';
 import { resolveConflict } from './conflictResolver';
+import { applySyncRecord } from './syncRecordApplier';
 
 export interface SyncStore {
   getManifest(tableName?: string): SyncRecordManifestItem[];
   getRecordsByIds(ids: string[]): SyncRecord[];
   getRecordById(id: string): SyncRecord | null;
   insertRecord(record: SyncRecord): void;
+  applyRecord(record: SyncRecord, smk: Buffer): void;
   listDevices(): SyncDevice[];
   updateLastSyncAt(timestamp: number): void;
 }
@@ -39,6 +41,7 @@ export function createDbSyncStore(db: Database.Database): SyncStore {
     getRecordsByIds: (ids) => getSyncRecordsByIds(ids, db),
     getRecordById: (id) => getSyncRecordById(id, db),
     insertRecord: (record) => insertSyncRecord(record, db),
+    applyRecord: (record, smk) => applySyncRecord(record, { smk, db }),
     listDevices: () => listSyncDevices(db),
     updateLastSyncAt: (timestamp) => updateLastSyncAt(timestamp, db),
   };
@@ -229,6 +232,7 @@ export class SyncEngine extends EventEmitter {
 
       if (apply) {
         this.store.insertRecord(record);
+        this.store.applyRecord(record, this.smk);
       }
       receivedIds.push(record.id);
       this.pendingRequests.delete(record.id);
