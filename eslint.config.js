@@ -11,21 +11,31 @@ module.exports = [
   {
     ignores: [
       'node_modules/**',
+      '**/node_modules/**',
       'dist/**',
+      '**/dist/**',
       'web-build/**',
+      '**/web-build/**',
       '.expo/**',
+      '**/.expo/**',
       '.expo-shared/**',
+      '**/.expo-shared/**',
       'android/**',
+      '**/android/**',
       'ios/**',
+      '**/ios/**',
       'coverage/**',
+      '**/coverage/**',
       '**/*.min.js',
       '.trae/**', // internal IDE tooling, not part of the app
+      '.trae/documents/**',
       'scripts/inject-cache-buster.js', // run in CI, not part of app source
       'desktop/**', // separate sub-project with its own toolchain
       'backend/**', // separate sub-project with its own toolchain
       'backend/.venv/**',
       'backend/**/__pycache__/**',
       'backend/data/**',
+      '**/scripts/fallback-index.html',
     ],
   },
 

@@ -2498,6 +2498,7 @@ export const useAppStore = create<AppStore>((set, get) => ({
       assertArray(parsed.notes, 'notes');
 
       // 校验通过后恢复原有的 any 行为，避免破坏已有的宽松类型推断。
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const importData = parsed as Record<string, any>;
 
       if (importData.tasks) {

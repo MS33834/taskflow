@@ -67,7 +67,9 @@ export function attachWsRelay(
       connections.remove(ws);
       try {
         ws.terminate();
-      } catch {}
+      } catch {
+        /* ignore terminate errors on already-closed sockets */
+      }
     });
   });
 

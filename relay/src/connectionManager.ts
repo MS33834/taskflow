@@ -13,7 +13,9 @@ export class ConnectionManager {
     if (existing && existing !== ws) {
       try {
         existing.close(1000, 'superseded');
-      } catch {}
+      } catch {
+        /* ignore close errors on stale connections */
+      }
     }
     this.connections.set(key, ws);
 
