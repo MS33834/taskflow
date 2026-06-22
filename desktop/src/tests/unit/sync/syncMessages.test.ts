@@ -9,6 +9,7 @@ import {
   isHelloMessage,
   isOfferMessage,
   isBatchMessage,
+  isSmkTransferMessage,
 } from '../../../main/services/sync/syncMessages';
 
 describe('syncMessages', () => {
@@ -94,11 +95,23 @@ describe('syncMessages', () => {
     expect(() => deserializeMessage(buf)).toThrow('Invalid sync message');
   });
 
+  it('round-trips an SMK_TRANSFER message', () => {
+    const msg = {
+      type: 'SMK_TRANSFER' as const,
+      encryptedSmk: Buffer.from('encrypted-key').toString('base64'),
+    };
+    const recovered = deserializeMessage(serializeMessage(msg));
+    expect(recovered).toEqual(msg);
+  });
+
   it('validates message shape with type guards', () => {
     expect(isHelloMessage({ type: 'HELLO', deviceId: 'a', publicKey: 'b', nonce: 'c' })).toBe(true);
     expect(isHelloMessage({ type: 'HELLO', deviceId: 'a' })).toBe(false);
     expect(isOfferMessage({ type: 'OFFER', signedPayload: 'payload' })).toBe(true);
     expect(isOfferMessage({ type: 'OFFER', encryptedPayload: 'payload' })).toBe(false);
     expect(isBatchMessage({ type: 'BATCH', records: [] })).toBe(true);
+    expect(isSmkTransferMessage({ type: 'SMK_TRANSFER', encryptedSmk: 'payload' })).toBe(true);
+    expect(isSmkTransferMessage({ type: 'SMK_TRANSFER' })).toBe(false);
+    expect(isSmkTransferMessage({ type: 'UNKNOWN', encryptedSmk: 'payload' })).toBe(false);
   });
 });

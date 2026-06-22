@@ -37,3 +37,18 @@ export interface SecuritySettings {
   screenshotProtection: boolean;
   privacyModeEnabled: boolean;
 }
+
+export interface SyncDeviceInfo {
+  deviceId: string;
+  publicKey: string;
+  name: string | null;
+  pairedAt: number;
+  lastSeenAt: number | null;
+}
+
+export interface SyncState {
+  enabled: boolean;
+  relayUrl: string;
+  devices: SyncDeviceInfo[];
+  lastSyncAt: number | null;
+}

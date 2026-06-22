@@ -53,7 +53,8 @@ async function createPairingCode(
 async function claimPairingCode(
   app: ReturnType<typeof createRelayServer>['app'],
   code: string,
-  identity: ReturnType<typeof createIdentity>
+  identity: ReturnType<typeof createIdentity>,
+  hostIdentity: ReturnType<typeof createIdentity>
 ) {
   const timestamp = nowSeconds();
   const signature = signMessage(
@@ -64,6 +65,7 @@ async function claimPairingCode(
     .post('/claim-pairing-code')
     .send({ code, deviceId: identity.deviceId, publicKey: identity.publicKey, timestamp, signature });
   expect(res.status).toBe(200);
+  expect(res.body.pairedDeviceId).toBe(hostIdentity.deviceId);
   return res.body.token as string;
 }
 
@@ -73,6 +75,30 @@ function connectWs(port: number, token: string, targetDeviceId: string): Promise
       `ws://127.0.0.1:${port}/sync?target=${encodeURIComponent(targetDeviceId)}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
+    const timer = setTimeout(() => reject(new Error('websocket connection timeout')), 2000);
+    ws.on('open', () => {
+      clearTimeout(timer);
+      resolve(ws);
+    });
+    ws.on('error', (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+  });
+}
+
+function connectPairingWs(
+  port: number,
+  token: string,
+  pairingCode: string,
+  targetDeviceId?: string
+): Promise<WebSocket> {
+  return new Promise((resolve, reject) => {
+    let url = `ws://127.0.0.1:${port}/sync?pairingCode=${encodeURIComponent(pairingCode)}`;
+    if (targetDeviceId) {
+      url += `&target=${encodeURIComponent(targetDeviceId)}`;
+    }
+    const ws = new WebSocket(url, { headers: { Authorization: `Bearer ${token}` } });
     const timer = setTimeout(() => reject(new Error('websocket connection timeout')), 2000);
     ws.on('open', () => {
       clearTimeout(timer);
@@ -145,7 +171,7 @@ describe('RelayServer', () => {
     expect(code).toMatch(/^\d{8}$/);
 
     const newest = createIdentity();
-    const newToken = await claimPairingCode(relay.app, code, newest);
+    const newToken = await claimPairingCode(relay.app, code, newest, existing);
     expect(newToken).toBeDefined();
   });
 
@@ -165,7 +191,7 @@ describe('RelayServer', () => {
       .send({ code, deviceId: newest.deviceId, publicKey: newest.publicKey, timestamp, signature: badSignature });
     expect(bad.status).toBe(401);
 
-    const token = await claimPairingCode(relay.app, code, newest);
+    const token = await claimPairingCode(relay.app, code, newest, existing);
     expect(token).toBeDefined();
   });
 
@@ -260,5 +286,30 @@ describe('RelayServer', () => {
       ws.on('close', (c) => resolve(c));
     });
     expect(code).toBe(4001);
+  });
+
+  it('forwards frames between devices in a pairing room', async () => {
+    const host = createIdentity();
+    const joiner = createIdentity();
+    const hostToken = await registerDevice(relay.app, host);
+    const joinerToken = await registerDevice(relay.app, joiner);
+
+    const hostReceived = new Promise<Buffer>((resolve, reject) => {
+      setTimeout(() => reject(new Error('timeout waiting for pairing frame')), 2000);
+      connectPairingWs(port, hostToken, 'PAIR-CODE').then((ws) => {
+        ws.once('message', (data) => resolve(Buffer.isBuffer(data) ? data : Buffer.from(data as ArrayBuffer)));
+      });
+    });
+
+    const joinerWs = await connectPairingWs(port, joinerToken, 'PAIR-CODE', host.deviceId);
+    const payload = Buffer.from(JSON.stringify({ type: 'HELLO', deviceId: joiner.deviceId }));
+    joinerWs.send(encodeFrame(0, payload));
+
+    const received = await hostReceived;
+    expect(received.subarray(0, 1).readUInt8(0)).toBe(0);
+    const len = received.readUInt32BE(1);
+    expect(JSON.parse(received.subarray(5, 5 + len).toString('utf8')).deviceId).toBe(joiner.deviceId);
+
+    joinerWs.close();
   });
 });

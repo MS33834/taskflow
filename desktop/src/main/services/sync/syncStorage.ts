@@ -182,6 +182,11 @@ export function removeSyncDevice(deviceId: string, db?: Database.Database): void
   stmt.run(deviceId);
 }
 
+export function clearSyncDevices(db?: Database.Database): void {
+  const resolvedDb = resolveDb(db);
+  resolvedDb.prepare('DELETE FROM sync_devices').run();
+}
+
 export function getTrustedPublicKey(deviceId: string, db?: Database.Database): string | undefined {
   return getSyncDevice(deviceId, db)?.publicKey;
 }

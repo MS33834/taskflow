@@ -6,6 +6,7 @@ import { registerTaskChannels } from './ipc/taskChannels';
 import { registerVaultChannels } from './ipc/vaultChannels';
 import { registerBackupChannels } from './ipc/backupChannels';
 import { registerBiometricChannels } from './ipc/biometricChannels';
+import { registerSyncIpc } from './ipc/syncChannels';
 import { initializeSecuritySettings } from './repositories/securitySettingsRepository';
 import {
   getCurrentSettings,
@@ -57,6 +58,7 @@ app.whenReady().then(() => {
   registerVaultChannels();
   registerBackupChannels();
   registerBiometricChannels();
+  registerSyncIpc();
 });
 
 app.on('window-all-closed', () => {

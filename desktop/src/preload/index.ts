@@ -1,6 +1,6 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron';
 import { IPC_CHANNELS } from '../shared/constants';
-import type { Task, VaultItem, SecuritySettings } from '../shared/types';
+import type { Task, VaultItem, SecuritySettings, SyncState } from '../shared/types';
 
 type AppEventChannel = 'app:lock' | 'app:newTask' | 'app:togglePrivacy';
 type EventCallback = () => void;
@@ -50,6 +50,19 @@ const api = {
       ipcRenderer.invoke(IPC_CHANNELS.BACKUP.EXPORT, defaultFileName),
     importBackup: (password: string, newPassword?: string) =>
       ipcRenderer.invoke(IPC_CHANNELS.BACKUP.IMPORT, password, newPassword),
+  },
+  sync: {
+    getState: () => ipcRenderer.invoke(IPC_CHANNELS.SYNC.GET_STATE),
+    setEnabled: (enabled: boolean) => ipcRenderer.invoke(IPC_CHANNELS.SYNC.SET_ENABLED, enabled),
+    setRelayUrl: (url: string) => ipcRenderer.invoke(IPC_CHANNELS.SYNC.SET_RELAY_URL, url),
+    generatePairingCode: () => ipcRenderer.invoke(IPC_CHANNELS.SYNC.GENERATE_PAIRING_CODE),
+    claimPairingCode: (code: string) => ipcRenderer.invoke(IPC_CHANNELS.SYNC.CLAIM_PAIRING_CODE, code),
+    removeDevice: (deviceId: string) => ipcRenderer.invoke(IPC_CHANNELS.SYNC.REMOVE_DEVICE, deviceId),
+    onStateChanged: (callback: (state: SyncState) => void) => {
+      const listener = (_event: IpcRendererEvent, state: SyncState) => callback(state);
+      ipcRenderer.on(IPC_CHANNELS.SYNC.ON_STATE_CHANGED, listener);
+      return () => ipcRenderer.off(IPC_CHANNELS.SYNC.ON_STATE_CHANGED, listener);
+    },
   },
   app: {
     on: (channel: AppEventChannel, callback: EventCallback) => {
