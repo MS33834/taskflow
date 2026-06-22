@@ -52,3 +52,10 @@ export interface SyncState {
   devices: SyncDeviceInfo[];
   lastSyncAt: number | null;
 }
+
+export interface SyncStatusInfo {
+  state: 'idle' | 'syncing' | 'error';
+  lastSyncAt: number | null;
+  targetDeviceId?: string;
+  error: string | null;
+}
