@@ -88,6 +88,16 @@ export class SyncEngine extends EventEmitter {
     }
   }
 
+  public triggerSync(): void {
+    if (!this.session.isReady()) return;
+    this.localManifestSent = false;
+    this.remoteManifestReceived = false;
+    this.pendingRequests.clear();
+    this.pendingAcks.clear();
+    this.completed = false;
+    this.sendManifest();
+  }
+
   private sendManifest(): void {
     if (this.localManifestSent) return;
     const records: ManifestRecordItem[] = [];

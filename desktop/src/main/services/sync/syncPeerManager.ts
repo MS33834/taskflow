@@ -51,6 +51,16 @@ export class SyncPeerManager extends EventEmitter {
     };
   }
 
+  broadcastLocalChange(): void {
+    for (const peer of this.getPeers()) {
+      if (peer.state === 'idle' || peer.state === 'syncing') {
+        peer.state = 'syncing';
+        peer.engine.triggerSync();
+      }
+    }
+    this.emit('stateChanged', this.getState());
+  }
+
   private bindPeerEvents(peer: SyncPeer): void {
     peer.engine.on('complete', () => {
       peer.state = 'idle';
