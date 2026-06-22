@@ -34,4 +34,13 @@ export const IPC_CHANNELS = {
     EXPORT: 'backup:export',
     IMPORT: 'backup:import',
   },
+  SYNC: {
+    GET_STATE: 'sync:getState',
+    SET_ENABLED: 'sync:setEnabled',
+    SET_RELAY_URL: 'sync:setRelayUrl',
+    GENERATE_PAIRING_CODE: 'sync:generatePairingCode',
+    CLAIM_PAIRING_CODE: 'sync:claimPairingCode',
+    REMOVE_DEVICE: 'sync:removeDevice',
+    ON_STATE_CHANGED: 'sync:onStateChanged',
+  },
 } as const;

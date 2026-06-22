@@ -27,6 +27,7 @@ import {
 export interface SyncSessionOptions {
   identity: DeviceIdentity;
   isInitiator: boolean;
+  isPairing?: boolean;
   getTrustedPublicKey: (deviceId: string) => string | undefined;
 }
 
@@ -41,6 +42,7 @@ type SessionState =
 export class SyncSession extends EventEmitter {
   private identity: DeviceIdentity;
   private isInitiator: boolean;
+  private isPairing: boolean;
   private getTrustedPublicKey: (deviceId: string) => string | undefined;
   private state: SessionState = 'idle';
   private nonce: string;
@@ -55,6 +57,7 @@ export class SyncSession extends EventEmitter {
     super();
     this.identity = opts.identity;
     this.isInitiator = opts.isInitiator;
+    this.isPairing = opts.isPairing ?? false;
     this.getTrustedPublicKey = opts.getTrustedPublicKey;
     this.nonce = randomBytes(16).toString('base64');
   }
@@ -65,6 +68,19 @@ export class SyncSession extends EventEmitter {
 
   isReady(): boolean {
     return this.state === 'ready';
+  }
+
+  getSendKey(): Buffer | null {
+    return this.sendKey;
+  }
+
+  getReceiveKey(): Buffer | null {
+    return this.receiveKey;
+  }
+
+  getPeerIdentity(): { deviceId: string; publicKey: string } | null {
+    if (!this.peerDeviceId || !this.peerPublicKey) return null;
+    return { deviceId: this.peerDeviceId, publicKey: this.peerPublicKey };
   }
 
   begin(): void {
@@ -135,15 +151,18 @@ export class SyncSession extends EventEmitter {
   }
 
   private handleHello(msg: HelloMessage): void {
-    const trustedKey = this.getTrustedPublicKey(msg.deviceId);
-    if (!trustedKey) {
-      throw new Error(`Unknown device ${msg.deviceId}`);
-    }
-    if (trustedKey !== msg.publicKey) {
-      throw new Error(`Public key mismatch for ${msg.deviceId}`);
-    }
     if (getDeviceFingerprint(msg.publicKey) !== msg.deviceId) {
       throw new Error('DeviceId does not match public key fingerprint');
+    }
+
+    if (!this.isPairing) {
+      const trustedKey = this.getTrustedPublicKey(msg.deviceId);
+      if (!trustedKey) {
+        throw new Error(`Unknown device ${msg.deviceId}`);
+      }
+      if (trustedKey !== msg.publicKey) {
+        throw new Error(`Public key mismatch for ${msg.deviceId}`);
+      }
     }
 
     this.peerDeviceId = msg.deviceId;
