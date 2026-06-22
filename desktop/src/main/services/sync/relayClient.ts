@@ -6,6 +6,7 @@ export interface RelayRegisterResult {
   deviceId: string;
   token: string;
   wsUrl: string;
+  pairedDeviceId?: string;
 }
 
 export interface RelayPairingCodeResult {
@@ -63,7 +64,7 @@ export class RelayClient {
     code: string
   ): Promise<RelayRegisterResult> {
     const timestamp = Math.floor(Date.now() / 1000);
-    const message = buildAuthMessage(identity.deviceId, timestamp, 'claim-pairing-code');
+    const message = buildAuthMessage(identity.deviceId, timestamp, 'claim-pairing-code:' + code);
     const signature = sign(null, message, identity.privateKeyPem).toString('base64');
     const res = await fetch(`${this.baseUrl}/claim-pairing-code`, {
       method: 'POST',

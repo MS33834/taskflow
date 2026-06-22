@@ -80,7 +80,7 @@ export function createRoutes(store: RelayStore, publicWsUrl: string): Router {
     }
     store.registerDevice(deviceId, publicKey);
     const token = store.createToken(deviceId);
-    return res.status(200).json({ deviceId, token, wsUrl: publicWsUrl });
+    return res.status(200).json({ deviceId, token, wsUrl: publicWsUrl, pairedDeviceId: createdByDeviceId });
   });
 
   router.post('/refresh-token', requireAuth(store), (req, res) => {

@@ -88,7 +88,12 @@ describe('RelayClient', () => {
     const fetchMock = mockFetch({
       ok: true,
       status: 200,
-      json: { deviceId: identity.deviceId, token: 'token-xyz', wsUrl: 'ws://localhost:8787/sync' },
+      json: {
+        deviceId: identity.deviceId,
+        token: 'token-xyz',
+        wsUrl: 'ws://localhost:8787/sync',
+        pairedDeviceId: 'host-device-id',
+      },
     });
     global.fetch = fetchMock;
 
@@ -99,6 +104,7 @@ describe('RelayClient', () => {
       deviceId: identity.deviceId,
       token: 'token-xyz',
       wsUrl: 'ws://localhost:8787/sync',
+      pairedDeviceId: 'host-device-id',
     });
     const [, options] = fetchMock.mock.calls[0];
     const body = JSON.parse(String(options?.body));

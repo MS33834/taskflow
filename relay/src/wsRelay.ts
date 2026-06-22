@@ -14,6 +14,7 @@ export function attachWsRelay(
   wss.on('connection', (ws, req) => {
     const url = new URL(req.url ?? '', 'http://localhost');
     const targetDeviceId = url.searchParams.get('target');
+    const pairingCode = url.searchParams.get('pairingCode');
 
     const authHeader = req.headers['authorization'];
     const authMatch = typeof authHeader === 'string' ? /^Bearer\s+(.+)$/i.exec(authHeader) : null;
@@ -24,22 +25,22 @@ export function attachWsRelay(
       return;
     }
 
-    if (!targetDeviceId) {
-      console.log(`[relay] WebSocket auth failed: missing target query parameter`);
-      ws.close(4001, 'missing target');
+    if (!targetDeviceId && !pairingCode) {
+      console.log(`[relay] WebSocket auth failed: missing target or pairingCode query parameter`);
+      ws.close(4001, 'missing target or pairingCode');
       return;
     }
 
     const token = authMatch[1];
     const deviceId = store.validateToken(token);
     if (!deviceId) {
-      console.log(`[relay] WebSocket auth failed: invalid token for target ${targetDeviceId}`);
+      console.log(`[relay] WebSocket auth failed: invalid token for target ${targetDeviceId ?? ''}`);
       ws.close(4001, 'invalid token');
       return;
     }
 
     alive.set(ws, true);
-    connections.add(ws, deviceId, targetDeviceId);
+    connections.add(ws, deviceId, targetDeviceId ?? '', pairingCode ?? undefined);
 
     ws.on('ping', () => {
       ws.pong();
@@ -55,7 +56,7 @@ export function attachWsRelay(
         ws.close(1009, 'frame too large');
         return;
       }
-      connections.forward(deviceId, targetDeviceId, buf);
+      connections.forward(deviceId, targetDeviceId ?? '', buf, pairingCode ?? undefined);
     });
 
     ws.on('close', () => {
