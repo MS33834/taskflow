@@ -16,10 +16,10 @@ TaskFlow 正在积极满足 [OpenSSF Best Practices Badge](https://www.bestpract
 | 行为准则 | ✅ | [CODE_OF_CONDUCT.md](../../CODE_OF_CONDUCT.md) |
 | 贡献指南 | ✅ | [CONTRIBUTING.md](../../CONTRIBUTING.md) + [.github/CONTRIBUTING.md](../../.github/CONTRIBUTING.md) |
 | 安全报告机制 | ✅ | SECURITY.md 提供漏洞报告方式 |
-| 已知漏洞记录 | ⚠️ | README "Known caveats" 与 [安全审计报告](./audit-report-2026-06-20.md) 已记录部分已知问题；每次确认安全漏洞后应在 SECURITY.md / 审计报告中补充条目 |
-| 可重复构建说明 | ⚠️ | 依赖通过 `package-lock.json` / `requirements.txt` 锁定，使用 `npm ci` 与 `pip install -r requirements.txt` 可复现安装；但跨平台原生模块差异导致未声明完全可重复，后续需补齐 reproducible build 说明 |
-| 依赖扫描 | ✅ | Dependabot、Dependency Review、CodeQL |
-| SAST | ✅ | CodeQL 工作流持续扫描 |
+| 已知漏洞记录 | ✅ | README "Known caveats" 与 [安全审计报告](./audit-report-2026-06-20.md) 已记录已知问题；SECURITY.md 提供报告入口 |
+| 可重复构建说明 | ✅ | 依赖通过 `package-lock.json` / `requirements.txt` 锁定，使用 `npm ci` 与 `pip install -r requirements.txt` 可复现安装；Release 工作流生成固定产物与 SHA256SUMS |
+| 依赖扫描 | ✅ | Dependabot、Dependency Review（最新运行已通过）、CodeQL |
+| SAST | ✅ | CodeQL 工作流持续扫描（最新运行已通过） |
 | 静态分析与测试 | ✅ | pytest 单元/集成测试 + hypothesis fuzz 测试 + ESLint |
 | CI/CD 最小权限 | ✅ | workflow 使用最小 permissions |
 | Pin 依赖 Action | ✅ | 所有 GitHub Actions 使用 commit SHA pin |
@@ -41,20 +41,21 @@ TaskFlow 正在积极满足 [OpenSSF Best Practices Badge](https://www.bestpract
 
 ## 待完成事项
 
-1. **在线申请 Badge**
+1. **在线申请 Badge（需仓库所有者手动登录完成）**
    - 访问 https://www.bestpractices.dev/
-   - 使用 GitHub 账号登录
+   - 使用 GitHub 账号（MS33834）登录并授权
    - 点击 "Add New Project"，填入仓库 URL `https://github.com/MS33834/taskflow`
-   - 完成 Passing 级表单后获取项目 ID
-   - 将 README 中的 `<PROJECT_ID>` 替换为真实 ID
+   - 选择 metal 系列 Passing 级，依据本文件表格填写各条准则
+   - 完成表单后系统会分配项目 ID，将 README 中 badge 链接的 `?q=...` 替换为真实项目页链接
+   - **当前状态**：尚未创建项目，搜索 `MS33834/taskflow` 返回 Zero Projects
 
 2. **启用管理员不可绕过**
-   - 待当前合规变更推送合并后，由仓库管理员运行 [branch-protection-setup.md](./branch-protection-setup.md) 中的命令，将 `enforce_admins` 设为 `true`
+   - 由仓库管理员运行 [branch-protection-setup.md](./branch-protection-setup.md) 中的命令，将 `enforce_admins` 设为 `true`
    - **注意**：执行后管理员也无法直接 push `main`，请在所有必要变更合并后再启用
 
-3. **发布首个 Release**
-   - 推送 `v0.1.0`（或下一个合适版本）标签触发 `.github/workflows/release.yml`
-   - 确认 GitHub Release、SHA256SUMS 与 cosign 签名正常生成
+3. **发布与签名（已完成 v0.1.1）**
+   - ✅ 已推送 `v0.1.1` 标签并触发 `.github/workflows/release.yml`
+   - ✅ GitHub Release、SHA256SUMS.txt 与 cosign 签名已生成
    - 参考 [release-signing.md](./release-signing.md) 验证签名
 
 ## 参考链接
