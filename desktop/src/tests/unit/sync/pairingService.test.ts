@@ -149,6 +149,40 @@ describe('pairingService', () => {
     expect(createCodeMock).toHaveBeenCalledWith(identity, 'existing-token');
   });
 
+  it('refreshes token on 401 and falls back to re-register when refresh fails', async () => {
+    const identity = generateDeviceIdentity('pairing-host-reauth');
+    const tokenStorage = createTokenStorage('expired-token');
+    const registerMock = vi
+      .fn()
+      .mockResolvedValue({ deviceId: identity.deviceId, token: 'new-token', wsUrl: 'ws://host/sync' });
+    const refreshMock = vi
+      .fn()
+      .mockRejectedValue(new Error('refresh-token failed: 401 unauthorized'));
+    const createCodeMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('pairing-codes failed: 401 unauthorized'))
+      .mockResolvedValueOnce({ code: '11112222', expiresAt: Date.now() + 300_000 });
+
+    vi.mocked(RelayClient).mockImplementation(
+      function () {
+        return {
+          registerDevice: registerMock,
+          createPairingCode: createCodeMock,
+          refreshToken: refreshMock,
+        } as unknown as RelayClient;
+      }
+    );
+    vi.mocked(RelayClient).isUnauthorizedError = vi.fn().mockReturnValue(true) as unknown as typeof RelayClient.isUnauthorizedError;
+
+    const result = await generatePairingCode('http://relay', identity, tokenStorage);
+
+    expect(result.code).toBe('11112222');
+    expect(refreshMock).toHaveBeenCalledWith(identity, 'expired-token');
+    expect(registerMock).toHaveBeenCalledWith(identity);
+    expect(createCodeMock).toHaveBeenCalledTimes(2);
+    expect(tokenStorage.get()).toBe('new-token');
+  });
+
   it('claims pairing code and pairs, saving SMK and registering host device', async () => {
     const joinerIdentity = generateDeviceIdentity('pairing-joiner');
     const hostIdentity = generateDeviceIdentity('pairing-host-3');

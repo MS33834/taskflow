@@ -4,6 +4,7 @@ import fs from 'fs';
 import {
   getSyncSettings,
   setSyncSettings,
+  clearSyncSettings,
   createTokenStorage,
   getSyncSettingsPath,
 } from '../../../main/services/sync/syncSettingsState';
@@ -66,5 +67,14 @@ describe('syncSettingsState', () => {
     storage.set('new-token');
     expect(storage.get()).toBe('new-token');
     expect(getSyncSettings().token).toBe('new-token');
+  });
+
+  it('clears settings back to defaults', () => {
+    setSyncSettings({ enabled: true, relayUrl: 'http://relay.local', token: 'secret' });
+    expect(getSyncSettings().enabled).toBe(true);
+
+    const cleared = clearSyncSettings();
+    expect(cleared).toEqual({ enabled: false, relayUrl: '', token: '' });
+    expect(getSyncSettings()).toEqual({ enabled: false, relayUrl: '', token: '' });
   });
 });

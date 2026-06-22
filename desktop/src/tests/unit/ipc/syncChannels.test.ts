@@ -107,6 +107,25 @@ describe('syncChannels', () => {
     expect(sentMessages[IPC_CHANNELS.SYNC.ON_STATE_CHANGED]).toHaveLength(2);
   });
 
+  it('disabling sync clears settings and devices', async () => {
+    await handlers[IPC_CHANNELS.SYNC.SET_ENABLED](undefined as never, true);
+    await handlers[IPC_CHANNELS.SYNC.SET_RELAY_URL](undefined as never, 'ws://relay.local:8787/');
+    const identity = generateDeviceIdentity('disable-sync-device');
+    registerSyncDevice({
+      deviceId: identity.deviceId,
+      publicKey: identity.publicKeyPem,
+      name: 'Test Device',
+      pairedAt: 1_000,
+    });
+
+    await handlers[IPC_CHANNELS.SYNC.SET_ENABLED](undefined as never, false);
+
+    const state = await handlers[IPC_CHANNELS.SYNC.GET_STATE]();
+    expect(state.enabled).toBe(false);
+    expect(state.relayUrl).toBe('');
+    expect(state.devices).toHaveLength(0);
+  });
+
   it('lists paired devices in state', async () => {
     const identity = generateDeviceIdentity('sync-state-device');
     registerSyncDevice({

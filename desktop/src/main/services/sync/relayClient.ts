@@ -82,4 +82,30 @@ export class RelayClient {
     }
     return res.json() as Promise<RelayRegisterResult>;
   }
+
+  async refreshToken(identity: DeviceIdentity, token: string): Promise<string> {
+    const timestamp = Math.floor(Date.now() / 1000);
+    const message = buildAuthMessage(identity.deviceId, timestamp, 'refresh-token');
+    const signature = sign(null, message, identity.privateKeyPem).toString('base64');
+    const res = await fetch(`${this.baseUrl}/refresh-token`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ timestamp, signature }),
+    });
+    if (!res.ok) {
+      throw new Error(`refresh-token failed: ${res.status} ${await res.text()}`);
+    }
+    const body = await res.json() as { token?: unknown };
+    if (typeof body.token !== 'string') {
+      throw new Error('refresh-token response missing token');
+    }
+    return body.token;
+  }
+
+  static isUnauthorizedError(error: unknown): boolean {
+    return error instanceof Error && error.message.includes('401');
+  }
 }

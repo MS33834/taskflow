@@ -127,4 +127,43 @@ describe('RelayClient', () => {
     const client = new RelayClient('http://localhost:8787');
     await expect(client.registerDevice(identity)).rejects.toThrow('register-device failed: 401 unauthorized');
   });
+
+  it('refreshes a token with Authorization header', async () => {
+    const fetchMock = mockFetch({
+      ok: true,
+      status: 200,
+      json: { token: 'refreshed-token' },
+    });
+    global.fetch = fetchMock;
+
+    const client = new RelayClient('http://localhost:8787');
+    const result = await client.refreshToken(identity, 'old-token');
+
+    expect(result).toBe('refreshed-token');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, options] = fetchMock.mock.calls[0];
+    expect(url).toBe('http://localhost:8787/refresh-token');
+    const headers = options?.headers as Record<string, string>;
+    expect(headers?.Authorization).toBe('Bearer old-token');
+  });
+
+  it('throws when refresh-token response lacks token', async () => {
+    const fetchMock = mockFetch({
+      ok: true,
+      status: 200,
+      json: {},
+    });
+    global.fetch = fetchMock;
+
+    const client = new RelayClient('http://localhost:8787');
+    await expect(client.refreshToken(identity, 'old-token')).rejects.toThrow(
+      'refresh-token response missing token'
+    );
+  });
+
+  it('detects unauthorized errors', () => {
+    expect(RelayClient.isUnauthorizedError(new Error('pairing-codes failed: 401 unauthorized'))).toBe(true);
+    expect(RelayClient.isUnauthorizedError(new Error('network error'))).toBe(false);
+    expect(RelayClient.isUnauthorizedError(null)).toBe(false);
+  });
 });

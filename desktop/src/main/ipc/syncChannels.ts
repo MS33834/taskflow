@@ -4,9 +4,10 @@ import type { SyncState } from '../../shared/types';
 import {
   getSyncSettings,
   setSyncSettings,
+  clearSyncSettings,
   createTokenStorage,
 } from '../services/sync/syncSettingsState';
-import { listSyncDevices, removeSyncDevice, getSyncState } from '../services/sync/syncStorage';
+import { listSyncDevices, removeSyncDevice, clearSyncDevices, getSyncState } from '../services/sync/syncStorage';
 import { loadDeviceIdentity, generateDeviceIdentity } from '../services/sync/syncIdentity';
 import {
   generatePairingCode,
@@ -18,7 +19,12 @@ export function registerSyncIpc(): void {
   ipcMain.handle(IPC_CHANNELS.SYNC.GET_STATE, async () => buildSyncState());
 
   ipcMain.handle(IPC_CHANNELS.SYNC.SET_ENABLED, async (_event, enabled: boolean) => {
-    setSyncSettings({ enabled });
+    if (enabled) {
+      setSyncSettings({ enabled });
+    } else {
+      clearSyncSettings();
+      clearSyncDevices();
+    }
     notifySyncStateChanged();
     return true;
   });

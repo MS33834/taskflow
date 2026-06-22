@@ -66,6 +66,21 @@ export function setSyncSettings(updates: Partial<SyncSettings>): SyncSettings {
   return next;
 }
 
+export function clearSyncSettings(): SyncSettings {
+  if (!safeStorage.isEncryptionAvailable()) {
+    throw new Error('safeStorage is not available; refusing to write plaintext sync settings');
+  }
+
+  const filePath = getSyncSettingsPath();
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+
+  const payload = safeStorage.encryptString(JSON.stringify(DEFAULT_SYNC_SETTINGS)).toString('base64');
+  const data = { encrypted: true, payload };
+  fs.writeFileSync(filePath, JSON.stringify(data), { mode: 0o600 });
+  return { ...DEFAULT_SYNC_SETTINGS };
+}
+
 export function createTokenStorage(): { get: () => string | undefined; set: (value: string) => void } {
   return {
     get: () => {

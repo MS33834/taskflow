@@ -40,12 +40,32 @@ export async function generatePairingCode(
 ): Promise<PairingCodeResult> {
   const client = new RelayClient(relayUrl);
   let token = tokenStorage.get();
-  if (!token) {
+
+  async function ensureToken(): Promise<string> {
+    if (token) return token;
     const result = await client.registerDevice(identity);
     token = result.token;
     tokenStorage.set(token);
+    return token;
   }
-  return client.createPairingCode(identity, token);
+
+  try {
+    return await client.createPairingCode(identity, await ensureToken());
+  } catch (err) {
+    if (RelayClient.isUnauthorizedError(err) && token) {
+      // Token may have expired; try refreshing once, then fall back to re-registering.
+      try {
+        const refreshed = await client.refreshToken(identity, token);
+        token = refreshed;
+        tokenStorage.set(token);
+        return await client.createPairingCode(identity, token);
+      } catch {
+        token = undefined;
+        return await client.createPairingCode(identity, await ensureToken());
+      }
+    }
+    throw err;
+  }
 }
 
 export function respondToPairing(
