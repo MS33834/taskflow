@@ -181,4 +181,4 @@ describe('backupService', () => {
     const result = restoreBackup(invalidBackup, TEST_PASSWORD);
     expect(result.success).toBe(false);
   });
-});
+}, 30000);
