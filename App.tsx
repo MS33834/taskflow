@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -18,6 +18,7 @@ import { ToastContainer } from './src/shared/components/common/Toast';
 import { ErrorBoundary } from './src/shared/components/common/ErrorBoundary';
 import { QuickAddTask } from './src/shared/components/common/QuickAddTask';
 import { useKeyboardShortcuts } from './src/shared/hooks/useKeyboardShortcuts';
+import { useResponsiveLayout } from './src/shared/hooks/useResponsiveLayout';
 import HomeScreen from './screens/HomeScreen';
 import TaskDetailScreen from './screens/TaskDetailScreen';
 import CategoriesScreen from './screens/CategoriesScreen';
@@ -164,6 +165,13 @@ function getTabBarIcon(routeName: string, focused: boolean, color: string, _size
 function MainTabsScreen() {
   const { theme } = useAppStore();
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const {
+    width,
+    isWeb,
+    isSmall,
+    tabBarHeight,
+    tabBarBottomOffset,
+  } = useResponsiveLayout();
 
   useKeyboardShortcuts({
     'mod+k': () => {
@@ -173,6 +181,10 @@ function MainTabsScreen() {
     escape: () => setShowQuickAdd(false),
   });
 
+  // Very narrow screens get slightly smaller labels so they don't collide.
+  const tabLabelSize = isSmall ? 9 : isWeb ? 12 : 11;
+  const tabLabelLineHeight = isSmall ? 11 : isWeb ? 16 : 13;
+
   return (
     <View style={{ flex: 1 }}>
     <Tab.Navigator
@@ -180,18 +192,24 @@ function MainTabsScreen() {
         headerShown: false,
         tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: theme.colors.textTertiary,
+        tabBarShowLabel: true,
+        tabBarLabelPosition: 'below-icon',
+        tabBarIconStyle: {
+          marginBottom: 0,
+        },
         tabBarStyle: {
           position: 'absolute',
-          left: 16,
-          right: 16,
-          bottom: 12,
+          left: isWeb ? Math.min(24, width * 0.02) : 16,
+          right: isWeb ? Math.min(24, width * 0.02) : 16,
+          bottom: tabBarBottomOffset,
           backgroundColor: theme.colors.glassBackground,
           borderTopWidth: 0,
           borderRadius: 24,
-          height: 64,
-          paddingTop: 6,
-          paddingBottom: 6,
-          paddingHorizontal: 8,
+          height: tabBarHeight,
+          minHeight: tabBarHeight,
+          paddingTop: 0,
+          paddingBottom: 0,
+          paddingHorizontal: isSmall ? 4 : 8,
           shadowColor: '#0F172A',
           shadowOffset: { width: 0, height: 8 },
           shadowOpacity: 0.12,
@@ -199,15 +217,19 @@ function MainTabsScreen() {
           elevation: 12,
           borderWidth: 1,
           borderColor: theme.colors.glassBorder,
+          overflow: 'visible',
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: tabLabelSize,
           fontWeight: '600',
           letterSpacing: 0.2,
+          lineHeight: tabLabelLineHeight,
           marginTop: 2,
+          marginBottom: 0,
         },
         tabBarItemStyle: {
-          paddingVertical: 4,
+          paddingVertical: isWeb ? 8 : 6,
+          minHeight: tabBarHeight - 8,
         },
         tabBarIcon: ({ focused, color, size }) =>
           getTabBarIcon(route.name, focused, color, size),

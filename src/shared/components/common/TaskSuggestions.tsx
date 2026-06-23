@@ -222,13 +222,15 @@ export interface TaskSuggestionsProps {
   onApply?: (s: TaskSuggestion) => void;
   onDismiss?: (id: string) => void;
   emptyHint?: string;
+  contentPadding?: number;
 }
 
 export function TaskSuggestions({
   suggestions: provided,
   onApply,
   onDismiss,
-  emptyHint = '暂无建议 · 继续积累任务历史以获得更智能的推荐',
+  emptyHint,
+  contentPadding = 16,
 }: TaskSuggestionsProps) {
   const { theme } = useAppStore();
   const auto = useTaskSuggestions();
@@ -245,7 +247,7 @@ export function TaskSuggestions({
 
   return (
     <View style={styles.wrap}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: contentPadding }]}>
         <MaterialIcons name="auto-awesome" size={16} color={theme.colors.primary} />
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>智能建议</Text>
         <View style={[styles.aiBadge, { backgroundColor: theme.colors.primary + '20' }]}>
@@ -256,7 +258,7 @@ export function TaskSuggestions({
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.row}
+        contentContainerStyle={[styles.row, { paddingHorizontal: contentPadding }]}
         nestedScrollEnabled
       >
         {list.map((s) => {

@@ -141,12 +141,12 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
-    marginHorizontal: 16,
+    marginHorizontal: 12,
     marginVertical: 6,
     overflow: 'hidden',
   },
   containerCompact: {
-    marginHorizontal: 16,
+    marginHorizontal: 12,
     marginVertical: 4,
     borderRadius: 12,
   },

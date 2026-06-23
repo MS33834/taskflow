@@ -31,6 +31,7 @@ import {
   CollapsibleSection,
 } from '../src/shared/components/common';
 import { useBulkSelection } from '../src/shared/hooks/useBulkSelection';
+import { useResponsiveLayout, BREAKPOINTS } from '../src/shared/hooks/useResponsiveLayout';
 import { undoDeleteTask } from '../src/shared/hooks/useUndo';
 import { HomeStackParamList, Task, Priority } from '../src/shared/types';
 
@@ -53,6 +54,21 @@ export default function HomeScreen() {
     sortTasks,
     reorderTasks,
   } = useAppStore();
+  const {
+    width,
+    isWeb,
+    isSmall,
+    screenPadding,
+    contentMaxWidth,
+    tabBarHeight,
+  } = useResponsiveLayout();
+
+  const contentWrapperStyle = {
+    flex: 1,
+    width: '100%',
+    maxWidth: contentMaxWidth,
+    alignSelf: 'center' as const,
+  };
 
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -186,7 +202,7 @@ export default function HomeScreen() {
               padding: 12,
               backgroundColor: selected ? theme.colors.primary + '14' : theme.colors.card,
               borderRadius: 12,
-              marginHorizontal: 16,
+              marginHorizontal: 0,
               marginVertical: 4,
               borderWidth: selected ? 1.5 : 1,
               borderColor: selected ? theme.colors.primary : theme.colors.border,
@@ -261,7 +277,7 @@ export default function HomeScreen() {
   ];
 
   const renderHeader = useCallback(() => (
-    <View style={styles.header}>
+    <View style={[styles.header, { paddingHorizontal: screenPadding }]}>
       <View style={styles.headerRow}>
         <View style={styles.headerTitleWrap}>
           <Text style={[styles.greeting, { color: theme.colors.textSecondary }]}>
@@ -323,7 +339,7 @@ export default function HomeScreen() {
         theme={theme}
         compact
       >
-        <View style={styles.statsRow}>
+        <View style={[styles.statsRow, { paddingHorizontal: screenPadding, flexDirection: isSmall ? 'column' : 'row', gap: isSmall ? 8 : 10 }]}>
           <TouchableOpacity
             style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
             activeOpacity={0.85}
@@ -370,7 +386,7 @@ export default function HomeScreen() {
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.chipRow}
+      contentContainerStyle={[styles.chipRow, { paddingHorizontal: screenPadding }]}
     >
       <TouchableOpacity
         style={[
@@ -435,7 +451,7 @@ export default function HomeScreen() {
       theme={theme}
       compact
     >
-      <View style={styles.quickActionsGrid}>
+      <View style={[styles.quickActionsGrid, { paddingHorizontal: screenPadding }]}>
         {[
           { icon: 'calendar-today', label: '日历', color: theme.colors.primary, bg: theme.colors.primary + '14', target: 'Calendar' },
           { icon: 'folder', label: '项目', color: theme.colors.secondary, bg: theme.colors.secondary + '14', target: 'Projects' },
@@ -444,7 +460,14 @@ export default function HomeScreen() {
         ].map((item) => (
           <TouchableOpacity
             key={item.label}
-            style={[styles.quickAction, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+            style={[
+              styles.quickAction,
+              {
+                backgroundColor: theme.colors.surface,
+                borderColor: theme.colors.border,
+                minWidth: isSmall ? '45%' : width < BREAKPOINTS.md ? '30%' : '22%',
+              },
+            ]}
             onPress={() => navigation.navigate(item.target as never)}
             activeOpacity={0.7}
           >
@@ -504,6 +527,7 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={contentWrapperStyle}>
       <FlatList
         data={sortedTasks}
         renderItem={renderTask}
@@ -515,13 +539,17 @@ export default function HomeScreen() {
             tintColor={theme.colors.primary}
           />
         }
-        contentContainerStyle={[styles.list, bulk.active && { paddingBottom: 80 }]}
+        contentContainerStyle={[
+          styles.list,
+          { paddingHorizontal: screenPadding, paddingBottom: tabBarHeight + (isWeb ? 40 : 24) },
+          bulk.active && { paddingBottom: tabBarHeight + (isWeb ? 24 : 12) },
+        ]}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <>
             {renderHeader()}
             {renderStats()}
-            <TaskSuggestions onApply={handleApplySuggestion} />
+            <TaskSuggestions onApply={handleApplySuggestion} contentPadding={screenPadding} />
             {renderQuickActions()}
             {renderCategories()}
           </>
@@ -660,6 +688,7 @@ export default function HomeScreen() {
         completedToday={completedCount}
         theme={theme}
       />
+      </View>
     </SafeAreaView>
   );
 }
