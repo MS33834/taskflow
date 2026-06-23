@@ -1,8 +1,10 @@
 """Git 管理器测试"""
-import pytest
 import tempfile
 from pathlib import Path
-from app.core.git_manager import GitManager, GitStatus, GitCommit
+
+import pytest
+
+from app.core.git_manager import GitCommit, GitManager, GitStatus
 
 
 @pytest.fixture
