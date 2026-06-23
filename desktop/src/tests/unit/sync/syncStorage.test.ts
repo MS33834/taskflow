@@ -24,16 +24,37 @@ import {
 const testDbPath = path.join(os.tmpdir(), `taskflow-sync-storage-test-${Date.now()}.db`);
 const testKey = Buffer.alloc(32, 0xab);
 
+function safeRemoveSync(target: string, maxRetries = 10): void {
+  if (!fs.existsSync(target)) return;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const stats = fs.statSync(target);
+      if (stats.isDirectory()) {
+        fs.rmSync(target, { recursive: true, force: true });
+      } else {
+        fs.unlinkSync(target);
+      }
+      return;
+    } catch (err: any) {
+      if (err.code === 'EBUSY' && i < maxRetries - 1) {
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 describe('syncStorage', () => {
   beforeEach(() => {
-    if (fs.existsSync(testDbPath)) fs.unlinkSync(testDbPath);
+    safeRemoveSync(testDbPath);
     openDatabase(testKey, testDbPath);
     runMigrations();
   });
 
   afterEach(() => {
     closeDatabase();
-    if (fs.existsSync(testDbPath)) fs.unlinkSync(testDbPath);
+    safeRemoveSync(testDbPath);
   });
 
   it('inserts and retrieves sync records', () => {
@@ -304,6 +325,6 @@ describe('syncStorage', () => {
     expect(records[0].recordId).toBe('7');
 
     closeDatabase();
-    fs.unlinkSync(otherDbPath);
+    safeRemoveSync(otherDbPath);
   });
 });

@@ -177,7 +177,7 @@ describe('syncCrypto', () => {
     expect(() => loadSyncMasterKey(testKeyPath)).toThrow('Corrupt sync master key file');
   });
 
-  it('writes the key file with restricted permissions', () => {
+  it.skipIf(process.platform === 'win32')('writes the key file with restricted permissions', () => {
     saveSyncMasterKey(generateSyncMasterKey(), testKeyPath);
     const stats = fs.statSync(testKeyPath);
     expect(stats.mode & 0o777).toBe(0o600);

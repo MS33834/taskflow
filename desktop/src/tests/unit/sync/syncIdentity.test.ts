@@ -136,7 +136,7 @@ describe('syncIdentity', () => {
     fs.rmSync(identityPath, { force: true });
   });
 
-  it('writes identity file with restricted permissions', () => {
+  it.skipIf(process.platform === 'win32')('writes identity file with restricted permissions', () => {
     const identityPath = path.join(os.tmpdir(), `taskflow-device-identity-mode-${Date.now()}.json`);
     const identity = generateDeviceIdentity('device-k');
     saveDeviceIdentity(identity, identityPath);
