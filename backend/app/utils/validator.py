@@ -2,6 +2,7 @@
 import ipaddress
 import os
 import re
+import socket
 from pathlib import Path
 from typing import Optional
 from urllib.parse import urlparse
@@ -76,6 +77,15 @@ def validate_file_path(path: str, base_dir: Optional[Path] = None) -> Path:
     return Path(os.path.abspath(normalized))
 
 
+def is_internal_ip(ip: str) -> bool:
+    """判断 IP 地址是否属于私有、回环、链路本地或保留范围。"""
+    try:
+        addr = ipaddress.ip_address(ip)
+    except ValueError:
+        return False
+    return addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved
+
+
 def _is_internal_host(hostname: str) -> bool:
     """判断主机名是否指向内网、回环或链路本地地址。
 
@@ -89,21 +99,15 @@ def _is_internal_host(hostname: str) -> bool:
     if lower in ("localhost", "127.0.0.1", "::1"):
         return True
 
-    # 尝试解析 IP 地址
-    try:
-        addr = ipaddress.ip_address(hostname)
-        return addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved
-    except ValueError:
-        pass
-
-    # 对于无法解析的域名，继续允许（实际克隆时由 DNS 解析）
-    return False
+    return is_internal_ip(hostname)
 
 
 def validate_git_url(url: str) -> str:
-    """校验 Git 仓库 URL，拒绝内网/回环/链路本地地址，防止 SSRF。"""
+    """校验 Git 仓库 URL，拒绝内网/回环/链路本地地址与非标准端口，防止 SSRF。"""
     if not url or not url.strip():
         raise ValidationError("Git URL 不能为空")
+
+    url = url.strip()
 
     # 支持 HTTPS 和 SSH 格式
     https_pattern = r"^https?://[\w\-\.]+(:\d+)?/[\w\-\.]+/[\w\-\.]+(\.git)?$"
@@ -112,18 +116,42 @@ def validate_git_url(url: str) -> str:
     if not (re.match(https_pattern, url) or re.match(ssh_pattern, url)):
         raise ValidationError(f"无效的 Git URL 格式: {url}")
 
-    url = url.strip()
-
-    # 提取主机名并检查是否为内网/本地地址
+    is_ssh = url.startswith("git@")
     parsed = urlparse(url)
-    if parsed.hostname and _is_internal_host(parsed.hostname):
+
+    if is_ssh:
+        # SSH 格式 git@host:path 没有 scheme，urlparse 会把 host 放到 path
+        hostname = url.split(":", 1)[0].split("@", 1)[-1]
+        port = 22
+    else:
+        hostname = parsed.hostname
+        port = parsed.port
+
+    if not hostname:
+        raise ValidationError(f"无效的 Git URL 格式: {url}")
+
+    # 未显式指定端口时根据 scheme 推断
+    if port is None:
+        port = 443 if parsed.scheme == "https" else 80
+
+    allowed_ports = {22, 80, 443, 9418}
+    if port not in allowed_ports:
+        raise ValidationError(f"Git URL 使用了非标准端口，不被允许: {port}")
+
+    # 检查主机名是否直接指向内部地址
+    if _is_internal_host(hostname):
         raise ValidationError(f"Git URL 指向内部或本地地址，不被允许: {url}")
 
-    # SSH 格式 git@host:path 没有 scheme，urlparse 会把 host 放到 path
-    if url.startswith("git@"):
-        host = url.split(":", 1)[0].split("@", 1)[-1]
-        if _is_internal_host(host):
-            raise ValidationError(f"Git URL 指向内部或本地地址，不被允许: {url}")
+    # 对域名进行二次解析，防止 DNS 解析到内部地址
+    try:
+        ipaddress.ip_address(hostname)
+    except ValueError:
+        try:
+            resolved_ip = socket.gethostbyname(hostname)
+        except (socket.gaierror, UnicodeError) as exc:
+            raise ValidationError(f"无法解析 Git URL 主机名: {hostname}") from exc
+        if is_internal_ip(resolved_ip):
+            raise ValidationError(f"Git URL 解析到内部地址，不被允许: {url}")
 
     return url
 
