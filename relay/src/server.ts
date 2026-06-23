@@ -1,5 +1,5 @@
 import http from 'http';
-import express, { Express } from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import { WebSocketServer } from 'ws';
 import { RelayStore } from './store';
 import { createRoutes } from './routes';
@@ -29,8 +29,14 @@ export function createRelayServer(opts: RelayServerOptions): RelayServer {
   const publicWsUrl = opts.publicWsUrl ?? `ws://localhost:${opts.port}/sync`;
   const host = opts.host ?? '0.0.0.0';
 
-  app.use('/health', (_req, res) => res.json({ ok: true }));
+  app.get('/health', (_req, res) => res.json({ ok: true }));
   app.use(createRoutes(store, publicWsUrl));
+
+  app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+    console.error('[relay] unhandled error', err);
+    const isDev = process.env.NODE_ENV === 'development';
+    res.status(500).json({ error: isDev ? err.message : 'Internal server error' });
+  });
 
   attachWsRelay(wss, store, connections);
 
