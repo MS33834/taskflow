@@ -2,7 +2,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -25,8 +25,12 @@ class Task(Base):
     status: Mapped[str] = mapped_column(String(30), default="todo")
     progress: Mapped[int] = mapped_column(Integer, default=0)
 
-    category_id: Mapped[Optional[str]] = mapped_column(String(64), ForeignKey("categories.id"), nullable=True)
-    project_id: Mapped[Optional[str]] = mapped_column(String(64), ForeignKey("projects.id"), nullable=True)
+    category_id: Mapped[Optional[str]] = mapped_column(
+        String(64), ForeignKey("categories.id"), nullable=True
+    )
+    project_id: Mapped[Optional[str]] = mapped_column(
+        String(64), ForeignKey("projects.id"), nullable=True
+    )
 
     completed: Mapped[bool] = mapped_column(Boolean, default=False)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
@@ -60,17 +64,27 @@ class Task(Base):
     # 复杂字段以 JSON 文本存储，降低早期 schema 复杂度
     tags: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
     subtasks: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
-    attachments: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
+    attachments: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True, default="[]"
+    )
     comments: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
     links: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
-    custom_fields: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
-    dependencies: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
+    custom_fields: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True, default="[]"
+    )
+    dependencies: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True, default="[]"
+    )
     blocked_by: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
     checklist: Mapped[Optional[str]] = mapped_column(Text, nullable=True, default="[]")
 
-    category: Mapped[Optional["Category"]] = relationship("Category", back_populates="tasks")
-    project: Mapped[Optional["Project"]] = relationship("Project", back_populates="tasks")
+    category: Mapped[Optional["Category"]] = relationship(
+        "Category", back_populates="tasks"
+    )
+    project: Mapped[Optional["Project"]] = relationship(
+        "Project", back_populates="tasks"
+    )
 
 
 class Project(Base):

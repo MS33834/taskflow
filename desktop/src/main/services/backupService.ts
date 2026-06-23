@@ -15,6 +15,18 @@ export const BACKUP_VERSION = 2;
 
 const MIN_PASSWORD_LENGTH = 8;
 
+function parseJsonSafe(text: string): unknown {
+  return JSON.parse(text, (key, value) => {
+    if (key === '__proto__' || key === 'constructor') {
+      throw new Error('备份数据包含不安全的键');
+    }
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+      return Object.assign(Object.create(null), value);
+    }
+    return value;
+  });
+}
+
 export interface BackupResult {
   success: boolean;
   message?: string;
@@ -193,7 +205,7 @@ function restoreV2Backup(
 
   let payload: BackupPayload;
   try {
-    payload = JSON.parse(plaintext);
+    payload = parseJsonSafe(plaintext) as BackupPayload;
   } catch {
     return { success: false, message: '备份文件格式不正确' };
   }

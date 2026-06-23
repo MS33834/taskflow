@@ -1,13 +1,14 @@
 """文件归档管理器测试"""
-import pytest
-import pytest_asyncio
 import tempfile
 from pathlib import Path
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+
+import pytest
+import pytest_asyncio
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
-from app.database import Base
+
 from app.core.file_organizer import FileOrganizer
-from app.models.file import FileMetadata
+from app.database import Base
 
 
 @pytest_asyncio.fixture

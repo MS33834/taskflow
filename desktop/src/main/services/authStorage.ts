@@ -7,6 +7,21 @@ interface Verifier {
   hash: string;
 }
 
+function isValidHex(value: unknown): value is string {
+  return typeof value === 'string' && value.length > 0 && /^[0-9a-fA-F]+$/.test(value);
+}
+
+function validateVerifier(data: unknown): Verifier {
+  if (typeof data !== 'object' || data === null) {
+    throw new Error('Malformed verifier file');
+  }
+  const record = data as Record<string, unknown>;
+  if (!isValidHex(record.salt) || !isValidHex(record.hash)) {
+    throw new Error('Malformed verifier file: salt and hash must be non-empty hex strings');
+  }
+  return { salt: record.salt, hash: record.hash };
+}
+
 function getVerifierPath(): string {
   return path.join(app.getPath('userData'), 'taskflow-auth.json');
 }
@@ -18,12 +33,12 @@ export function loadVerifier(): Verifier | null {
   try {
     const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
     if (data.encrypted && safeStorage.isEncryptionAvailable()) {
-      return {
+      return validateVerifier({
         salt: safeStorage.decryptString(Buffer.from(data.salt, 'base64')),
         hash: safeStorage.decryptString(Buffer.from(data.hash, 'base64')),
-      };
+      });
     }
-    return data;
+    return validateVerifier(data);
   } catch {
     return null;
   }

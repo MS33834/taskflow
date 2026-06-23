@@ -1,9 +1,11 @@
 """插件系统测试"""
-import pytest
 import tempfile
 from pathlib import Path
-from app.plugins.manager import PluginManager
+
+import pytest
+
 from app.plugins.hookspecs import hookimpl
+from app.plugins.manager import PluginManager
 
 
 class DummyPlugin:
@@ -79,7 +81,9 @@ def test_call_multiple_hooks(temp_plugins_dir):
     
     manager.call_hook("on_file_created", file_path="/test/file1.py", metadata={})
     manager.call_hook("on_file_created", file_path="/test/file2.py", metadata={})
-    manager.call_hook("on_git_commit", repo_path="/repo", commit_hash="abc123", message="test")
+    manager.call_hook(
+        "on_git_commit", repo_path="/repo", commit_hash="abc123", message="test"
+    )
     
     assert len(plugin.events) == 3
 

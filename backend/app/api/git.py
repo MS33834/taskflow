@@ -2,11 +2,11 @@
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
+from app.core.exceptions import handle_api_error
 from app.core.git_manager import git_manager
-from app.utils.logger import logger
 
 router = APIRouter(prefix="/git", tags=["git"])
 
@@ -47,8 +47,7 @@ async def clone_repository(request: CloneRequest):
             "message": f"仓库克隆成功: {repo_path}"
         }
     except Exception as e:
-        logger.error(f"克隆仓库失败: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise handle_api_error(e, status_code=400, log_message="克隆仓库失败")
 
 
 @router.get("/status/{repo_path:path}", response_model=GitStatusResponse)
@@ -58,8 +57,7 @@ async def get_git_status(repo_path: str):
         status = git_manager.get_status(Path(repo_path))
         return status
     except Exception as e:
-        logger.error(f"获取仓库状态失败: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise handle_api_error(e, status_code=400, log_message="获取仓库状态失败")
 
 
 @router.get("/commits/{repo_path:path}", response_model=List[GitCommitResponse])
@@ -80,8 +78,7 @@ async def get_recent_commits(
             for c in commits
         ]
     except Exception as e:
-        logger.error(f"获取提交记录失败: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise handle_api_error(e, status_code=400, log_message="获取提交记录失败")
 
 
 @router.post("/pull")
@@ -91,8 +88,7 @@ async def pull_repository(repo_path: str):
         result = git_manager.pull_repository(Path(repo_path))
         return result
     except Exception as e:
-        logger.error(f"拉取更新失败: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise handle_api_error(e, status_code=400, log_message="拉取更新失败")
 
 
 @router.post("/commit")
@@ -110,5 +106,4 @@ async def commit_changes(request: CommitRequest):
             "message": "提交成功"
         }
     except Exception as e:
-        logger.error(f"提交失败: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise handle_api_error(e, status_code=400, log_message="提交失败")

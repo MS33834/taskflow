@@ -6,6 +6,7 @@ import {
   setSyncSettings,
   clearSyncSettings,
   createTokenStorage,
+  normalizeRelayUrl,
 } from '../services/sync/syncSettingsState';
 import { listSyncDevices, removeSyncDevice, clearSyncDevices, getSyncState } from '../services/sync/syncStorage';
 import { loadDeviceIdentity, generateDeviceIdentity } from '../services/sync/syncIdentity';
@@ -102,21 +103,6 @@ function buildSyncState(): SyncState {
     devices,
     lastSyncAt: syncState.lastSyncAt,
   };
-}
-
-function normalizeRelayUrl(input: string): string {
-  const trimmed = input.trim();
-  if (!trimmed) return '';
-  if (trimmed.startsWith('ws://')) {
-    return trimmed.replace(/^ws/, 'http');
-  }
-  if (trimmed.startsWith('wss://')) {
-    return trimmed.replace(/^wss/, 'https');
-  }
-  if (!/^https?:\/\//i.test(trimmed)) {
-    throw new Error('relay URL must include a protocol');
-  }
-  return trimmed;
 }
 
 function relayHttpUrlToWsUrl(httpUrl: string): string {

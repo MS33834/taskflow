@@ -1,11 +1,15 @@
 """基于属性的 fuzz 测试：验证路径与 URL 校验器。"""
 from pathlib import Path
 
-import pytest
-from hypothesis import given, settings, strategies as st
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
-from app.utils.validator import ValidationError, validate_category, validate_file_path, validate_git_url
-
+from app.utils.validator import (
+    ValidationError,
+    validate_category,
+    validate_file_path,
+    validate_git_url,
+)
 
 BASE_DIR = Path("/tmp/taskflow-fuzz-base")
 
@@ -25,12 +29,21 @@ class TestValidateFilePathFuzz:
             pass
 
     @settings(max_examples=300, deadline=None)
-    @given(name=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-.", min_size=1, max_size=50))
+    @given(
+        name=st.text(
+            alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-.",
+            min_size=1,
+            max_size=50,
+        )
+    )
     def test_safe_filename_passes(self, name):
         BASE_DIR.mkdir(parents=True, exist_ok=True)
         try:
             result = validate_file_path(name, base_dir=BASE_DIR)
-            assert BASE_DIR.resolve() in result.resolve().parents or result.resolve() == BASE_DIR.resolve()
+            assert (
+                BASE_DIR.resolve() in result.resolve().parents
+                or result.resolve() == BASE_DIR.resolve()
+            )
         except ValidationError:
             # 例如 ".." 会被危险字符检查拒绝，这是预期行为
             pass
@@ -50,9 +63,21 @@ class TestValidateGitUrlFuzz:
 
     @settings(max_examples=200, deadline=None)
     @given(
-        host=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789-.", min_size=3, max_size=50),
-        owner=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-", min_size=1, max_size=30),
-        repo=st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-", min_size=1, max_size=30),
+        host=st.text(
+            alphabet="abcdefghijklmnopqrstuvwxyz0123456789-.",
+            min_size=3,
+            max_size=50,
+        ),
+        owner=st.text(
+            alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-",
+            min_size=1,
+            max_size=30,
+        ),
+        repo=st.text(
+            alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-",
+            min_size=1,
+            max_size=30,
+        ),
     )
     def test_valid_https_url_passes(self, host, owner, repo):
         url = f"https://{host}/{owner}/{repo}.git"

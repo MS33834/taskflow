@@ -92,7 +92,6 @@ class TaskUpdate(BaseModel):
     assignee_id: Optional[str] = None
     created_by: Optional[str] = None
     order: Optional[int] = None
-    version: Optional[int] = None
     tags: Optional[list[str]] = None
     subtasks: Optional[list[Subtask]] = None
     attachments: Optional[list[Any]] = None
@@ -216,8 +215,6 @@ class TagUpdate(BaseModel):
     name: Optional[str] = None
     color: Optional[str] = None
     icon: Optional[str] = None
-    is_system: Optional[bool] = None
-    usage_count: Optional[int] = None
     created_by: Optional[str] = None
 
 

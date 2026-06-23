@@ -1,8 +1,10 @@
 """大模型模块测试"""
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
-from app.core.llm import LLMManager
+
 from app.core.context import ConversationContext
+from app.core.llm import LLMManager
 
 
 def test_context_add_message():

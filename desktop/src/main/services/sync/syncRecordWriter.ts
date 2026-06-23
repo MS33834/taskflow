@@ -51,6 +51,9 @@ function writeRecord(
   const encryptedPayload = encryptSyncRecord(payload, opts.smk);
   const id = `${tableName}:${recordId}:v${version}`;
   const updatedAtMs = new Date(updatedAt).getTime();
+  if (Number.isNaN(updatedAtMs)) {
+    throw new Error(`Invalid updatedAt timestamp: ${updatedAt}`);
+  }
   const deviceVersion: Record<string, number> = opts.deviceId
     ? { [opts.deviceId]: version }
     : {};

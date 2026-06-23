@@ -27,9 +27,9 @@ async def init_db():
     """初始化数据库，创建所有表"""
     # Import models here so Base.metadata knows about all tables, without
     # creating a circular import at module load time.
-    from app.models import task as _task_models  # noqa: F401
     from app.models import file as _file_models  # noqa: F401
     from app.models import operation as _operation_models  # noqa: F401
+    from app.models import task as _task_models  # noqa: F401
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

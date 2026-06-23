@@ -6,6 +6,9 @@ import type { SyncPeer } from '../../../main/services/sync/syncPeer';
 function createMockPeer(deviceId: string): SyncPeer {
   const session = new EventEmitter();
   const engine = new EventEmitter();
+  (session as unknown as { close: () => void }).close = () => {
+    session.emit('close');
+  };
   return {
     deviceId,
     session: session as unknown as SyncPeer['session'],

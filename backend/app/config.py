@@ -34,7 +34,8 @@ class Settings(BaseSettings):
     api_token_file: Optional[Path] = None
 
     # 数据库配置：基于 backend 目录的绝对路径，避免启动目录不同导致找不到文件
-    database_url: str = f"sqlite+aiosqlite:///{Path(__file__).resolve().parent.parent / 'data' / 'taskflow.db'}"
+    _db_path = Path(__file__).resolve().parent.parent / "data" / "taskflow.db"
+    database_url: str = f"sqlite+aiosqlite:///{_db_path}"
     
     # 大模型配置
     llm_provider: str = Field(default="openai", description="openai | ollama")

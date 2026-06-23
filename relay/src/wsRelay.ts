@@ -16,6 +16,17 @@ export function attachWsRelay(
     const targetDeviceId = url.searchParams.get('target');
     const pairingCode = url.searchParams.get('pairingCode');
 
+    if (
+      (targetDeviceId !== null &&
+        (targetDeviceId.length === 0 || targetDeviceId.length > 128)) ||
+      (pairingCode !== null &&
+        (pairingCode.length === 0 || pairingCode.length > 32))
+    ) {
+      console.log(`[relay] WebSocket auth failed: invalid target or pairingCode query parameter`);
+      ws.close(4001, 'invalid target or pairingCode');
+      return;
+    }
+
     const authHeader = req.headers['authorization'];
     const authMatch = typeof authHeader === 'string' ? /^Bearer\s+(.+)$/i.exec(authHeader) : null;
 
@@ -51,12 +62,16 @@ export function attachWsRelay(
     });
 
     ws.on('message', (data: RawData) => {
-      const buf = Buffer.isBuffer(data) ? data : Buffer.from(data as ArrayBuffer);
-      if (buf.length > MAX_FRAME_SIZE) {
+      const buffer = Buffer.isBuffer(data)
+        ? data
+        : Array.isArray(data)
+          ? Buffer.concat(data)
+          : Buffer.from(data);
+      if (buffer.length > MAX_FRAME_SIZE) {
         ws.close(1009, 'frame too large');
         return;
       }
-      connections.forward(deviceId, targetDeviceId ?? '', buf, pairingCode ?? undefined);
+      connections.forward(deviceId, targetDeviceId ?? '', buffer, pairingCode ?? undefined);
     });
 
     ws.on('close', () => {

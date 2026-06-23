@@ -7,10 +7,15 @@ const host = process.env.HOST;
 
 const relay = createRelayServer({ port, publicWsUrl, host });
 
-relay.start().then(() => {
-  console.log(`TaskFlow relay listening on ${host ?? '0.0.0.0'}:${port}`);
-  console.log(`WebSocket path: ${publicWsUrl ?? `ws://${host ?? '0.0.0.0'}:${port}/sync`}`);
-});
+relay.start()
+  .then(() => {
+    console.log(`TaskFlow relay listening on ${host ?? '0.0.0.0'}:${port}`);
+    console.log(`WebSocket path: ${publicWsUrl ?? `ws://${host ?? '0.0.0.0'}:${port}/sync`}`);
+  })
+  .catch((err) => {
+    console.error('[relay] failed to start', err);
+    process.exit(1);
+  });
 
 function shutdown() {
   relay.stop().then(() => process.exit(0));

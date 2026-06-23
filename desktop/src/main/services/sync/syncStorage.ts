@@ -35,6 +35,25 @@ export interface SyncState {
   lastSyncAt: number | null;
 }
 
+interface SyncRecordRow {
+  id: string;
+  table_name: string;
+  record_id: string;
+  version: number;
+  encrypted_payload: Buffer;
+  updated_at: number;
+  deleted: number;
+  device_version: string;
+}
+
+interface SyncDeviceRow {
+  device_id: string;
+  public_key: string;
+  name: string | null;
+  paired_at: number;
+  last_seen_at: number | null;
+}
+
 function resolveDb(db?: Database.Database): Database.Database {
   return db ?? getDatabase();
 }
@@ -88,7 +107,7 @@ export function getSyncRecordsForTable(tableName: string, db?: Database.Database
   const stmt = resolvedDb.prepare(
     'SELECT * FROM sync_records WHERE table_name = ? ORDER BY updated_at DESC'
   );
-  return stmt.all(tableName).map(rowToSyncRecord);
+  return (stmt.all(tableName) as SyncRecordRow[]).map(rowToSyncRecord);
 }
 
 export function getSyncRecordManifest(tableName?: string, db?: Database.Database): SyncRecordManifestItem[] {
@@ -97,8 +116,8 @@ export function getSyncRecordManifest(tableName?: string, db?: Database.Database
     ? 'SELECT id, record_id, version, updated_at, encrypted_payload FROM sync_records WHERE table_name = ?'
     : 'SELECT id, record_id, version, updated_at, encrypted_payload FROM sync_records';
   const stmt = resolvedDb.prepare(sql);
-  const rows = tableName ? stmt.all(tableName) : stmt.all();
-  return rows.map((row: any) => ({
+  const rows = (tableName ? stmt.all(tableName) : stmt.all()) as SyncRecordRow[];
+  return rows.map((row) => ({
     id: row.id,
     recordId: row.record_id,
     version: row.version,
@@ -110,7 +129,7 @@ export function getSyncRecordManifest(tableName?: string, db?: Database.Database
 export function getSyncRecordById(id: string, db?: Database.Database): SyncRecord | null {
   const resolvedDb = resolveDb(db);
   const stmt = resolvedDb.prepare('SELECT * FROM sync_records WHERE id = ?');
-  const row = stmt.get(id);
+  const row = stmt.get(id) as SyncRecordRow | undefined;
   return row ? rowToSyncRecord(row) : null;
 }
 
@@ -119,10 +138,10 @@ export function getSyncRecordsByIds(ids: string[], db?: Database.Database): Sync
   if (ids.length === 0) return [];
   const placeholders = ids.map(() => '?').join(',');
   const stmt = resolvedDb.prepare(`SELECT * FROM sync_records WHERE id IN (${placeholders})`);
-  return stmt.all(...ids).map(rowToSyncRecord);
+  return (stmt.all(...ids) as SyncRecordRow[]).map(rowToSyncRecord);
 }
 
-function rowToSyncRecord(row: any): SyncRecord {
+function rowToSyncRecord(row: SyncRecordRow): SyncRecord {
   return {
     id: row.id,
     tableName: row.table_name,
@@ -181,7 +200,7 @@ export function updateSyncDeviceLastSeen(
 export function getSyncDevice(deviceId: string, db?: Database.Database): SyncDevice | null {
   const resolvedDb = resolveDb(db);
   const stmt = resolvedDb.prepare('SELECT * FROM sync_devices WHERE device_id = ?');
-  const row = stmt.get(deviceId) as any;
+  const row = stmt.get(deviceId) as SyncDeviceRow | undefined;
   if (!row) return null;
   return {
     deviceId: row.device_id,
@@ -210,7 +229,7 @@ export function getTrustedPublicKey(deviceId: string, db?: Database.Database): s
 export function listSyncDevices(db?: Database.Database): SyncDevice[] {
   const resolvedDb = resolveDb(db);
   const stmt = resolvedDb.prepare('SELECT * FROM sync_devices ORDER BY paired_at DESC');
-  return stmt.all().map((row: any) => ({
+  return (stmt.all() as SyncDeviceRow[]).map((row) => ({
     deviceId: row.device_id,
     publicKey: row.public_key,
     name: row.name,

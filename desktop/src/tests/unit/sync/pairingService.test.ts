@@ -8,6 +8,7 @@ import {
 } from '../../../main/services/sync/pairingService';
 import { RelayClient } from '../../../main/services/sync/relayClient';
 import { RelayTransport } from '../../../main/services/sync/relayTransport';
+import type { RelayTransportOptions } from '../../../main/services/sync/relayTransport';
 import { generateDeviceIdentity } from '../../../main/services/sync/syncIdentity';
 import {
   generateSyncMasterKey,
@@ -205,7 +206,7 @@ describe('pairingService', () => {
     );
 
     vi.mocked(RelayTransport).mockImplementation(
-      function (_opts: any) {
+      function (_opts: RelayTransportOptions) {
         const session = new MockSyncSession(sendKey, receiveKey);
         session.setPeerIdentity({ deviceId: hostIdentity.deviceId, publicKey: hostIdentity.publicKeyPem });
         setTimeout(() => {
@@ -247,7 +248,7 @@ describe('pairingService', () => {
 
     let capturedSend: unknown;
     vi.mocked(RelayTransport).mockImplementation(
-      function (_opts: any) {
+      function (_opts: RelayTransportOptions) {
         const session = new MockSyncSession(sendKey, Buffer.alloc(32, 0x04));
         session.setPeerIdentity({ deviceId: joinerIdentity.deviceId, publicKey: joinerIdentity.publicKeyPem });
         session.on('send', (msg) => {

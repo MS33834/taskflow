@@ -7,10 +7,10 @@ from pydantic import BaseModel, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
+from app.core.exceptions import handle_api_error
 from app.core.file_organizer import FileOrganizer
 from app.database import get_db
 from app.models.file import FileMetadata
-from app.utils.logger import logger
 
 router = APIRouter(prefix="/files", tags=["files"])
 
@@ -101,8 +101,7 @@ async def scan_directory(
         
         return saved_files
     except Exception as e:
-        logger.error(f"扫描目录失败: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise handle_api_error(e, status_code=400, log_message="扫描目录失败")
 
 
 @router.post("/organize", response_model=FileResponse)
@@ -121,8 +120,7 @@ async def organize_file(
         )
         return metadata
     except Exception as e:
-        logger.error(f"归档文件失败: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise handle_api_error(e, status_code=400, log_message="归档文件失败")
 
 
 @router.get("/{file_id}", response_model=FileResponse)
