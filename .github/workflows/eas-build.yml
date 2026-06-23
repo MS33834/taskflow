@@ -40,12 +40,24 @@ jobs:
       - name: Check EAS credentials
         id: eas
         run: |
-          if [ -n "$EXPO_TOKEN" ]; then
-            echo "has_token=true" >> "$GITHUB_OUTPUT"
-            echo "EAS cloud build will run because EXPO_TOKEN is configured."
-          else
+          if [ -z "$EXPO_TOKEN" ]; then
             echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "has_project_id=false" >> "$GITHUB_OUTPUT"
             echo "::warning::EXPO_TOKEN secret is not set. Skipping EAS cloud build. To enable it, add an Expo access token as the EXPO_TOKEN repository secret."
+            exit 0
+          fi
+
+          echo "has_token=true" >> "$GITHUB_OUTPUT"
+          echo "EAS cloud build will run because EXPO_TOKEN is configured."
+
+          # Validate that app.json contains a real EAS projectId, not the placeholder.
+          PROJECT_ID=$(node -e "console.log(require('./app.json').expo?.extra?.eas?.projectId || '')")
+          if [ -z "$PROJECT_ID" ] || [ "$PROJECT_ID" = "00000000-0000-0000-0000-000000000000" ]; then
+            echo "has_project_id=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::No valid EAS projectId found in app.json. Skipping EAS cloud build. Run 'eas init' to configure a real projectId."
+          else
+            echo "has_project_id=true" >> "$GITHUB_OUTPUT"
+            echo "EAS projectId: $PROJECT_ID"
           fi
 
       - name: Setup Node.js
@@ -61,7 +73,7 @@ jobs:
         run: npx tsc --noEmit
 
       - name: Setup Expo and EAS
-        if: steps.eas.outputs.has_token == 'true'
+        if: steps.eas.outputs.has_token == 'true' && steps.eas.outputs.has_project_id == 'true'
         uses: expo/expo-github-action@eab7a230208c952974db8c3245cfd78402c7b385 # v9
         with:
           expo-version: latest
@@ -69,7 +81,7 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build APK
-        if: steps.eas.outputs.has_token == 'true'
+        if: steps.eas.outputs.has_token == 'true' && steps.eas.outputs.has_project_id == 'true'
         run: |
           echo "Starting EAS Build..."
           eas build --platform ${{ inputs.platform }} --profile ${{ inputs.profile }} --non-interactive --no-wait
@@ -77,7 +89,7 @@ jobs:
       - name: Build Report
         if: always()
         run: |
-          if [ "${{ steps.eas.outputs.has_token }}" == "true" ]; then
+          if [ "${{ steps.eas.outputs.has_token }}" == "true" ] && [ "${{ steps.eas.outputs.has_project_id }}" == "true" ]; then
             echo "## 📱 EAS Build Started!" > build-status.txt
             echo "" >> build-status.txt
             echo "- **Platform:** ${{ inputs.platform }}" >> build-status.txt
@@ -85,6 +97,16 @@ jobs:
             echo "" >> build-status.txt
             echo "Check your Expo dashboard for progress and download:" >> build-status.txt
             echo "https://expo.dev/" >> build-status.txt
+          elif [ "${{ steps.eas.outputs.has_token }}" == "true" ]; then
+            echo "## ⚠️ EAS Build Skipped" > build-status.txt
+            echo "" >> build-status.txt
+            echo "EXPO_TOKEN is configured, but app.json does not contain a valid EAS projectId." >> build-status.txt
+            echo "" >> build-status.txt
+            echo "To enable EAS cloud builds:" >> build-status.txt
+            echo "1. Run 'eas init' or update app.json with your real EAS projectId" >> build-status.txt
+            echo "2. Ensure the projectId is not the placeholder 00000000-0000-0000-0000-000000000000" >> build-status.txt
+            echo "" >> build-status.txt
+            echo "See BUILD_APK.md and GITHUB_BUILD.md for more details."
           else
             echo "## ⚠️ EAS Build Skipped" > build-status.txt
             echo "" >> build-status.txt
@@ -111,13 +133,20 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          if [ "${{ steps.eas.outputs.has_token }}" == "true" ]; then
+          if [ "${{ steps.eas.outputs.has_token }}" == "true" ] && [ "${{ steps.eas.outputs.has_project_id }}" == "true" ]; then
             echo "## 📱 EAS Build Started" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "- **Platform:** ${{ inputs.platform }}" >> "$GITHUB_STEP_SUMMARY"
             echo "- **Profile:** ${{ inputs.profile }}" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "Monitor progress at https://expo.dev/" >> "$GITHUB_STEP_SUMMARY"
+          elif [ "${{ steps.eas.outputs.has_token }}" == "true" ]; then
+            echo "## ⚠️ EAS Build Skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "EXPO_TOKEN is configured, but app.json does not contain a valid EAS projectId." >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Run 'eas init' or update app.json with a real projectId to enable cloud builds." >> "$GITHUB_STEP_SUMMARY"
+            echo "See BUILD_APK.md and GITHUB_BUILD.md for details." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "## ⚠️ EAS Build Skipped" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
