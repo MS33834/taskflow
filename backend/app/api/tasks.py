@@ -33,7 +33,9 @@ def _now() -> datetime:
 
 
 def _dump(value: Any) -> str:
-    return json.dumps(value, ensure_ascii=False, default=str) if value is not None else "[]"
+    if value is None:
+        return "[]"
+    return json.dumps(value, ensure_ascii=False, default=str)
 
 
 def _load(value: str | None, default: Any = None) -> Any:
@@ -97,7 +99,7 @@ async def list_tasks(
     """获取任务列表"""
     stmt = select(Task)
     if not include_deleted:
-        stmt = stmt.where(Task.is_deleted == False)
+        stmt = stmt.where(Task.is_deleted.is_(False))
     result = await db.execute(stmt.order_by(Task.order, Task.created_at.desc()))
     return [_task_to_response(t) for t in result.scalars().all()]
 
@@ -165,7 +167,9 @@ async def get_task(task_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.patch("/{task_id}", response_model=TaskResponse)
-async def update_task(task_id: str, updates: TaskUpdate, db: AsyncSession = Depends(get_db)):
+async def update_task(
+    task_id: str, updates: TaskUpdate, db: AsyncSession = Depends(get_db)
+):
     """更新任务"""
     result = await db.execute(select(Task).where(Task.id == task_id))
     task = result.scalar_one_or_none()
@@ -197,7 +201,7 @@ async def update_task(task_id: str, updates: TaskUpdate, db: AsyncSession = Depe
             if isinstance(value, list) and value and hasattr(value[0], "model_dump"):
                 value = [v.model_dump() for v in value]
             setattr(task, json_fields[key], _dump(value))
-        else:
+        elif hasattr(task, key):
             setattr(task, key, value)
 
     await db.commit()
@@ -207,7 +211,9 @@ async def update_task(task_id: str, updates: TaskUpdate, db: AsyncSession = Depe
 
 
 @router.delete("/{task_id}", status_code=204)
-async def delete_task(task_id: str, hard: bool = Query(False), db: AsyncSession = Depends(get_db)):
+async def delete_task(
+    task_id: str, hard: bool = Query(False), db: AsyncSession = Depends(get_db)
+):
     """删除任务（默认软删除）"""
     result = await db.execute(select(Task).where(Task.id == task_id))
     task = result.scalar_one_or_none()
@@ -287,7 +293,9 @@ async def get_project(project_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.patch("/projects/{project_id}", response_model=ProjectResponse)
-async def update_project(project_id: str, updates: ProjectUpdate, db: AsyncSession = Depends(get_db)):
+async def update_project(
+    project_id: str, updates: ProjectUpdate, db: AsyncSession = Depends(get_db)
+):
     result = await db.execute(select(Project).where(Project.id == project_id))
     project = result.scalar_one_or_none()
     if not project:
@@ -296,7 +304,7 @@ async def update_project(project_id: str, updates: ProjectUpdate, db: AsyncSessi
     for key, value in updates.model_dump(exclude_unset=True).items():
         if key == "tags":
             project.tags = _dump(value)
-        elif key not in ("id", "created_at", "updated_at"):
+        elif hasattr(project, key):
             setattr(project, key, value)
 
     project.updated_at = _now()
@@ -321,15 +329,23 @@ async def delete_project(project_id: str, db: AsyncSession = Depends(get_db)):
 
 @router.get("/categories/", response_model=list[CategoryResponse])
 async def list_categories(db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(Category).order_by(Category.order, Category.created_at.desc()))
+    result = await db.execute(
+        select(Category).order_by(Category.order, Category.created_at.desc())
+    )
     return result.scalars().all()
 
 
 @router.post("/categories/", response_model=CategoryResponse, status_code=201)
-async def create_category(category_in: CategoryCreate, db: AsyncSession = Depends(get_db)):
+async def create_category(
+    category_in: CategoryCreate, db: AsyncSession = Depends(get_db)
+):
     now = _now()
     category = Category(
-        id=category_in.id if category_in.id else f"category_{int(now.timestamp() * 1000)}",
+        id=(
+            category_in.id
+            if category_in.id
+            else f"category_{int(now.timestamp() * 1000)}"
+        ),
         **category_in.model_dump(exclude={"id", "created_at", "updated_at"}),
         created_at=now,
         updated_at=now,
@@ -350,14 +366,16 @@ async def get_category(category_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.patch("/categories/{category_id}", response_model=CategoryResponse)
-async def update_category(category_id: str, updates: CategoryUpdate, db: AsyncSession = Depends(get_db)):
+async def update_category(
+    category_id: str, updates: CategoryUpdate, db: AsyncSession = Depends(get_db)
+):
     result = await db.execute(select(Category).where(Category.id == category_id))
     category = result.scalar_one_or_none()
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
 
     for key, value in updates.model_dump(exclude_unset=True).items():
-        if key not in ("id", "created_at", "updated_at"):
+        if hasattr(category, key):
             setattr(category, key, value)
 
     category.updated_at = _now()
@@ -411,14 +429,16 @@ async def get_tag(tag_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.patch("/tags/{tag_id}", response_model=TagResponse)
-async def update_tag(tag_id: str, updates: TagUpdate, db: AsyncSession = Depends(get_db)):
+async def update_tag(
+    tag_id: str, updates: TagUpdate, db: AsyncSession = Depends(get_db)
+):
     result = await db.execute(select(Tag).where(Tag.id == tag_id))
     tag = result.scalar_one_or_none()
     if not tag:
         raise HTTPException(status_code=404, detail="Tag not found")
 
     for key, value in updates.model_dump(exclude_unset=True).items():
-        if key not in ("id", "created_at", "updated_at"):
+        if hasattr(tag, key):
             setattr(tag, key, value)
 
     tag.updated_at = _now()
