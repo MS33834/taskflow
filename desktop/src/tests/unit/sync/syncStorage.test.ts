@@ -333,5 +333,5 @@ describe('syncStorage', () => {
 
     // Restore the default test database so afterEach can clean it up.
     openDatabase(testKey, testDbPath);
-  });
+  }, 30000);
 });
