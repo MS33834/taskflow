@@ -78,7 +78,9 @@ export class RelayTransport {
     this.ws.on('message', (data) => this.handleMessage(data));
     this.ws.on('ping', () => this.ws?.pong());
     this.ws.on('pong', () => this.resetHeartbeatTimeout());
-    this.ws.on('error', () => {});
+    this.ws.on('error', (error: Error) => {
+      console.error('RelayTransport WebSocket error:', error.message);
+    });
     this.ws.on('close', () => this.handleClose());
   }
 

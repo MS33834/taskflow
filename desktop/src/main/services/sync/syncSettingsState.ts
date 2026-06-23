@@ -18,6 +18,21 @@ export function getSyncSettingsPath(): string {
   return path.join(app.getPath('userData'), 'taskflow-sync-settings.dat');
 }
 
+export function normalizeRelayUrl(input: string): string {
+  const trimmed = input.trim();
+  if (!trimmed) return '';
+  if (trimmed.startsWith('ws://')) {
+    return trimmed.replace(/^ws/, 'http');
+  }
+  if (trimmed.startsWith('wss://')) {
+    return trimmed.replace(/^wss/, 'https');
+  }
+  if (!/^https?:\/\//i.test(trimmed)) {
+    throw new Error('relay URL must include a protocol');
+  }
+  return trimmed;
+}
+
 export function getSyncSettings(): SyncSettings {
   const filePath = getSyncSettingsPath();
   if (!fs.existsSync(filePath)) {
@@ -51,6 +66,10 @@ export function getSyncSettings(): SyncSettings {
 export function setSyncSettings(updates: Partial<SyncSettings>): SyncSettings {
   const current = getSyncSettings();
   const next: SyncSettings = { ...current, ...updates };
+
+  if (typeof next.relayUrl === 'string' && next.relayUrl !== '') {
+    next.relayUrl = normalizeRelayUrl(next.relayUrl);
+  }
 
   if (!safeStorage.isEncryptionAvailable()) {
     throw new Error('safeStorage is not available; refusing to write plaintext sync settings');

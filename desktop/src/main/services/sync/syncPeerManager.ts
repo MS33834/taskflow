@@ -27,6 +27,7 @@ export class SyncPeerManager extends EventEmitter {
     if (!peer) return;
     peer.session.removeAllListeners();
     peer.engine.removeAllListeners();
+    peer.session.close();
     peer.state = 'closed';
     this.peers.delete(deviceId);
     this.emit('stateChanged', this.getState());
