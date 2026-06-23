@@ -211,7 +211,7 @@ function makeSyncRecord(
   };
 }
 
-function safeRemoveSync(target: string, maxRetries = 10): void {
+function safeRemoveSync(target: string, maxRetries = 50): void {
   if (!fs.existsSync(target)) return;
   for (let i = 0; i < maxRetries; i++) {
     try {
@@ -224,7 +224,7 @@ function safeRemoveSync(target: string, maxRetries = 10): void {
       return;
     } catch (err: unknown) {
       if ((err as NodeJS.ErrnoException).code === 'EBUSY' && i < maxRetries - 1) {
-        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 200);
         continue;
       }
       throw err;

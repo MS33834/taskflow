@@ -24,7 +24,7 @@ import {
 const testDbPath = path.join(os.tmpdir(), `taskflow-sync-storage-test-${Date.now()}.db`);
 const testKey = Buffer.alloc(32, 0xab);
 
-function safeRemoveSync(target: string, maxRetries = 10): void {
+function safeRemoveSync(target: string, maxRetries = 50): void {
   if (!fs.existsSync(target)) return;
   for (let i = 0; i < maxRetries; i++) {
     try {
@@ -37,7 +37,7 @@ function safeRemoveSync(target: string, maxRetries = 10): void {
       return;
     } catch (err: unknown) {
       if ((err as NodeJS.ErrnoException).code === 'EBUSY' && i < maxRetries - 1) {
-        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 200);
         continue;
       }
       throw err;
