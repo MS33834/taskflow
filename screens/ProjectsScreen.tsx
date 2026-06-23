@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
+  ScrollView,
   TouchableOpacity,
   TextInput,
   SafeAreaView,
   Platform,
   Alert,
   Modal,
-  ScrollView,
   Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -19,11 +19,10 @@ import { useAppStore } from '../src/shared/store';
 import { RootStackParamList, Project } from '../src/shared/types';
 import { Button } from '../src/shared/components/common';
 import { toast } from '../src/shared/components/common/Toast';
+import { useResponsiveLayout } from '../src/shared/hooks/useResponsiveLayout';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Projects'>;
 type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
-
-const { width } = Dimensions.get('window');
 
 const PROJECT_COLORS = [
   '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
@@ -39,6 +38,30 @@ const PROJECT_ICONS = [
 ];
 
 export default function ProjectsScreen() {
+  const layout = useResponsiveLayout();
+  const {
+    width,
+    isXSmall,
+    isSmall,
+    isLarge,
+    screenPadding,
+    sectionSpacing,
+    cardSpacing,
+    bottomInset,
+    contentMaxWidth,
+  } = layout;
+
+  const headerPaddingV = isXSmall ? 10 : isSmall ? 11 : 12;
+  const headerTitleSize = isXSmall ? 16 : isSmall ? 17 : 18;
+  const iconSize = isXSmall ? 20 : isSmall ? 22 : 24;
+  const sectionPadding = isXSmall ? 12 : isSmall ? 14 : 16;
+  const bodyTextSize = isXSmall ? 13 : 14;
+  const contentWrapperStyle = isLarge ? {
+    maxWidth: contentMaxWidth,
+    alignSelf: 'center' as const,
+    width: '100%' as const,
+  } : {};
+
   const navigation = useNavigation<NavigationProp>();
   const {
     theme,
@@ -337,23 +360,23 @@ export default function ProjectsScreen() {
   };
 
   const renderHeader = () => (
-    <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.header, { backgroundColor: theme.colors.surface, paddingHorizontal: screenPadding, paddingVertical: headerPaddingV }]}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+        <MaterialIcons name="arrow-back" size={iconSize} color={theme.colors.primary} />
       </TouchableOpacity>
-      <Text style={[styles.headerTitle, { color: theme.colors.text }]}>项目管理</Text>
+      <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: headerTitleSize }]}>项目管理</Text>
       <TouchableOpacity onPress={() => setShowAddModal(true)} style={styles.addButton}>
-        <Text style={[styles.addButtonText, { color: theme.colors.primary }]}>+ 新建</Text>
+        <Text style={[styles.addButtonText, { color: theme.colors.primary, fontSize: bodyTextSize }]}>+ 新建</Text>
       </TouchableOpacity>
     </View>
   );
 
   const renderSearchBar = () => (
-    <View style={[styles.searchBar, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.searchBar, { backgroundColor: theme.colors.surface, padding: screenPadding }]}>
       <View style={[styles.searchInputContainer, { backgroundColor: theme.colors.background }]}>
-        <MaterialIcons name="search" size={16} color={theme.colors.textSecondary} style={{ marginRight: 8 }} />
+        <MaterialIcons name="search" size={isXSmall ? 14 : 16} color={theme.colors.textSecondary} style={{ marginRight: 8 }} />
         <TextInput
-          style={[styles.searchInput, { color: theme.colors.text }]}
+          style={[styles.searchInput, { color: theme.colors.text, fontSize: bodyTextSize }]}
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="搜索项目..."
@@ -361,7 +384,7 @@ export default function ProjectsScreen() {
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <MaterialIcons name="close" size={20} color={theme.colors.textSecondary} />
+            <MaterialIcons name="close" size={isXSmall ? 18 : 20} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -369,13 +392,13 @@ export default function ProjectsScreen() {
         style={styles.viewModeButton}
         onPress={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
       >
-        <MaterialIcons name={viewMode === 'grid' ? 'format-list-bulleted' : 'grid-view'} size={20} color={theme.colors.textSecondary} />
+        <MaterialIcons name={viewMode === 'grid' ? 'format-list-bulleted' : 'grid-view'} size={isXSmall ? 18 : 20} color={theme.colors.textSecondary} />
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.archiveButton, showArchived && { backgroundColor: theme.colors.primary }]}
         onPress={() => setShowArchived(!showArchived)}
       >
-        <MaterialIcons name="archive" size={20} color={showArchived ? '#FFFFFF' : theme.colors.textSecondary} />
+        <MaterialIcons name="archive" size={isXSmall ? 18 : 20} color={showArchived ? '#FFFFFF' : theme.colors.textSecondary} />
       </TouchableOpacity>
     </View>
   );
@@ -600,12 +623,13 @@ export default function ProjectsScreen() {
       {renderSearchBar()}
 
       <ScrollView
-        contentContainerStyle={styles.contentContainer}
+        style={contentWrapperStyle}
+        contentContainerStyle={[styles.contentContainer, { padding: screenPadding, paddingBottom: bottomInset }]}
         showsVerticalScrollIndicator={false}
       >
             {favoriteProjects.length > 0 && !showArchived && (
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>
+              <View style={[styles.section, { marginBottom: sectionSpacing }]}>
+                <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary, fontSize: bodyTextSize }]}>
                   收藏的项目 ({favoriteProjects.length})
                 </Text>
                 {viewMode === 'grid' ? (
@@ -619,8 +643,8 @@ export default function ProjectsScreen() {
             )}
 
             {activeProjects.length > 0 && (
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>
+              <View style={[styles.section, { marginBottom: sectionSpacing }]}>
+                <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary, fontSize: bodyTextSize }]}>
                   {showArchived ? '所有项目' : '项目'} ({activeProjects.length})
                 </Text>
                 {viewMode === 'grid' ? (
@@ -634,8 +658,8 @@ export default function ProjectsScreen() {
             )}
 
             {showArchived && archivedProjects.length > 0 && (
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>
+              <View style={[styles.section, { marginBottom: sectionSpacing }]}>
+                <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary, fontSize: bodyTextSize }]}>
                   已归档 ({archivedProjects.length})
                 </Text>
                 {viewMode === 'grid' ? (
@@ -656,6 +680,8 @@ export default function ProjectsScreen() {
     </SafeAreaView>
   );
 }
+
+const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {

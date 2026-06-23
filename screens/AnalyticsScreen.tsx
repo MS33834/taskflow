@@ -7,17 +7,15 @@ import {
   TouchableOpacity,
   SafeAreaView,
   Platform,
-  Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAppStore } from '../src/shared/store';
 import { RootStackParamList } from '../src/shared/types';
+import { useResponsiveLayout } from '../src/shared/hooks/useResponsiveLayout';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Analytics'>;
-
-const { width } = Dimensions.get('window');
 
 type TimeRange = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'all';
 
@@ -27,10 +25,48 @@ const getDaysBetween = (start: Date, end: Date): number => {
 };
 
 export default function AnalyticsScreen() {
+  const layout = useResponsiveLayout();
+  const {
+    width,
+    isXSmall,
+    isSmall,
+    isLarge,
+    screenPadding,
+    sectionSpacing,
+    cardSpacing,
+    bottomInset,
+    contentMaxWidth,
+  } = layout;
+
   const navigation = useNavigation<NavigationProp>();
   const { theme, tasks, projects, goals, habits } = useAppStore();
 
   const [timeRange, setTimeRange] = useState<TimeRange>('week');
+
+  const headerPaddingV = isXSmall ? 10 : isSmall ? 11 : 12;
+  const headerTitleSize = isXSmall ? 16 : isSmall ? 17 : 18;
+  const backIconSize = isXSmall ? 20 : isSmall ? 22 : 24;
+  const sectionPadding = isXSmall ? 12 : isSmall ? 14 : 16;
+  const sectionTitleSize = isXSmall ? 14 : isSmall ? 15 : 16;
+  const buttonTextSize = isXSmall ? 12 : isSmall ? 13 : 14;
+  const overviewValueSize = isXSmall ? 24 : isSmall ? 28 : 32;
+  const overviewLabelSize = isXSmall ? 12 : isSmall ? 13 : 14;
+  const scoreCircleSize = isXSmall ? 80 : isSmall ? 90 : 100;
+  const scoreBorderWidth = isXSmall ? 6 : isSmall ? 7 : 8;
+  const scoreValueSize = isXSmall ? 24 : isSmall ? 28 : 32;
+  const scoreTextSize = isXSmall ? 12 : 14;
+  const completionTextSize = isXSmall ? 16 : 18;
+  const labelTextSize = isXSmall ? 11 : 12;
+  const chartHeight = isXSmall ? 120 : isSmall ? 135 : 150;
+  const insightIconSize = isXSmall ? 20 : isSmall ? 22 : 24;
+  const habitStatValueSize = isXSmall ? 20 : isSmall ? 22 : 24;
+  const cardWidth = (width - screenPadding * 2 - cardSpacing) / 2;
+
+  const contentWrapperStyle = isLarge ? {
+    maxWidth: contentMaxWidth,
+    alignSelf: 'center' as const,
+    width: '100%' as const,
+  } : {};
 
   const getDateRange = (range: TimeRange): { start: Date; end: Date } => {
     const end = new Date();
@@ -261,22 +297,23 @@ export default function AnalyticsScreen() {
   };
 
   const renderHeader = () => (
-    <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.header, { backgroundColor: theme.colors.surface, paddingHorizontal: screenPadding, paddingVertical: headerPaddingV }]}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+        <MaterialIcons name="arrow-back" size={backIconSize} color={theme.colors.primary} />
       </TouchableOpacity>
-      <Text style={[styles.headerTitle, { color: theme.colors.text }]}>统计分析</Text>
+      <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: headerTitleSize }]}>统计分析</Text>
       <View style={styles.headerRight} />
     </View>
   );
 
   const renderTimeRangeSelector = () => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.timeRangeSelector}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.timeRangeSelector, { paddingHorizontal: screenPadding, paddingVertical: headerPaddingV }]}>
       {(['today', 'week', 'month', 'quarter', 'year', 'all'] as TimeRange[]).map((range) => (
         <TouchableOpacity
           key={range}
           style={[
             styles.timeRangeButton,
+            { paddingHorizontal: isXSmall ? 12 : 16, paddingVertical: isXSmall ? 6 : 8 },
             timeRange === range && { backgroundColor: theme.colors.primary },
           ]}
           onPress={() => setTimeRange(range)}
@@ -284,7 +321,7 @@ export default function AnalyticsScreen() {
           <Text
             style={[
               styles.timeRangeText,
-              { color: timeRange === range ? '#FFFFFF' : theme.colors.text },
+              { color: timeRange === range ? '#FFFFFF' : theme.colors.text, fontSize: buttonTextSize },
             ]}
           >
             {range === 'today' ? '今天' :
@@ -299,39 +336,39 @@ export default function AnalyticsScreen() {
   );
 
   const renderOverviewCards = () => (
-    <View style={styles.overviewGrid}>
-      <View style={[styles.overviewCard, { backgroundColor: theme.colors.primary + '20' }]}>
-        <Text style={[styles.overviewCardValue, { color: theme.colors.primary }]}>
+    <View style={[styles.overviewGrid, { paddingHorizontal: screenPadding, marginBottom: sectionSpacing }]}>
+      <View style={[styles.overviewCard, { backgroundColor: theme.colors.primary + '20', width: cardWidth, padding: sectionPadding, marginBottom: cardSpacing }]}>
+        <Text style={[styles.overviewCardValue, { color: theme.colors.primary, fontSize: overviewValueSize }]}>
           {filteredTasks.length}
         </Text>
-        <Text style={[styles.overviewCardLabel, { color: theme.colors.textSecondary }]}>
+        <Text style={[styles.overviewCardLabel, { color: theme.colors.textSecondary, fontSize: overviewLabelSize }]}>
           总任务数
         </Text>
       </View>
       
-      <View style={[styles.overviewCard, { backgroundColor: '#10b98120' }]}>
-        <Text style={[styles.overviewCardValue, { color: '#10b981' }]}>
+      <View style={[styles.overviewCard, { backgroundColor: '#10b98120', width: cardWidth, padding: sectionPadding, marginBottom: cardSpacing, marginLeft: cardSpacing }]}>
+        <Text style={[styles.overviewCardValue, { color: '#10b981', fontSize: overviewValueSize }]}>
           {completedTasks.length}
         </Text>
-        <Text style={[styles.overviewCardLabel, { color: theme.colors.textSecondary }]}>
+        <Text style={[styles.overviewCardLabel, { color: theme.colors.textSecondary, fontSize: overviewLabelSize }]}>
           已完成
         </Text>
       </View>
       
-      <View style={[styles.overviewCard, { backgroundColor: '#ef444420' }]}>
-        <Text style={[styles.overviewCardValue, { color: '#ef4444' }]}>
+      <View style={[styles.overviewCard, { backgroundColor: '#ef444420', width: cardWidth, padding: sectionPadding }]}>
+        <Text style={[styles.overviewCardValue, { color: '#ef4444', fontSize: overviewValueSize }]}>
           {overdueTasks.length}
         </Text>
-        <Text style={[styles.overviewCardLabel, { color: theme.colors.textSecondary }]}>
+        <Text style={[styles.overviewCardLabel, { color: theme.colors.textSecondary, fontSize: overviewLabelSize }]}>
           已逾期
         </Text>
       </View>
       
-      <View style={[styles.overviewCard, { backgroundColor: '#f59e0b20' }]}>
-        <Text style={[styles.overviewCardValue, { color: '#f59e0b' }]}>
+      <View style={[styles.overviewCard, { backgroundColor: '#f59e0b20', width: cardWidth, padding: sectionPadding, marginLeft: cardSpacing }]}>
+        <Text style={[styles.overviewCardValue, { color: '#f59e0b', fontSize: overviewValueSize }]}>
           {upcomingTasks.length}
         </Text>
-        <Text style={[styles.overviewCardLabel, { color: theme.colors.textSecondary }]}>
+        <Text style={[styles.overviewCardLabel, { color: theme.colors.textSecondary, fontSize: overviewLabelSize }]}>
           即将到期
         </Text>
       </View>
@@ -339,31 +376,31 @@ export default function AnalyticsScreen() {
   );
 
   const renderProductivityScore = () => (
-    <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>生产力得分</Text>
+    <View style={[styles.section, { backgroundColor: theme.colors.surface, marginHorizontal: screenPadding, marginBottom: sectionSpacing, padding: sectionPadding }]}>
+      <Text style={[styles.sectionTitle, { color: theme.colors.text, fontSize: sectionTitleSize }]}>生产力得分</Text>
       <View style={styles.scoreContainer}>
-        <View style={[styles.scoreCircle, { borderColor: theme.colors?.primary || '#3b82f6' }]}>
-          <Text style={[styles.scoreValue, { color: theme.colors.primary }]}>
+        <View style={[styles.scoreCircle, { borderColor: theme.colors?.primary || '#3b82f6', width: scoreCircleSize, height: scoreCircleSize, borderRadius: scoreCircleSize / 2, borderWidth: scoreBorderWidth, marginRight: isXSmall ? 12 : 20 }]}>
+          <Text style={[styles.scoreValue, { color: theme.colors.primary, fontSize: scoreValueSize }]}>
             {productivityScore}
           </Text>
-          <Text style={[styles.scoreMax, { color: theme.colors.textSecondary }]}>/100</Text>
+          <Text style={[styles.scoreMax, { color: theme.colors.textSecondary, fontSize: labelTextSize }]}>/100</Text>
         </View>
         <View style={styles.scoreDetails}>
           <View style={styles.scoreDetailRow}>
             <View style={[styles.scoreIndicator, { backgroundColor: theme.colors.primary }]} />
-            <Text style={[styles.scoreDetailText, { color: theme.colors.text }]}>
+            <Text style={[styles.scoreDetailText, { color: theme.colors.text, fontSize: scoreTextSize }]}>
               完成率 {completionRate.toFixed(1)}%
             </Text>
           </View>
           <View style={styles.scoreDetailRow}>
             <View style={[styles.scoreIndicator, { backgroundColor: '#10b981' }]} />
-            <Text style={[styles.scoreDetailText, { color: theme.colors.text }]}>
+            <Text style={[styles.scoreDetailText, { color: theme.colors.text, fontSize: scoreTextSize }]}>
               连续 {streakDays} 天
             </Text>
           </View>
           <View style={styles.scoreDetailRow}>
             <View style={[styles.scoreIndicator, { backgroundColor: '#f59e0b' }]} />
-            <Text style={[styles.scoreDetailText, { color: theme.colors.text }]}>
+            <Text style={[styles.scoreDetailText, { color: theme.colors.text, fontSize: scoreTextSize }]}>
               日均 {averageTasksPerDay} 任务
             </Text>
           </View>
@@ -373,8 +410,8 @@ export default function AnalyticsScreen() {
   );
 
   const renderCompletionRate = () => (
-    <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>完成率</Text>
+    <View style={[styles.section, { backgroundColor: theme.colors.surface, marginHorizontal: screenPadding, marginBottom: sectionSpacing, padding: sectionPadding }]}>
+      <Text style={[styles.sectionTitle, { color: theme.colors.text, fontSize: sectionTitleSize }]}>完成率</Text>
       <View style={styles.completionContainer}>
         <View style={styles.completionBar}>
           <View
@@ -387,12 +424,12 @@ export default function AnalyticsScreen() {
             ]}
           />
         </View>
-        <Text style={[styles.completionText, { color: theme.colors.text }]}>
+        <Text style={[styles.completionText, { color: theme.colors.text, fontSize: completionTextSize }]}>
           {completionRate.toFixed(1)}%
         </Text>
       </View>
       <View style={styles.completionStats}>
-        <Text style={[styles.completionStatText, { color: theme.colors.textSecondary }]}>
+        <Text style={[styles.completionStatText, { color: theme.colors.textSecondary, fontSize: labelTextSize }]}>
           {completedTasks.length} / {filteredTasks.length} 任务
         </Text>
       </View>
@@ -400,14 +437,14 @@ export default function AnalyticsScreen() {
   );
 
   const renderTasksByStatus = () => (
-    <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>任务状态分布</Text>
+    <View style={[styles.section, { backgroundColor: theme.colors.surface, marginHorizontal: screenPadding, marginBottom: sectionSpacing, padding: sectionPadding }]}>
+      <Text style={[styles.sectionTitle, { color: theme.colors.text, fontSize: sectionTitleSize }]}>任务状态分布</Text>
       <View style={styles.statusChart}>
         {Object.entries(tasksByStatus).map(([status, count]) => (
           <View key={status} style={styles.statusRow}>
-            <View style={styles.statusLabel}>
+            <View style={[styles.statusLabel, { width: isXSmall ? 80 : 100 }]}>
               <View style={[styles.statusDot, { backgroundColor: getStatusColor(status) }]} />
-              <Text style={[styles.statusText, { color: theme.colors.text }]}>
+              <Text style={[styles.statusText, { color: theme.colors.text, fontSize: labelTextSize }]}>
                 {status === 'todo' ? '待办' :
                  status === 'in-progress' ? '进行中' :
                  status === 'waiting' ? '等待中' :
@@ -427,7 +464,7 @@ export default function AnalyticsScreen() {
                 ]}
               />
             </View>
-            <Text style={[styles.statusCount, { color: theme.colors.textSecondary }]}>
+            <Text style={[styles.statusCount, { color: theme.colors.textSecondary, fontSize: labelTextSize }]}>
               {count}
             </Text>
           </View>
@@ -437,14 +474,14 @@ export default function AnalyticsScreen() {
   );
 
   const renderTasksByPriority = () => (
-    <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>任务优先级分布</Text>
+    <View style={[styles.section, { backgroundColor: theme.colors.surface, marginHorizontal: screenPadding, marginBottom: sectionSpacing, padding: sectionPadding }]}>
+      <Text style={[styles.sectionTitle, { color: theme.colors.text, fontSize: sectionTitleSize }]}>任务优先级分布</Text>
       <View style={styles.priorityChart}>
         {Object.entries(tasksByPriority).map(([priority, count]) => (
           <View key={priority} style={styles.priorityRow}>
-            <View style={styles.priorityLabel}>
+            <View style={[styles.priorityLabel, { width: isXSmall ? 80 : 100 }]}>
               <View style={[styles.priorityDot, { backgroundColor: getPriorityColor(priority) }]} />
-              <Text style={[styles.priorityText, { color: theme.colors.text }]}>
+              <Text style={[styles.priorityText, { color: theme.colors.text, fontSize: labelTextSize }]}>
                 {priority === 'critical' ? '紧急且重要' :
                  priority === 'urgent' ? '紧急' :
                  priority === 'high' ? '高' :
@@ -462,7 +499,7 @@ export default function AnalyticsScreen() {
                 ]}
               />
             </View>
-            <Text style={[styles.priorityCount, { color: theme.colors.textSecondary }]}>
+            <Text style={[styles.priorityCount, { color: theme.colors.textSecondary, fontSize: labelTextSize }]}>
               {count}
             </Text>
           </View>
@@ -472,16 +509,16 @@ export default function AnalyticsScreen() {
   );
 
   const renderDailyTrend = () => (
-    <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>每日完成趋势</Text>
-      <View style={styles.trendChart}>
+    <View style={[styles.section, { backgroundColor: theme.colors.surface, marginHorizontal: screenPadding, marginBottom: sectionSpacing, padding: sectionPadding }]}>
+      <Text style={[styles.sectionTitle, { color: theme.colors.text, fontSize: sectionTitleSize }]}>每日完成趋势</Text>
+      <View style={[styles.trendChart, { height: chartHeight }]}>
         {dailyCompletionTrend.slice(-14).map((day, index) => {
           const maxCount = Math.max(...dailyCompletionTrend.map((d) => d.count), 1);
           const height = (day.count / maxCount) * 100;
           
           return (
             <View key={index} style={styles.trendBar}>
-              <Text style={[styles.trendValue, { color: theme.colors.textSecondary }]}>
+              <Text style={[styles.trendValue, { color: theme.colors.textSecondary, fontSize: isXSmall ? 9 : 10 }]}>
                 {day.count}
               </Text>
               <View
@@ -493,7 +530,7 @@ export default function AnalyticsScreen() {
                   },
                 ]}
               />
-              <Text style={[styles.trendDate, { color: theme.colors.textSecondary }]}>
+              <Text style={[styles.trendDate, { color: theme.colors.textSecondary, fontSize: isXSmall ? 9 : 10 }]}>
                 {new Date(day.date).getDate()}
               </Text>
             </View>
@@ -504,8 +541,8 @@ export default function AnalyticsScreen() {
   );
 
   const renderProjectDistribution = () => (
-    <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>项目分布</Text>
+    <View style={[styles.section, { backgroundColor: theme.colors.surface, marginHorizontal: screenPadding, marginBottom: sectionSpacing, padding: sectionPadding }]}>
+      <Text style={[styles.sectionTitle, { color: theme.colors.text, fontSize: sectionTitleSize }]}>项目分布</Text>
       <View style={styles.projectList}>
         {Object.entries(tasksByProject)
           .sort(([, a], [, b]) => b - a)
@@ -519,11 +556,11 @@ export default function AnalyticsScreen() {
               <View key={projectId} style={styles.projectRow}>
                 <View style={styles.projectLabel}>
                   <View style={[styles.projectDot, { backgroundColor: projectColor }]} />
-                  <Text style={[styles.projectText, { color: theme.colors.text }]} numberOfLines={1}>
+                  <Text style={[styles.projectText, { color: theme.colors.text, fontSize: scoreTextSize }]} numberOfLines={1}>
                     {projectName}
                   </Text>
                 </View>
-                <Text style={[styles.projectCount, { color: theme.colors.textSecondary }]}>
+                <Text style={[styles.projectCount, { color: theme.colors.textSecondary, fontSize: labelTextSize }]}>
                   {count} 任务
                 </Text>
               </View>
@@ -534,12 +571,12 @@ export default function AnalyticsScreen() {
   );
 
   const renderGoalProgress = () => (
-    <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>目标进度</Text>
+    <View style={[styles.section, { backgroundColor: theme.colors.surface, marginHorizontal: screenPadding, marginBottom: sectionSpacing, padding: sectionPadding }]}>
+      <Text style={[styles.sectionTitle, { color: theme.colors.text, fontSize: sectionTitleSize }]}>目标进度</Text>
       {goalProgress.length > 0 ? (
         goalProgress.map((goal) => (
           <View key={goal.id} style={styles.goalRow}>
-            <Text style={[styles.goalTitle, { color: theme.colors.text }]} numberOfLines={1}>
+            <Text style={[styles.goalTitle, { color: theme.colors.text, fontSize: scoreTextSize }]} numberOfLines={1}>
               {goal.title}
             </Text>
             <View style={styles.goalProgressContainer}>
@@ -554,14 +591,14 @@ export default function AnalyticsScreen() {
                   ]}
                 />
               </View>
-              <Text style={[styles.goalProgressText, { color: theme.colors.textSecondary }]}>
+              <Text style={[styles.goalProgressText, { color: theme.colors.textSecondary, fontSize: labelTextSize }]}>
                 {goal.progress.toFixed(0)}%
               </Text>
             </View>
           </View>
         ))
       ) : (
-        <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+        <Text style={[styles.emptyText, { color: theme.colors.textSecondary, fontSize: scoreTextSize }]}>
           暂无目标
         </Text>
       )}
@@ -569,30 +606,30 @@ export default function AnalyticsScreen() {
   );
 
   const renderHabitStats = () => (
-    <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>习惯追踪</Text>
+    <View style={[styles.section, { backgroundColor: theme.colors.surface, marginHorizontal: screenPadding, marginBottom: sectionSpacing, padding: sectionPadding }]}>
+      <Text style={[styles.sectionTitle, { color: theme.colors.text, fontSize: sectionTitleSize }]}>习惯追踪</Text>
       <View style={styles.habitStats}>
         <View style={styles.habitStatItem}>
-          <Text style={[styles.habitStatValue, { color: theme.colors.primary }]}>
+          <Text style={[styles.habitStatValue, { color: theme.colors.primary, fontSize: habitStatValueSize }]}>
             {habits.length}
           </Text>
-          <Text style={[styles.habitStatLabel, { color: theme.colors.textSecondary }]}>
+          <Text style={[styles.habitStatLabel, { color: theme.colors.textSecondary, fontSize: labelTextSize }]}>
             习惯数量
           </Text>
         </View>
         <View style={styles.habitStatItem}>
-          <Text style={[styles.habitStatValue, { color: '#10b981' }]}>
+          <Text style={[styles.habitStatValue, { color: '#10b981', fontSize: habitStatValueSize }]}>
             {habitCompletionRate}%
           </Text>
-          <Text style={[styles.habitStatLabel, { color: theme.colors.textSecondary }]}>
+          <Text style={[styles.habitStatLabel, { color: theme.colors.textSecondary, fontSize: labelTextSize }]}>
             平均完成率
           </Text>
         </View>
         <View style={styles.habitStatItem}>
-          <Text style={[styles.habitStatValue, { color: '#f59e0b' }]}>
+          <Text style={[styles.habitStatValue, { color: '#f59e0b', fontSize: habitStatValueSize }]}>
             {streakDays}
           </Text>
-          <Text style={[styles.habitStatLabel, { color: theme.colors.textSecondary }]}>
+          <Text style={[styles.habitStatLabel, { color: theme.colors.textSecondary, fontSize: labelTextSize }]}>
             连续天数
           </Text>
         </View>
@@ -601,16 +638,16 @@ export default function AnalyticsScreen() {
   );
 
   const renderInsights = () => (
-    <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>智能洞察</Text>
+    <View style={[styles.section, { backgroundColor: theme.colors.surface, marginHorizontal: screenPadding, marginBottom: sectionSpacing, padding: sectionPadding }]}>
+      <Text style={[styles.sectionTitle, { color: theme.colors.text, fontSize: sectionTitleSize }]}>智能洞察</Text>
       <View style={styles.insightsList}>
-        <View style={[styles.insightCard, { backgroundColor: theme.colors.primary + '10' }]}>
-          <MaterialIcons name="lightbulb" size={24} color={theme.colors.warning} style={{ marginRight: 12 }} />
+        <View style={[styles.insightCard, { backgroundColor: theme.colors.primary + '10', padding: isXSmall ? 10 : 12 }]}>
+          <MaterialIcons name="lightbulb" size={insightIconSize} color={theme.colors.warning} style={{ marginRight: isXSmall ? 8 : 12 }} />
           <View style={styles.insightContent}>
-            <Text style={[styles.insightTitle, { color: theme.colors.text }]}>
+            <Text style={[styles.insightTitle, { color: theme.colors.text, fontSize: scoreTextSize }]}>
               完成效率
             </Text>
-            <Text style={[styles.insightText, { color: theme.colors.textSecondary }]}>
+            <Text style={[styles.insightText, { color: theme.colors.textSecondary, fontSize: isXSmall ? 12 : 13 }]}>
               {completedTasks.length > 0
                 ? `您已完成${completedTasks.length}个任务，平均完成时间为${averageCompletionTime}`
                 : '开始完成任务以获取洞察'}
@@ -618,13 +655,13 @@ export default function AnalyticsScreen() {
           </View>
         </View>
         
-        <View style={[styles.insightCard, { backgroundColor: '#10b98110' }]}>
-          <MaterialIcons name="local-fire-department" size={24} color="#f97316" style={{ marginRight: 12 }} />
+        <View style={[styles.insightCard, { backgroundColor: '#10b98110', padding: isXSmall ? 10 : 12 }]}>
+          <MaterialIcons name="local-fire-department" size={insightIconSize} color="#f97316" style={{ marginRight: isXSmall ? 8 : 12 }} />
           <View style={styles.insightContent}>
-            <Text style={[styles.insightTitle, { color: theme.colors.text }]}>
+            <Text style={[styles.insightTitle, { color: theme.colors.text, fontSize: scoreTextSize }]}>
               坚持不懈
             </Text>
-            <Text style={[styles.insightText, { color: theme.colors.textSecondary }]}>
+            <Text style={[styles.insightText, { color: theme.colors.textSecondary, fontSize: isXSmall ? 12 : 13 }]}>
               {streakDays > 0
                 ? `您已连续${streakDays}天完成任务，继续保持！`
                 : '今天完成任务，开启您的连续记录'}
@@ -633,13 +670,13 @@ export default function AnalyticsScreen() {
         </View>
         
         {overdueTasks.length > 0 && (
-          <View style={[styles.insightCard, { backgroundColor: '#ef444410' }]}>
-            <MaterialIcons name="warning" size={24} color={theme.colors.error} style={{ marginRight: 12 }} />
+          <View style={[styles.insightCard, { backgroundColor: '#ef444410', padding: isXSmall ? 10 : 12 }]}>
+            <MaterialIcons name="warning" size={insightIconSize} color={theme.colors.error} style={{ marginRight: isXSmall ? 8 : 12 }} />
             <View style={styles.insightContent}>
-              <Text style={[styles.insightTitle, { color: theme.colors.text }]}>
+              <Text style={[styles.insightTitle, { color: theme.colors.text, fontSize: scoreTextSize }]}>
                 注意逾期
               </Text>
-              <Text style={[styles.insightText, { color: theme.colors.textSecondary }]}>
+              <Text style={[styles.insightText, { color: theme.colors.textSecondary, fontSize: isXSmall ? 12 : 13 }]}>
                 您有{overdueTasks.length}个逾期任务，建议优先处理
               </Text>
             </View>
@@ -653,7 +690,11 @@ export default function AnalyticsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {renderHeader()}
       
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={[styles.scrollView, contentWrapperStyle]} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: bottomInset }}
+      >
         {renderTimeRangeSelector()}
         {renderOverviewCards()}
         {renderProductivityScore()}
@@ -665,8 +706,6 @@ export default function AnalyticsScreen() {
         {renderGoalProgress()}
         {renderHabitStats()}
         {renderInsights()}
-        
-        <View style={styles.bottomPadding} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -683,63 +722,42 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,0,0,0.1)',
   },
   backButton: {
     padding: 4,
   },
-  backButtonText: {
-    fontSize: 16,
-  },
   headerTitle: {
-    fontSize: 18,
     fontWeight: '600',
   },
   headerRight: {
     width: 60,
   },
   timeRangeSelector: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
   },
   timeRangeButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
     borderRadius: 20,
     marginRight: 8,
   },
   timeRangeText: {
-    fontSize: 14,
     fontWeight: '500',
   },
   overviewGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 16,
-    marginBottom: 16,
   },
   overviewCard: {
-    width: (width - 48) / 2,
-    padding: 16,
     borderRadius: 12,
-    marginBottom: 12,
     alignItems: 'center',
   },
   overviewCardValue: {
-    fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   overviewCardLabel: {
-    fontSize: 14,
   },
   section: {
-    marginHorizontal: 16,
-    marginBottom: 16,
-    padding: 16,
     borderRadius: 12,
     ...Platform.select({
       ios: {
@@ -754,7 +772,6 @@ const styles = StyleSheet.create({
     }),
   },
   sectionTitle: {
-    fontSize: 16,
     fontWeight: '600',
     marginBottom: 16,
   },
@@ -763,20 +780,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scoreCircle: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 20,
   },
   scoreValue: {
-    fontSize: 32,
     fontWeight: 'bold',
   },
   scoreMax: {
-    fontSize: 12,
   },
   scoreDetails: {
     flex: 1,
@@ -793,7 +803,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   scoreDetailText: {
-    fontSize: 14,
   },
   completionContainer: {
     flexDirection: 'row',
@@ -812,7 +821,6 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   completionText: {
-    fontSize: 18,
     fontWeight: '600',
     width: 60,
     textAlign: 'right',
@@ -821,7 +829,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   completionStatText: {
-    fontSize: 12,
   },
   statusChart: {
     marginTop: 8,
@@ -834,7 +841,6 @@ const styles = StyleSheet.create({
   statusLabel: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: 100,
   },
   statusDot: {
     width: 8,
@@ -843,7 +849,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   statusText: {
-    fontSize: 12,
   },
   statusBarContainer: {
     flex: 1,
@@ -858,7 +863,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   statusCount: {
-    fontSize: 12,
     width: 30,
     textAlign: 'right',
   },
@@ -873,7 +877,6 @@ const styles = StyleSheet.create({
   priorityLabel: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: 100,
   },
   priorityDot: {
     width: 8,
@@ -882,7 +885,6 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   priorityText: {
-    fontSize: 12,
   },
   priorityBarContainer: {
     flex: 1,
@@ -897,14 +899,12 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   priorityCount: {
-    fontSize: 12,
     width: 30,
     textAlign: 'right',
   },
   trendChart: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    height: 150,
     marginTop: 8,
   },
   trendBar: {
@@ -915,7 +915,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   trendValue: {
-    fontSize: 10,
     marginBottom: 4,
   },
   trendBarFill: {
@@ -924,7 +923,6 @@ const styles = StyleSheet.create({
     minHeight: 4,
   },
   trendDate: {
-    fontSize: 10,
     marginTop: 4,
   },
   projectList: {
@@ -948,18 +946,15 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   projectText: {
-    fontSize: 14,
     flex: 1,
   },
   projectCount: {
-    fontSize: 12,
     marginLeft: 8,
   },
   goalRow: {
     marginBottom: 16,
   },
   goalTitle: {
-    fontSize: 14,
     fontWeight: '500',
     marginBottom: 8,
   },
@@ -980,7 +975,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   goalProgressText: {
-    fontSize: 12,
     width: 45,
     textAlign: 'right',
   },
@@ -992,44 +986,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   habitStatValue: {
-    fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 4,
   },
   habitStatLabel: {
-    fontSize: 12,
   },
   insightsList: {
     marginTop: 8,
   },
   insightCard: {
     flexDirection: 'row',
-    padding: 12,
     borderRadius: 8,
     marginBottom: 12,
-  },
-  insightIcon: {
-    fontSize: 24,
-    marginRight: 12,
   },
   insightContent: {
     flex: 1,
   },
   insightTitle: {
-    fontSize: 14,
     fontWeight: '600',
     marginBottom: 4,
   },
   insightText: {
-    fontSize: 13,
     lineHeight: 18,
   },
   emptyText: {
-    fontSize: 14,
     textAlign: 'center',
     paddingVertical: 20,
-  },
-  bottomPadding: {
-    height: 40,
   },
 });

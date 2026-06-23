@@ -22,6 +22,7 @@ import {
 } from '../../utils/naturalLanguageParser';
 import { toast } from './Toast';
 import { VoiceInput } from './VoiceInput';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 export interface QuickAddTaskProps {
   visible: boolean;
@@ -36,6 +37,8 @@ export function QuickAddTask({ visible, onClose }: QuickAddTaskProps) {
   const projects = useAppStore((s) => s.projects);
   const categories = useAppStore((s) => s.categories);
   const tags = useAppStore((s) => s.tags);
+  const layout = useResponsiveLayout();
+  const { isXSmall, isSmall, screenPadding } = layout;
 
   const [text, setText] = useState('');
   const [showHints, setShowHints] = useState(false);
@@ -179,21 +182,27 @@ export function QuickAddTask({ visible, onClose }: QuickAddTaskProps) {
     }
     if (chips.length === 0) return null;
     return (
-      <View style={styles.preview}>
-        <Text style={[styles.previewLabel, { color: theme.colors.textSecondary }]}>
+      <View style={[styles.preview, { marginTop: isXSmall ? 10 : 12 }]}>
+        <Text style={[styles.previewLabel, { color: theme.colors.textSecondary, fontSize: isXSmall ? 11 : 12 }]}>
           智能解析预览
         </Text>
-        <View style={styles.chipRow}>
+        <View style={[styles.chipRow, { gap: isXSmall ? 5 : 6 }]}>
           {chips.map((c, i) => (
             <View
               key={i}
               style={[
                 styles.chip,
-                { backgroundColor: c.color + '20', borderColor: c.color + '40' },
+                {
+                  backgroundColor: c.color + '20',
+                  borderColor: c.color + '40',
+                  paddingHorizontal: isXSmall ? 6 : 8,
+                  paddingVertical: isXSmall ? 3 : 4,
+                  gap: isXSmall ? 3 : 4,
+                },
               ]}
             >
-              <MaterialIcons name={c.icon as unknown as MaterialIconName} size={14} color={c.color} />
-              <Text style={[styles.chipText, { color: c.color }]}>{c.label}</Text>
+              <MaterialIcons name={c.icon as unknown as MaterialIconName} size={isXSmall ? 12 : 14} color={c.color} />
+              <Text style={[styles.chipText, { color: c.color, fontSize: isXSmall ? 11 : 12 }]}>{c.label}</Text>
             </View>
           ))}
         </View>
@@ -204,32 +213,48 @@ export function QuickAddTask({ visible, onClose }: QuickAddTaskProps) {
   const renderExamples = () => {
     if (!showHints) return null;
     return (
-      <View style={[styles.hintBox, { backgroundColor: theme.colors.background }]}>
-        <Text style={[styles.hintTitle, { color: theme.colors.text }]}>试试这样输入</Text>
+      <View
+        style={[
+          styles.hintBox,
+          {
+            backgroundColor: theme.colors.background,
+            marginTop: isXSmall ? 12 : 16,
+            padding: isXSmall ? 10 : 12,
+          },
+        ]}
+      >
+        <Text style={[styles.hintTitle, { color: theme.colors.text, fontSize: isXSmall ? 12 : 13, marginBottom: isXSmall ? 6 : 8 }]}>试试这样输入</Text>
         {NL_EXAMPLES.map((ex, i) => (
           <TouchableOpacity
             key={i}
-            style={styles.exampleRow}
+            style={[styles.exampleRow, { paddingVertical: isXSmall ? 5 : 6 }]}
             onPress={() => {
               setText(ex.input);
               Keyboard.dismiss();
             }}
           >
-            <Text style={[styles.exampleInput, { color: theme.colors.text }]}>
+            <Text style={[styles.exampleInput, { color: theme.colors.text, fontSize: isXSmall ? 13 : 14 }]}>
               {ex.input}
             </Text>
-            <Text style={[styles.exampleExpected, { color: theme.colors.textSecondary }]}>
+            <Text style={[styles.exampleExpected, { color: theme.colors.textSecondary, fontSize: isXSmall ? 11 : 12 }]}>
               → {ex.expected}
             </Text>
           </TouchableOpacity>
         ))}
-        <View style={styles.keywordGrid}>
+        <View style={[styles.keywordGrid, { gap: isXSmall ? 5 : 6, marginTop: isXSmall ? 10 : 12 }]}>
           {NL_KEYWORDS_HELP.map((k, i) => (
             <View
               key={i}
-              style={[styles.keywordChip, { backgroundColor: theme.colors.surface }]}
+              style={[
+                styles.keywordChip,
+                {
+                  backgroundColor: theme.colors.surface,
+                  paddingHorizontal: isXSmall ? 6 : 8,
+                  paddingVertical: isXSmall ? 3 : 4,
+                },
+              ]}
             >
-              <Text style={[styles.keywordText, { color: theme.colors.textSecondary }]}>
+              <Text style={[styles.keywordText, { color: theme.colors.textSecondary, fontSize: isXSmall ? 10 : 11 }]}>
                 {k}
               </Text>
             </View>
@@ -239,22 +264,40 @@ export function QuickAddTask({ visible, onClose }: QuickAddTaskProps) {
     );
   };
 
+  const inputMinHeight = isXSmall ? 56 : 64;
+  const inputPadding = isXSmall ? 10 : 12;
+  const inputFontSize = isXSmall ? 15 : 16;
+  const headerPaddingH = isXSmall ? screenPadding : 20;
+  const bodyPaddingH = isXSmall ? screenPadding : 20;
+  const footerPaddingH = isXSmall ? screenPadding : 20;
+  const footerPaddingTop = isXSmall ? 10 : 12;
+  const footerGap = isXSmall ? 10 : 12;
+  const btnPaddingV = isXSmall ? 10 : 12;
+  const sheetPaddingBottom = Platform.OS === 'ios' ? (isXSmall ? 24 : 32) : (isXSmall ? 12 : 16);
+  const titleFontSize = isXSmall ? 16 : 18;
+  const btnFontSize = isXSmall ? 14 : 15;
+  const cancelBtnFontSize = isXSmall ? 14 : 15;
+
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose} />
       <View
         style={[
           styles.sheet,
-          { backgroundColor: theme.colors.surface },
+          {
+            backgroundColor: theme.colors.surface,
+            paddingTop: isXSmall ? 6 : 8,
+            paddingBottom: sheetPaddingBottom,
+          },
         ]}
       >
-        <View style={styles.handle} />
-        <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.colors.text }]}>快速添加任务</Text>
+        <View style={[styles.handle, { width: isXSmall ? 36 : 40, marginBottom: isXSmall ? 6 : 8 }]} />
+        <View style={[styles.header, { paddingHorizontal: headerPaddingH, paddingBottom: isXSmall ? 10 : 12 }]}>
+          <Text style={[styles.title, { color: theme.colors.text, fontSize: titleFontSize }]}>快速添加任务</Text>
           <TouchableOpacity onPress={() => setShowHints((s) => !s)} style={styles.helpBtn}>
             <MaterialIcons
               name={showHints ? 'help' : 'help-outline'}
-              size={22}
+              size={isXSmall ? 20 : 22}
               color={theme.colors.primary}
             />
           </TouchableOpacity>
@@ -263,6 +306,7 @@ export function QuickAddTask({ visible, onClose }: QuickAddTaskProps) {
           style={styles.body}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingHorizontal: bodyPaddingH }}
         >
           <TextInput
             ref={inputRef}
@@ -272,6 +316,10 @@ export function QuickAddTask({ visible, onClose }: QuickAddTaskProps) {
                 color: theme.colors.text,
                 backgroundColor: theme.colors.background,
                 borderColor: theme.colors.border || '#e5e7eb',
+                minHeight: inputMinHeight,
+                padding: inputPadding,
+                fontSize: inputFontSize,
+                borderRadius: isXSmall ? 10 : 12,
               },
             ]}
             value={text}
@@ -283,9 +331,9 @@ export function QuickAddTask({ visible, onClose }: QuickAddTaskProps) {
             onSubmitEditing={handleSubmit}
             blurOnSubmit={false}
           />
-          <View style={styles.voiceRow}>
+          <View style={[styles.voiceRow, { marginTop: isXSmall ? 10 : 12 }]}>
             <VoiceInput
-              size={36}
+              size={isXSmall ? 32 : 36}
               onResult={(t) => setText((prev) => (prev ? `${prev} ${t}` : t))}
               hint="或按住说话"
             />
@@ -293,21 +341,35 @@ export function QuickAddTask({ visible, onClose }: QuickAddTaskProps) {
           {renderPreview()}
           {renderExamples()}
         </ScrollView>
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingHorizontal: footerPaddingH, paddingTop: footerPaddingTop, gap: footerGap }]}>
           <TouchableOpacity
-            style={[styles.cancelBtn, { borderColor: theme.colors.border || '#e5e7eb' }]}
+            style={[
+              styles.cancelBtn,
+              {
+                borderColor: theme.colors.border || '#e5e7eb',
+                paddingVertical: btnPaddingV,
+                borderRadius: isXSmall ? 10 : 12,
+              },
+            ]}
             onPress={onClose}
           >
-            <Text style={{ color: theme.colors.textSecondary, fontSize: 15, fontWeight: '500' }}>
+            <Text style={{ color: theme.colors.textSecondary, fontSize: cancelBtnFontSize, fontWeight: '500' }}>
               取消
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.submitBtn, { backgroundColor: theme.colors.primary }]}
+            style={[
+              styles.submitBtn,
+              {
+                backgroundColor: theme.colors.primary,
+                paddingVertical: btnPaddingV,
+                borderRadius: isXSmall ? 10 : 12,
+              },
+            ]}
             onPress={handleSubmit}
           >
-            <MaterialIcons name="add" size={18} color="#fff" />
-            <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600', marginLeft: 4 }}>
+            <MaterialIcons name="add" size={isXSmall ? 16 : 18} color="#fff" />
+            <Text style={{ color: '#fff', fontSize: btnFontSize, fontWeight: '600', marginLeft: isXSmall ? 3 : 4 }}>
               添加
             </Text>
           </TouchableOpacity>
@@ -330,8 +392,6 @@ const styles = StyleSheet.create({
     maxHeight: '90%',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 32 : 16,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -343,49 +403,35 @@ const styles = StyleSheet.create({
     }),
   },
   handle: {
-    width: 40,
     height: 4,
     borderRadius: 2,
     backgroundColor: 'rgba(0,0,0,0.2)',
     alignSelf: 'center',
-    marginBottom: 8,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 12,
   },
   title: {
-    fontSize: 18,
     fontWeight: '700',
   },
   helpBtn: {
     padding: 4,
   },
   body: {
-    paddingHorizontal: 20,
     maxHeight: 480,
   },
   input: {
-    minHeight: 64,
     maxHeight: 160,
-    borderRadius: 12,
     borderWidth: 1,
-    padding: 12,
-    fontSize: 16,
     textAlignVertical: 'top',
   },
   voiceRow: {
-    marginTop: 12,
     alignItems: 'center',
   },
-  preview: {
-    marginTop: 12,
-  },
+  preview: {},
   previewLabel: {
-    fontSize: 12,
     fontWeight: '600',
     marginBottom: 8,
     textTransform: 'uppercase',
@@ -394,73 +440,47 @@ const styles = StyleSheet.create({
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
-    gap: 4,
   },
   chipText: {
-    fontSize: 12,
     fontWeight: '600',
   },
   hintBox: {
-    marginTop: 16,
-    padding: 12,
     borderRadius: 12,
   },
   hintTitle: {
-    fontSize: 13,
     fontWeight: '600',
-    marginBottom: 8,
   },
-  exampleRow: {
-    paddingVertical: 6,
-  },
+  exampleRow: {},
   exampleInput: {
-    fontSize: 14,
     fontWeight: '500',
   },
   exampleExpected: {
-    fontSize: 12,
     marginTop: 2,
   },
   keywordGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 12,
   },
   keywordChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
     borderRadius: 6,
   },
-  keywordText: {
-    fontSize: 11,
-  },
+  keywordText: {},
   footer: {
     flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    gap: 12,
   },
   cancelBtn: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
     borderWidth: 1,
     alignItems: 'center',
   },
   submitBtn: {
     flex: 2,
-    paddingVertical: 12,
-    borderRadius: 12,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',

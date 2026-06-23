@@ -18,10 +18,34 @@ import { useAppStore } from '../src/shared/store';
 import { RootStackParamList, Goal, GoalType, GoalPeriod } from '../src/shared/types';
 import { Button } from '../src/shared/components/common';
 import { toast } from '../src/shared/components/common/Toast';
+import { useResponsiveLayout } from '../src/shared/hooks/useResponsiveLayout';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Goals'>;
 
 export default function GoalsScreen() {
+  const layout = useResponsiveLayout();
+  const {
+    isXSmall,
+    isSmall,
+    isLarge,
+    screenPadding,
+    sectionSpacing,
+    cardSpacing,
+    bottomInset,
+    contentMaxWidth,
+  } = layout;
+
+  const headerPaddingV = isXSmall ? 10 : isSmall ? 11 : 12;
+  const headerTitleSize = isXSmall ? 16 : isSmall ? 17 : 18;
+  const iconSize = isXSmall ? 20 : isSmall ? 22 : 24;
+  const sectionTitleSize = isXSmall ? 14 : isSmall ? 15 : 16;
+  const bodyTextSize = isXSmall ? 13 : 14;
+  const contentWrapperStyle = isLarge ? {
+    maxWidth: contentMaxWidth,
+    alignSelf: 'center' as const,
+    width: '100%' as const,
+  } : {};
+
   const navigation = useNavigation<NavigationProp>();
   const {
     theme,
@@ -198,13 +222,13 @@ export default function GoalsScreen() {
   const completedGoals = goals.filter((g) => g.isCompleted);
 
   const renderHeader = () => (
-    <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.header, { backgroundColor: theme.colors.surface, paddingHorizontal: screenPadding, paddingVertical: headerPaddingV }]}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+        <MaterialIcons name="arrow-back" size={iconSize} color={theme.colors.primary} />
       </TouchableOpacity>
-      <Text style={[styles.headerTitle, { color: theme.colors.text }]}>目标管理</Text>
+      <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: headerTitleSize }]}>目标管理</Text>
       <TouchableOpacity onPress={() => setShowAddModal(true)} style={styles.addButton}>
-        <Text style={[styles.addButtonText, { color: theme.colors.primary }]}>+ 新建</Text>
+        <Text style={[styles.addButtonText, { color: theme.colors.primary, fontSize: bodyTextSize }]}>+ 新建</Text>
       </TouchableOpacity>
     </View>
   );
@@ -537,10 +561,14 @@ export default function GoalsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {renderHeader()}
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={[styles.scrollView, contentWrapperStyle]}
+        contentContainerStyle={{ padding: screenPadding, paddingBottom: bottomInset }}
+        showsVerticalScrollIndicator={false}
+      >
         {activeGoals.length > 0 && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+          <View style={[styles.section, { marginBottom: sectionSpacing }]}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text, fontSize: sectionTitleSize }]}>
               进行中的目标 ({activeGoals.length})
             </Text>
             {activeGoals.map(renderGoalCard)}
@@ -548,8 +576,8 @@ export default function GoalsScreen() {
         )}
 
         {completedGoals.length > 0 && (
-          <View style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+          <View style={[styles.section, { marginBottom: sectionSpacing }]}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text, fontSize: sectionTitleSize }]}>
               已完成的目标 ({completedGoals.length})
             </Text>
             {completedGoals.map(renderGoalCard)}
@@ -557,8 +585,6 @@ export default function GoalsScreen() {
         )}
 
         {goals.length === 0 && renderEmptyState()}
-
-        <View style={styles.bottomPadding} />
       </ScrollView>
 
       {renderAddModal()}

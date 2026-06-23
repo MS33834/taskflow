@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAppStore } from '../../store';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
@@ -57,9 +58,19 @@ export const toast = {
 
 export function ToastContainer() {
   const { theme } = useAppStore();
+  const layout = useResponsiveLayout();
+  const { isXSmall, isSmall, isLarge, screenPadding, bottomInset, contentMaxWidth } = layout;
   const [current, setCurrent] = useState<ToastConfig | null>(null);
   const translateY = useRef(new Animated.Value(100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
+
+  const toastPaddingH = isXSmall ? 12 : isSmall ? 13 : 14;
+  const toastPaddingV = isXSmall ? 10 : isSmall ? 11 : 12;
+  const iconWrapSize = isXSmall ? 32 : isSmall ? 34 : 36;
+  const iconSize = isXSmall ? 18 : isSmall ? 20 : 22;
+  const messageFontSize = isXSmall ? 13 : 14;
+  const descFontSize = isXSmall ? 11 : 12;
+  const actionFontSize = isXSmall ? 12 : 13;
 
   useEffect(() => {
     const handler = (toast: ToastConfig | null) => setCurrent(toast);
@@ -93,7 +104,14 @@ export function ToastContainer() {
   }[current.type];
 
   return (
-    <SafeAreaView pointerEvents="box-none" style={styles.safeArea}>
+    <SafeAreaView pointerEvents="box-none" style={[
+      styles.safeArea,
+      {
+        paddingHorizontal: screenPadding,
+        paddingBottom: bottomInset + (Platform.OS === 'web' ? 12 : 8),
+      },
+      isLarge && { alignItems: 'center' },
+    ]}>
       <Animated.View
         pointerEvents={current ? 'auto' : 'none'}
         style={[
@@ -104,18 +122,21 @@ export function ToastContainer() {
             shadowColor: '#000',
             transform: [{ translateY }],
             opacity,
+            paddingVertical: toastPaddingV,
+            paddingHorizontal: toastPaddingH,
           },
+          isLarge && { maxWidth: contentMaxWidth, width: '100%' },
         ]}
       >
-        <View style={[styles.iconWrap, { backgroundColor: colors.bg + '20' }]}>
-          <MaterialIcons name={colors.icon} size={22} color={colors.bg} />
+        <View style={[styles.iconWrap, { backgroundColor: colors.bg + '20', width: iconWrapSize, height: iconWrapSize }]}>
+          <MaterialIcons name={colors.icon} size={iconSize} color={colors.bg} />
         </View>
         <View style={styles.textWrap}>
-          <Text style={[styles.message, { color: theme.colors.text }]} numberOfLines={2}>
+          <Text style={[styles.message, { color: theme.colors.text, fontSize: messageFontSize }]} numberOfLines={2}>
             {current.message}
           </Text>
           {current.description && (
-            <Text style={[styles.description, { color: theme.colors.textSecondary }]} numberOfLines={2}>
+            <Text style={[styles.description, { color: theme.colors.textSecondary, fontSize: descFontSize }]} numberOfLines={2}>
               {current.description}
             </Text>
           )}
@@ -129,7 +150,7 @@ export function ToastContainer() {
             style={styles.actionButton}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
-            <Text style={[styles.actionText, { color: theme.colors.primary }]}>
+            <Text style={[styles.actionText, { color: theme.colors.primary, fontSize: actionFontSize }]}>
               {current.action.label}
             </Text>
           </TouchableOpacity>
@@ -139,7 +160,7 @@ export function ToastContainer() {
           style={styles.closeButton}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <MaterialIcons name="close" size={18} color={theme.colors.textTertiary} />
+          <MaterialIcons name="close" size={isXSmall ? 16 : 18} color={theme.colors.textTertiary} />
         </TouchableOpacity>
       </Animated.View>
     </SafeAreaView>

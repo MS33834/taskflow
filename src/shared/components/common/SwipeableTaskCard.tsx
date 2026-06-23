@@ -6,12 +6,12 @@ import {
   Animated,
   PanResponder,
   TouchableOpacity,
-  Dimensions,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAppStore } from '../../store';
 import { Task } from '../../types';
 import { TaskCard } from './TaskCard';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 interface SwipeableTaskCardProps {
   task: Task;
@@ -24,9 +24,6 @@ interface SwipeableTaskCardProps {
   compact?: boolean;
 }
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const SWIPE_THRESHOLD = 0.5;
-
 export const SwipeableTaskCard = React.memo(function SwipeableTaskCard({
   task,
   onPress,
@@ -38,9 +35,17 @@ export const SwipeableTaskCard = React.memo(function SwipeableTaskCard({
   compact = false,
 }: SwipeableTaskCardProps) {
   const { theme } = useAppStore();
+  const layout = useResponsiveLayout();
+  const { width, isXSmall, isSmall } = layout;
   const translateX = useRef(new Animated.Value(0)).current;
   const actionOpacityLeft = useRef(new Animated.Value(0)).current;
   const actionOpacityRight = useRef(new Animated.Value(0)).current;
+
+  const iconSize = isXSmall ? 20 : isSmall ? 22 : 24;
+  const actionFontSize = isXSmall ? 12 : 14;
+  const actionPaddingH = isXSmall ? 12 : 16;
+  const actionPaddingV = isXSmall ? 8 : 10;
+  const horizontalPadding = isXSmall ? 6 : 8;
 
   const resetPosition = useCallback(() => {
     Animated.spring(translateX, {
@@ -82,8 +87,8 @@ export const SwipeableTaskCard = React.memo(function SwipeableTaskCard({
         }
       },
       onPanResponderRelease: (_, gestureState) => {
-        const cardWidth = SCREEN_WIDTH - 56;
-        const threshold = cardWidth * SWIPE_THRESHOLD;
+        const cardWidth = width - layout.screenPadding * 2;
+        const threshold = cardWidth * 0.5;
 
         if (gestureState.dx > threshold) {
           Animated.timing(translateX, {
@@ -115,16 +120,16 @@ export const SwipeableTaskCard = React.memo(function SwipeableTaskCard({
       delayLongPress={350}
       style={styles.container}
     >
-      <View style={styles.actionBackground}>
+      <View style={[styles.actionBackground, { paddingHorizontal: horizontalPadding }]}>
         <Animated.View
           style={[
             styles.actionLeft,
             { opacity: actionOpacityLeft },
           ]}
         >
-          <View style={[styles.actionLeftContent, { backgroundColor: theme.colors.error }]}>
-            <MaterialIcons name="delete" size={24} color="#FFFFFF" />
-            <Text style={styles.actionText}>删除</Text>
+          <View style={[styles.actionLeftContent, { backgroundColor: theme.colors.error, paddingHorizontal: actionPaddingH, paddingVertical: actionPaddingV }]}>
+            <MaterialIcons name="delete" size={iconSize} color="#FFFFFF" />
+            <Text style={[styles.actionText, { fontSize: actionFontSize, marginLeft: isXSmall ? 4 : 6 }]}>删除</Text>
           </View>
         </Animated.View>
         <Animated.View
@@ -133,9 +138,9 @@ export const SwipeableTaskCard = React.memo(function SwipeableTaskCard({
             { opacity: actionOpacityRight },
           ]}
         >
-          <View style={[styles.actionRightContent, { backgroundColor: theme.colors.success }]}>
-            <MaterialIcons name="check" size={24} color="#FFFFFF" />
-            <Text style={styles.actionText}>完成</Text>
+          <View style={[styles.actionRightContent, { backgroundColor: theme.colors.success, paddingHorizontal: actionPaddingH, paddingVertical: actionPaddingV }]}>
+            <MaterialIcons name="check" size={iconSize} color="#FFFFFF" />
+            <Text style={[styles.actionText, { fontSize: actionFontSize, marginLeft: isXSmall ? 4 : 6 }]}>完成</Text>
           </View>
         </Animated.View>
       </View>
@@ -174,39 +179,32 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'stretch',
     paddingVertical: 4,
-    paddingHorizontal: 8,
   },
   actionLeft: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'flex-end',
-    paddingRight: 16,
+    paddingRight: 12,
   },
   actionLeftContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
     borderRadius: 12,
   },
   actionRight: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'flex-start',
-    paddingLeft: 16,
+    paddingLeft: 12,
   },
   actionRightContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
     borderRadius: 12,
   },
   actionText: {
     color: '#FFFFFF',
-    fontSize: 14,
     fontWeight: '600',
-    marginLeft: 6,
   },
   cardWrapper: {
     zIndex: 1,

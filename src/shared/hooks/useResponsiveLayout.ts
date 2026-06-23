@@ -6,7 +6,7 @@ export const BREAKPOINTS = {
   sm: 480,
   md: 768,
   lg: 1024,
-  xl: 1440,
+  xl: 1280,
 } as const;
 
 export function useResponsiveLayout() {
@@ -14,35 +14,65 @@ export function useResponsiveLayout() {
   const isWeb = Platform.OS === 'web';
 
   return useMemo(() => {
+    const isXSmall = width < BREAKPOINTS.xs;
     const isSmall = width < BREAKPOINTS.sm;
     const isMedium = width >= BREAKPOINTS.sm && width < BREAKPOINTS.lg;
     const isLarge = width >= BREAKPOINTS.lg;
+    const isXLarge = width >= BREAKPOINTS.xl;
 
-    // On narrow phones, reduce side padding so content doesn't feel cramped.
-    // On wider screens, keep a comfortable gutter and optionally center content.
     const screenPadding = isWeb
-      ? Math.min(32, Math.max(16, Math.round(width * 0.02)))
+      ? isLarge
+        ? 24
+        : isMedium
+        ? 20
+        : 16
+      : isXSmall
+      ? 10
       : isSmall
       ? 12
       : 16;
 
-    const contentMaxWidth = isWeb && width > BREAKPOINTS.md ? Math.min(960, width - screenPadding * 2) : undefined;
+    const sectionSpacing = isWeb ? 12 : 8;
+    const cardSpacing = isWeb ? 10 : 6;
 
-    // Tab bar: give labels more room on web/desktop; keep compact on phones.
-    const tabBarHeight = isWeb ? 72 : 64;
-    const tabBarBottomOffset = isWeb ? 16 : 12;
+    const contentMaxWidth = isWeb
+      ? isLarge
+        ? 1100
+        : isMedium
+        ? 720
+        : undefined
+      : undefined;
+
+    const tabBarHeight = isWeb ? 68 : isXSmall ? 56 : 64;
+    const tabBarBottomOffset = isWeb ? 12 : isXSmall ? 8 : 10;
+    const tabBarHorizontalInset = isWeb
+      ? isLarge
+        ? Math.max(16, Math.min(48, (width - (contentMaxWidth || width)) / 2 + 16))
+        : 16
+      : isXSmall
+      ? 8
+      : 12;
+
+    const headerHeight = isWeb ? 56 : 52;
 
     return {
       width,
       height,
       isWeb,
+      isXSmall,
       isSmall,
       isMedium,
       isLarge,
+      isXLarge,
       screenPadding,
+      sectionSpacing,
+      cardSpacing,
       contentMaxWidth,
       tabBarHeight,
       tabBarBottomOffset,
+      tabBarHorizontalInset,
+      headerHeight,
+      bottomInset: tabBarHeight + tabBarBottomOffset + (isWeb ? 8 : 4),
     };
   }, [width, height, isWeb]);
 }

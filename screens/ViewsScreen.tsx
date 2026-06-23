@@ -18,6 +18,7 @@ import { useAppStore } from '../src/shared/store';
 import { RootStackParamList, View as CustomView, ViewType } from '../src/shared/types';
 import { Button } from '../src/shared/components/common';
 import { toast } from '../src/shared/components/common/Toast';
+import { useResponsiveLayout } from '../src/shared/hooks/useResponsiveLayout';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Views'>;
 type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
@@ -34,6 +35,29 @@ const VIEW_TYPES: { type: ViewType; label: string; iconName: keyof typeof Materi
 ];
 
 export default function ViewsScreen() {
+  const layout = useResponsiveLayout();
+  const {
+    isXSmall,
+    isSmall,
+    isLarge,
+    screenPadding,
+    sectionSpacing,
+    cardSpacing,
+    bottomInset,
+    contentMaxWidth,
+  } = layout;
+
+  const headerPaddingV = isXSmall ? 10 : isSmall ? 11 : 12;
+  const headerTitleSize = isXSmall ? 16 : isSmall ? 17 : 18;
+  const iconSize = isXSmall ? 20 : isSmall ? 22 : 24;
+  const sectionTitleSize = isXSmall ? 14 : isSmall ? 15 : 16;
+  const bodyTextSize = isXSmall ? 13 : 14;
+  const contentWrapperStyle = isLarge ? {
+    maxWidth: contentMaxWidth,
+    alignSelf: 'center' as const,
+    width: '100%' as const,
+  } : {};
+
   const navigation = useNavigation<NavigationProp>();
   const { theme, views, addView, updateView, deleteView, setActiveView, activeView } = useAppStore();
 
@@ -232,13 +256,13 @@ export default function ViewsScreen() {
   };
 
   const renderHeader = () => (
-    <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.header, { backgroundColor: theme.colors.surface, paddingHorizontal: screenPadding, paddingVertical: headerPaddingV }]}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+        <MaterialIcons name="arrow-back" size={iconSize} color={theme.colors.primary} />
       </TouchableOpacity>
-      <Text style={[styles.headerTitle, { color: theme.colors.text }]}>视图管理</Text>
+      <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: headerTitleSize }]}>视图管理</Text>
       <TouchableOpacity onPress={() => setShowAddModal(true)} style={styles.addButton}>
-        <Text style={[styles.addButtonText, { color: theme.colors.primary }]}>+ 新建</Text>
+        <Text style={[styles.addButtonText, { color: theme.colors.primary, fontSize: bodyTextSize }]}>+ 新建</Text>
       </TouchableOpacity>
     </View>
   );
@@ -460,12 +484,13 @@ export default function ViewsScreen() {
       {renderHeader()}
 
       <ScrollView
-        contentContainerStyle={styles.contentContainer}
+        style={contentWrapperStyle}
+        contentContainerStyle={[styles.contentContainer, { padding: screenPadding, paddingBottom: bottomInset }]}
         showsVerticalScrollIndicator={false}
       >
             {favoriteViews.length > 0 && (
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>
+              <View style={[styles.section, { marginBottom: sectionSpacing }]}>
+                <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary, fontSize: sectionTitleSize }]}>
                   收藏的视图 ({favoriteViews.length})
                 </Text>
                 <View style={styles.viewsGrid}>
@@ -475,8 +500,8 @@ export default function ViewsScreen() {
             )}
 
             {systemViews.length > 0 && (
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>
+              <View style={[styles.section, { marginBottom: sectionSpacing }]}>
+                <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary, fontSize: sectionTitleSize }]}>
                   系统视图 ({systemViews.length})
                 </Text>
                 <View style={styles.viewsGrid}>
@@ -486,8 +511,8 @@ export default function ViewsScreen() {
             )}
 
             {customViews.length > 0 && (
-              <View style={styles.section}>
-                <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>
+              <View style={[styles.section, { marginBottom: sectionSpacing }]}>
+                <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary, fontSize: sectionTitleSize }]}>
                   自定义视图 ({customViews.length})
                 </Text>
                 <View style={styles.viewsGrid}>

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAppStore } from '../../store';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 export interface DraggableItem {
   id: string;
@@ -49,6 +50,11 @@ export function DraggableList<T extends DraggableItem>({
   enabled = true,
 }: DraggableListProps<T>) {
   const { theme } = useAppStore();
+  const layout = useResponsiveLayout();
+  const { isXSmall, isSmall } = layout;
+  const handleWidth = isXSmall ? 32 : isSmall ? 36 : 40;
+  const handlePaddingV = isXSmall ? 8 : 12;
+  const handleIconSize = isXSmall ? 18 : isSmall ? 19 : 20;
   const [orderedData, setOrderedData] = useState<T[]>(data);
   const [activeId, setActiveId] = useState<string | null>(null);
   const dragState = useRef<DragState>({
@@ -239,7 +245,7 @@ export function DraggableList<T extends DraggableItem>({
           >
             {showHandle && (
               <TouchableOpacity
-                style={styles.handleTouch}
+                style={[styles.handleTouch, { width: handleWidth, paddingVertical: handlePaddingV }]}
                 onPressIn={startLongPress(id)}
                 onPressOut={clearLongPress}
                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -248,7 +254,7 @@ export function DraggableList<T extends DraggableItem>({
                 {handleComponent ?? (
                   <MaterialIcons
                     name="drag-handle"
-                    size={20}
+                    size={handleIconSize}
                     color={enabled ? theme.colors.textTertiary : theme.colors.border}
                   />
                 )}

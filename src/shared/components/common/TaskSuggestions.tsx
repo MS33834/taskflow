@@ -9,6 +9,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAppStore } from '../../store';
 import { Task, Category } from '../../types';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 
@@ -233,32 +234,56 @@ export function TaskSuggestions({
   contentPadding = 16,
 }: TaskSuggestionsProps) {
   const { theme } = useAppStore();
+  const layout = useResponsiveLayout();
+  const { isXSmall, isSmall } = layout;
   const auto = useTaskSuggestions();
   const list = provided ?? auto;
 
+  const cardWidth = isXSmall ? 220 : isSmall ? 230 : 240;
+  const iconSize = isXSmall ? 12 : 14;
+  const titleFontSize = isXSmall ? 12 : 13;
+  const reasonFontSize = isXSmall ? 10 : 11;
+  const applyBtnPaddingV = isXSmall ? 5 : 6;
+  const kindIconSize = isXSmall ? 20 : 22;
+  const headerPaddingBottom = isXSmall ? 8 : 10;
+  const rowGap = isXSmall ? 8 : 10;
+  const emptyPaddingH = isXSmall ? 12 : 14;
+  const emptyPaddingV = isXSmall ? 10 : 12;
+  const emptyMarginH = contentPadding;
+
   if (list.length === 0) {
     return (
-      <View style={[styles.empty, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-        <MaterialIcons name="auto-awesome" size={20} color={theme.colors.textTertiary} />
-        <Text style={[styles.emptyText, { color: theme.colors.textTertiary }]}>{emptyHint}</Text>
+      <View style={[
+        styles.empty,
+        {
+          backgroundColor: theme.colors.surface,
+          borderColor: theme.colors.border,
+          marginHorizontal: emptyMarginH,
+          paddingHorizontal: emptyPaddingH,
+          paddingVertical: emptyPaddingV,
+          gap: isXSmall ? 6 : 8,
+        },
+      ]}>
+        <MaterialIcons name="auto-awesome" size={isXSmall ? 18 : 20} color={theme.colors.textTertiary} />
+        <Text style={[styles.emptyText, { color: theme.colors.textTertiary, fontSize: isXSmall ? 11 : 12 }]}>{emptyHint}</Text>
       </View>
     );
   }
 
   return (
     <View style={styles.wrap}>
-      <View style={[styles.header, { paddingHorizontal: contentPadding }]}>
-        <MaterialIcons name="auto-awesome" size={16} color={theme.colors.primary} />
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>智能建议</Text>
-        <View style={[styles.aiBadge, { backgroundColor: theme.colors.primary + '20' }]}>
-          <Text style={[styles.aiBadgeText, { color: theme.colors.primary }]}>AI</Text>
+      <View style={[styles.header, { paddingHorizontal: contentPadding, paddingBottom: headerPaddingBottom, gap: isXSmall ? 5 : 6 }]}>
+        <MaterialIcons name="auto-awesome" size={iconSize} color={theme.colors.primary} />
+        <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: isXSmall ? 13 : 14 }]}>智能建议</Text>
+        <View style={[styles.aiBadge, { backgroundColor: theme.colors.primary + '20', paddingHorizontal: isXSmall ? 5 : 6, paddingVertical: isXSmall ? 1 : 2 }]}>
+          <Text style={[styles.aiBadgeText, { color: theme.colors.primary, fontSize: isXSmall ? 8 : 9 }]}>AI</Text>
         </View>
       </View>
 
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[styles.row, { paddingHorizontal: contentPadding }]}
+        contentContainerStyle={[styles.row, { paddingHorizontal: contentPadding, gap: rowGap }]}
         nestedScrollEnabled
       >
         {list.map((s) => {
@@ -271,41 +296,45 @@ export function TaskSuggestions({
                 {
                   backgroundColor: theme.colors.card,
                   borderColor: theme.colors.border,
+                  width: cardWidth,
+                  padding: isXSmall ? 10 : 12,
+                  borderRadius: isXSmall ? 12 : 14,
                 },
               ]}
             >
-              <View style={styles.cardHeader}>
-                <View style={[styles.kindIcon, { backgroundColor: kindMeta.color + '20' }]}>
-                  <MaterialIcons name={kindMeta.icon} size={14} color={kindMeta.color} />
+              <View style={[styles.cardHeader, { gap: isXSmall ? 5 : 6, marginBottom: isXSmall ? 5 : 6 }]}>
+                <View style={[styles.kindIcon, { backgroundColor: kindMeta.color + '20', width: kindIconSize, height: kindIconSize, borderRadius: isXSmall ? 6 : 7 }]}>
+                  <MaterialIcons name={kindMeta.icon} size={iconSize} color={kindMeta.color} />
                 </View>
-                <Text style={[styles.kindLabel, { color: kindMeta.color }]}>{kindMeta.label}</Text>
+                <Text style={[styles.kindLabel, { color: kindMeta.color, fontSize: isXSmall ? 9 : 10 }]}>{kindMeta.label}</Text>
                 {onDismiss && (
                   <TouchableOpacity onPress={() => onDismiss(s.id)} hitSlop={8} style={styles.dismissBtn}>
-                    <MaterialIcons name="close" size={14} color={theme.colors.textTertiary} />
+                    <MaterialIcons name="close" size={iconSize} color={theme.colors.textTertiary} />
                   </TouchableOpacity>
                 )}
               </View>
 
-              <Text style={[styles.title, { color: theme.colors.text }]} numberOfLines={2}>
+              <Text style={[styles.title, { color: theme.colors.text, fontSize: titleFontSize, lineHeight: isXSmall ? 16 : 18, marginBottom: isXSmall ? 3 : 4 }]} numberOfLines={2}>
                 {s.title}
               </Text>
-              <Text style={[styles.reason, { color: theme.colors.textSecondary }]} numberOfLines={3}>
+              <Text style={[styles.reason, { color: theme.colors.textSecondary, fontSize: reasonFontSize, lineHeight: isXSmall ? 13 : 15, marginBottom: isXSmall ? 6 : 8 }]} numberOfLines={3}>
                 {s.reason}
               </Text>
 
-              <View style={styles.confidenceRow}>
-                <View style={[styles.confidenceBar, { backgroundColor: theme.colors.border }]}>
+              <View style={[styles.confidenceRow, { gap: isXSmall ? 5 : 6, marginBottom: isXSmall ? 8 : 10 }]}>
+                <View style={[styles.confidenceBar, { backgroundColor: theme.colors.border, height: isXSmall ? 3 : 4 }]}>
                   <View
                     style={[
                       styles.confidenceFill,
                       {
                         backgroundColor: kindMeta.color,
                         width: `${Math.round(s.confidence * 100)}%`,
+                        borderRadius: isXSmall ? 1.5 : 2,
                       },
                     ]}
                   />
                 </View>
-                <Text style={[styles.confidenceText, { color: theme.colors.textTertiary }]}>
+                <Text style={[styles.confidenceText, { color: theme.colors.textTertiary, fontSize: isXSmall ? 9 : 10 }]}>
                   {Math.round(s.confidence * 100)}%
                 </Text>
               </View>
@@ -314,10 +343,10 @@ export function TaskSuggestions({
                 <TouchableOpacity
                   onPress={() => onApply(s)}
                   activeOpacity={0.85}
-                  style={[styles.applyBtn, { backgroundColor: kindMeta.color }]}
+                  style={[styles.applyBtn, { backgroundColor: kindMeta.color, paddingVertical: applyBtnPaddingV, borderRadius: isXSmall ? 6 : 8, gap: isXSmall ? 3 : 4 }]}
                 >
-                  <Text style={styles.applyText}>应用建议</Text>
-                  <MaterialIcons name="arrow-forward" size={14} color="#fff" />
+                  <Text style={[styles.applyText, { fontSize: isXSmall ? 11 : 12 }]}>应用建议</Text>
+                  <MaterialIcons name="arrow-forward" size={iconSize} color="#fff" />
                 </TouchableOpacity>
               )}
             </View>
@@ -344,52 +373,31 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 20,
-    paddingBottom: 10,
   },
   headerTitle: {
-    fontSize: 14,
     fontWeight: '700',
   },
   aiBadge: {
-    paddingHorizontal: 6,
-    paddingVertical: 2,
     borderRadius: 6,
     marginLeft: 4,
   },
   aiBadgeText: {
-    fontSize: 9,
     fontWeight: '800',
     letterSpacing: 0.4,
   },
-  row: {
-    paddingHorizontal: 16,
-    paddingBottom: 4,
-    gap: 10,
-  },
+  row: {},
   card: {
-    width: 240,
-    borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
-    padding: 12,
-    marginRight: 8,
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 6,
   },
   kindIcon: {
-    width: 22,
-    height: 22,
-    borderRadius: 7,
     alignItems: 'center',
     justifyContent: 'center',
   },
   kindLabel: {
-    fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.3,
     flex: 1,
@@ -398,34 +406,22 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   title: {
-    fontSize: 13,
     fontWeight: '600',
-    lineHeight: 18,
-    marginBottom: 4,
   },
-  reason: {
-    fontSize: 11,
-    lineHeight: 15,
-    marginBottom: 8,
-  },
+  reason: {},
   confidenceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 10,
   },
   confidenceBar: {
     flex: 1,
-    height: 4,
     borderRadius: 2,
     overflow: 'hidden',
   },
   confidenceFill: {
     height: '100%',
-    borderRadius: 2,
   },
   confidenceText: {
-    fontSize: 10,
     fontWeight: '600',
     minWidth: 30,
     textAlign: 'right',
@@ -434,27 +430,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 6,
-    borderRadius: 8,
-    gap: 4,
   },
   applyText: {
     color: '#FFFFFF',
-    fontSize: 12,
     fontWeight: '600',
   },
   empty: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginHorizontal: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
   },
   emptyText: {
-    fontSize: 12,
     flex: 1,
   },
 });

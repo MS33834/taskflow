@@ -54,21 +54,18 @@ export default function HomeScreen() {
     sortTasks,
     reorderTasks,
   } = useAppStore();
+  const layout = useResponsiveLayout();
   const {
     width,
     isWeb,
+    isXSmall,
     isSmall,
+    isLarge,
     screenPadding,
-    contentMaxWidth,
-    tabBarHeight,
-  } = useResponsiveLayout();
-
-  const contentWrapperStyle = {
-    flex: 1,
-    width: '100%',
-    maxWidth: contentMaxWidth,
-    alignSelf: 'center' as const,
-  };
+    bottomInset,
+    sectionSpacing,
+    cardSpacing,
+  } = layout;
 
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -79,8 +76,6 @@ export default function HomeScreen() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
-    // Load once on mount; loadData is stable from the store and we don't
-    // want to refetch on every store change (would re-render the list).
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -199,23 +194,22 @@ export default function HomeScreen() {
             {
               flexDirection: 'row',
               alignItems: 'center',
-              padding: 12,
+              padding: isXSmall ? 10 : 12,
               backgroundColor: selected ? theme.colors.primary + '14' : theme.colors.card,
               borderRadius: 12,
-              marginHorizontal: 0,
-              marginVertical: 4,
-              borderWidth: selected ? 1.5 : 1,
+              marginVertical: cardSpacing / 2,
+              borderWidth: selected ? 1.5 : StyleSheet.hairlineWidth,
               borderColor: selected ? theme.colors.primary : theme.colors.border,
             },
           ]}
         >
           <MaterialIcons
             name={selected ? 'check-box' : 'check-box-outline-blank'}
-            size={24}
+            size={isXSmall ? 20 : 24}
             color={selected ? theme.colors.primary : theme.colors.textTertiary}
           />
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={{ fontSize: 15, fontWeight: '600', color: theme.colors.text }}>
+          <View style={{ flex: 1, marginLeft: 10 }}>
+            <Text style={{ fontSize: isXSmall ? 14 : 15, fontWeight: '600', color: theme.colors.text }}>
               {item.title}
             </Text>
             {item.dueDate && (
@@ -243,7 +237,7 @@ export default function HomeScreen() {
         onSwipeRight={(task) => toggleTaskComplete(task.id)}
       />
     );
-  }, [navigation, toggleTaskComplete, deleteTask, bulk, theme]);
+  }, [navigation, toggleTaskComplete, deleteTask, bulk, theme, isXSmall, cardSpacing]);
 
   const bulkActions: MultiSelectAction[] = [
     {
@@ -277,15 +271,31 @@ export default function HomeScreen() {
   ];
 
   const renderHeader = useCallback(() => (
-    <View style={[styles.header, { paddingHorizontal: screenPadding }]}>
+    <View style={{ paddingHorizontal: screenPadding, paddingTop: isWeb ? 8 : 4, paddingBottom: sectionSpacing }}>
       <View style={styles.headerRow}>
-        <View style={styles.headerTitleWrap}>
-          <Text style={[styles.greeting, { color: theme.colors.textSecondary }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ fontSize: 13, color: theme.colors.textSecondary, marginBottom: 2 }}>
             欢迎回来 👋
           </Text>
-          <Text style={[styles.title, { color: theme.colors.text }]}>TaskFlow <Text style={[styles.versionBadge, { color: theme.colors.primary, backgroundColor: theme.colors.primary + '14' }]}>v1.1.0 · web</Text></Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
+            <Text style={{ fontSize: isLarge ? 32 : 26, fontWeight: '700', color: theme.colors.text, letterSpacing: -0.5 }}>
+              TaskFlow
+            </Text>
+            <View style={{
+              backgroundColor: theme.colors.primary + '14',
+              paddingHorizontal: 8,
+              paddingVertical: 3,
+              borderRadius: 6,
+              marginLeft: 8,
+              marginTop: 2,
+            }}>
+              <Text style={{ fontSize: 10, fontWeight: '700', color: theme.colors.primary, letterSpacing: 0.2 }}>
+                v1.1.0 · web
+              </Text>
+            </View>
+          </View>
         </View>
-        <View style={styles.headerActions}>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
           <TouchableOpacity
             style={[styles.iconButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
             onPress={() => setDrawerOpen(true)}
@@ -293,7 +303,7 @@ export default function HomeScreen() {
             accessibilityLabel="打开导航抽屉"
             accessibilityRole="button"
           >
-            <MaterialIcons name="menu" size={20} color={theme.colors.text} />
+            <MaterialIcons name="menu" size={isXSmall ? 18 : 20} color={theme.colors.text} />
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.iconButton, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
@@ -301,15 +311,20 @@ export default function HomeScreen() {
             activeOpacity={0.7}
             accessibilityLabel="设置"
           >
-            <MaterialIcons name="settings" size={20} color={theme.colors.text} />
+            <MaterialIcons name="settings" size={isXSmall ? 18 : 20} color={theme.colors.text} />
           </TouchableOpacity>
         </View>
       </View>
 
-      <View style={[styles.searchBar, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
-        <MaterialIcons name="search" size={18} color={theme.colors.textTertiary} style={styles.searchIcon} />
+      <View style={[styles.searchBar, {
+        backgroundColor: theme.colors.surface,
+        borderColor: theme.colors.border,
+        height: isXSmall ? 42 : 46,
+        marginTop: sectionSpacing,
+      }]}>
+        <MaterialIcons name="search" size={isXSmall ? 16 : 18} color={theme.colors.textTertiary} style={{ marginRight: 10 }} />
         <TextInput
-          style={[styles.searchInput, { color: theme.colors.text }]}
+          style={{ flex: 1, fontSize: isXSmall ? 14 : 15, color: theme.colors.text, paddingVertical: 0 }}
           placeholder="搜索任务、项目、标签..."
           placeholderTextColor={theme.colors.textTertiary}
           value={searchQuery}
@@ -322,7 +337,7 @@ export default function HomeScreen() {
         )}
       </View>
     </View>
-  ), [theme, searchQuery, navigation]);
+  ), [theme, searchQuery, navigation, screenPadding, isWeb, isXSmall, isLarge, sectionSpacing]);
 
   const renderStats = useCallback(() => {
     if (pendingCount === 0 && completedCount === 0) return null;
@@ -339,107 +354,53 @@ export default function HomeScreen() {
         theme={theme}
         compact
       >
-        <View style={[styles.statsRow, { paddingHorizontal: screenPadding, flexDirection: isSmall ? 'column' : 'row', gap: isSmall ? 8 : 10 }]}>
+        <View style={{
+          flexDirection: isSmall ? 'column' : 'row',
+          paddingHorizontal: screenPadding - 12,
+          gap: cardSpacing,
+          paddingBottom: 4,
+        }}>
           <TouchableOpacity
-            style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+            style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, flex: 1 }]}
             activeOpacity={0.85}
           >
             <View style={[styles.statIconWrap, { backgroundColor: theme.colors.primary + '14' }]}>
               <MaterialIcons name="schedule" size={18} color={theme.colors.primary} />
             </View>
-            <View style={styles.statTextWrap}>
-              <Text style={[styles.statNumber, { color: theme.colors.text }]}>{pendingCount}</Text>
-              <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>待完成</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 19, fontWeight: '700', color: theme.colors.text, lineHeight: 22 }}>{pendingCount}</Text>
+              <Text style={{ fontSize: 11, color: theme.colors.textSecondary, marginTop: 2, fontWeight: '500' }}>待完成</Text>
             </View>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+            style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, flex: 1 }]}
             activeOpacity={0.85}
           >
             <View style={[styles.statIconWrap, { backgroundColor: theme.colors.success + '14' }]}>
               <MaterialIcons name="check-circle" size={18} color={theme.colors.success} />
             </View>
-            <View style={styles.statTextWrap}>
-              <Text style={[styles.statNumber, { color: theme.colors.text }]}>{completedCount}</Text>
-              <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>已完成</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 19, fontWeight: '700', color: theme.colors.text, lineHeight: 22 }}>{completedCount}</Text>
+              <Text style={{ fontSize: 11, color: theme.colors.textSecondary, marginTop: 2, fontWeight: '500' }}>已完成</Text>
             </View>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}
+            style={[styles.statCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, flex: 1 }]}
             onPress={() => navigation.navigate('Analytics')}
             activeOpacity={0.85}
           >
             <View style={[styles.statIconWrap, { backgroundColor: theme.colors.accent + '14' }]}>
               <Ionicons name="stats-chart" size={18} color={theme.colors.accent} />
             </View>
-            <View style={styles.statTextWrap}>
-              <Text style={[styles.statNumber, { color: theme.colors.text }]}>{completionPercent}<Text style={styles.statPercent}>%</Text></Text>
-              <Text style={[styles.statLabel, { color: theme.colors.textSecondary }]}>完成率</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 19, fontWeight: '700', color: theme.colors.text, lineHeight: 22 }}>{completionPercent}<Text style={{ fontSize: 12, color: theme.colors.textSecondary }}>%</Text></Text>
+              <Text style={{ fontSize: 11, color: theme.colors.textSecondary, marginTop: 2, fontWeight: '500' }}>完成率</Text>
             </View>
           </TouchableOpacity>
         </View>
       </CollapsibleSection>
     );
-  }, [pendingCount, completedCount, theme, navigation]);
-
-  const renderCategories = useCallback(() => (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={[styles.chipRow, { paddingHorizontal: screenPadding }]}
-    >
-      <TouchableOpacity
-        style={[
-          styles.chip,
-          { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
-          !selectedCategory && { backgroundColor: theme.colors.text, borderColor: theme.colors.text },
-        ]}
-        onPress={() => setSelectedCategory(null)}
-        activeOpacity={0.7}
-      >
-        <MaterialIcons
-          name="inbox"
-          size={14}
-          color={!selectedCategory ? theme.colors.onPrimary : theme.colors.textSecondary}
-          style={styles.chipIcon}
-        />
-        <Text
-          style={[
-            styles.chipText,
-            { color: !selectedCategory ? theme.colors.onPrimary : theme.colors.textSecondary },
-          ]}
-        >
-          全部
-        </Text>
-      </TouchableOpacity>
-      {categories.map((category) => {
-        const isActive = selectedCategory === category.id;
-        return (
-          <TouchableOpacity
-            key={category.id}
-            style={[
-              styles.chip,
-              { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
-              isActive && { backgroundColor: category.color + '20', borderColor: category.color + '40' },
-            ]}
-            onPress={() => setSelectedCategory(category.id)}
-            activeOpacity={0.7}
-          >
-            <View style={[styles.chipDot, { backgroundColor: category.color }]} />
-            <Text
-              style={[
-                styles.chipText,
-                { color: isActive ? category.color : theme.colors.textSecondary },
-                isActive && { fontWeight: '600' },
-              ]}
-            >
-              {category.name}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </ScrollView>
-  ), [selectedCategory, categories, theme, setSelectedCategory]);
+  }, [pendingCount, completedCount, theme, navigation, screenPadding, isSmall, cardSpacing]);
 
   const renderQuickActions = useCallback(() => (
     <CollapsibleSection
@@ -451,7 +412,13 @@ export default function HomeScreen() {
       theme={theme}
       compact
     >
-      <View style={[styles.quickActionsGrid, { paddingHorizontal: screenPadding }]}>
+      <View style={{
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        paddingHorizontal: screenPadding - 12,
+        paddingBottom: 8,
+        gap: cardSpacing,
+      }}>
         {[
           { icon: 'calendar-today', label: '日历', color: theme.colors.primary, bg: theme.colors.primary + '14', target: 'Calendar' },
           { icon: 'folder', label: '项目', color: theme.colors.secondary, bg: theme.colors.secondary + '14', target: 'Projects' },
@@ -465,21 +432,26 @@ export default function HomeScreen() {
               {
                 backgroundColor: theme.colors.surface,
                 borderColor: theme.colors.border,
-                minWidth: isSmall ? '45%' : width < BREAKPOINTS.md ? '30%' : '22%',
+                minWidth: isXSmall ? '46%' : isSmall ? '45%' : width < BREAKPOINTS.md ? '30%' : '22%',
+                flexGrow: 1,
               },
             ]}
             onPress={() => navigation.navigate(item.target as never)}
             activeOpacity={0.7}
           >
             <View style={[styles.quickActionIcon, { backgroundColor: item.bg }]}>
-              <MaterialIcons name={item.icon as unknown as MaterialIconName} size={20} color={item.color} />
+              <MaterialIcons name={item.icon as unknown as MaterialIconName} size={isXSmall ? 18 : 20} color={item.color} />
             </View>
-            <Text style={[styles.quickActionText, { color: theme.colors.text }]}>{item.label}</Text>
+            <Text style={{ fontSize: isXSmall ? 12 : 13, fontWeight: '500', color: theme.colors.text, letterSpacing: 0.1 }}>{item.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
       <TouchableOpacity
-        style={[styles.moreFeaturesLink, { backgroundColor: theme.colors.primary + '08', borderColor: theme.colors.primary + '30' }]}
+        style={[styles.moreFeaturesLink, {
+          backgroundColor: theme.colors.primary + '08',
+          borderColor: theme.colors.primary + '30',
+          marginHorizontal: screenPadding - 12,
+        }]}
         onPress={() => setDrawerOpen(true)}
         activeOpacity={0.7}
       >
@@ -490,7 +462,7 @@ export default function HomeScreen() {
         <MaterialIcons name="chevron-right" size={16} color={theme.colors.primary} />
       </TouchableOpacity>
     </CollapsibleSection>
-  ), [theme, navigation]);
+  ), [theme, navigation, screenPadding, isXSmall, isSmall, width, cardSpacing]);
 
   const drawerItems: DrawerItem[] = useMemo(() => [
     { key: 'search', icon: 'search', label: '搜索', description: '全文搜索任务', color: theme.colors.text, target: 'Search', group: 'tool' as const },
@@ -525,9 +497,12 @@ export default function HomeScreen() {
     }
   }, [navigation, sortedTasks, openReorder]);
 
+  const contentContainerStyle = useMemo(() => ({
+    paddingBottom: bottomInset + (bulk.active ? 80 : 0),
+  }), [bottomInset, bulk.active]);
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={contentWrapperStyle}>
       <FlatList
         data={sortedTasks}
         renderItem={renderTask}
@@ -539,11 +514,7 @@ export default function HomeScreen() {
             tintColor={theme.colors.primary}
           />
         }
-        contentContainerStyle={[
-          styles.list,
-          { paddingHorizontal: screenPadding, paddingBottom: tabBarHeight + (isWeb ? 40 : 24) },
-          bulk.active && { paddingBottom: tabBarHeight + (isWeb ? 24 : 12) },
-        ]}
+        contentContainerStyle={contentContainerStyle}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <>
@@ -555,11 +526,13 @@ export default function HomeScreen() {
           </>
         }
         ListEmptyComponent={
-          <EmptyState
-            illustration="inbox"
-            title="今日无任务"
-            description="享受轻松的时光，或点击下方 + 按钮添加新任务"
-          />
+          <View style={{ paddingHorizontal: screenPadding }}>
+            <EmptyState
+              illustration="inbox"
+              title="今日无任务"
+              description="享受轻松的时光，或点击下方 + 按钮添加新任务"
+            />
+          </View>
         }
       />
       {bulk.active && (
@@ -584,12 +557,12 @@ export default function HomeScreen() {
         onRequestClose={() => setShowReorder(false)}
       >
         <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-          <View style={[styles.reorderHeader, { borderBottomColor: theme.colors.border }]}>
+          <View style={[styles.reorderHeader, { borderBottomColor: theme.colors.border, paddingHorizontal: screenPadding }]}>
             <TouchableOpacity onPress={() => setShowReorder(false)} style={styles.iconButton}>
               <MaterialIcons name="close" size={22} color={theme.colors.text} />
             </TouchableOpacity>
             <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={[styles.title, { color: theme.colors.text, fontSize: 20 }]}>重排任务</Text>
+              <Text style={{ color: theme.colors.text, fontSize: 20, fontWeight: '700' }}>重排任务</Text>
               <Text style={{ fontSize: 12, color: theme.colors.textTertiary, marginTop: 2 }}>
                 长按拖拽手柄 ({Platform.OS === 'web' ? '250ms' : '0.25秒'}) · 共 {reorderList.length} 项
               </Text>
@@ -606,7 +579,7 @@ export default function HomeScreen() {
 
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ paddingVertical: 8 }}
+            contentContainerStyle={{ paddingVertical: 8, paddingHorizontal: screenPadding }}
             showsVerticalScrollIndicator={false}
           >
             {reorderList.length === 0 ? (
@@ -688,53 +661,79 @@ export default function HomeScreen() {
         completedToday={completedCount}
         theme={theme}
       />
-      </View>
     </SafeAreaView>
   );
+
+  function renderCategories() {
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: screenPadding, paddingBottom: sectionSpacing, gap: 8 }}
+      >
+        <TouchableOpacity
+          style={[
+            styles.chip,
+            { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+            !selectedCategory && { backgroundColor: theme.colors.text, borderColor: theme.colors.text },
+          ]}
+          onPress={() => setSelectedCategory(null)}
+          activeOpacity={0.7}
+        >
+          <MaterialIcons
+            name="inbox"
+            size={14}
+            color={!selectedCategory ? theme.colors.onPrimary : theme.colors.textSecondary}
+            style={{ marginRight: 5 }}
+          />
+          <Text
+            style={[
+              styles.chipText,
+              { color: !selectedCategory ? theme.colors.onPrimary : theme.colors.textSecondary },
+            ]}
+          >
+            全部
+          </Text>
+        </TouchableOpacity>
+        {categories.map((category) => {
+          const isActive = selectedCategory === category.id;
+          return (
+            <TouchableOpacity
+              key={category.id}
+              style={[
+                styles.chip,
+                { backgroundColor: theme.colors.surface, borderColor: theme.colors.border },
+                isActive && { backgroundColor: category.color + '20', borderColor: category.color + '40' },
+              ]}
+              onPress={() => setSelectedCategory(category.id)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.chipDot, { backgroundColor: category.color }]} />
+              <Text
+                style={[
+                  styles.chipText,
+                  { color: isActive ? category.color : theme.colors.textSecondary },
+                  isActive && { fontWeight: '600' },
+                ]}
+              >
+                {category.name}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </ScrollView>
+    );
+  }
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginBottom: 18,
-  },
-  headerTitleWrap: {
-    flex: 1,
-  },
-  greeting: {
-    fontSize: 14,
-    marginBottom: 4,
-    letterSpacing: 0.1,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    letterSpacing: -0.6,
-    lineHeight: 38,
-  },
-  versionBadge: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.2,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 6,
-    overflow: 'hidden',
-    marginLeft: 4,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 8,
   },
   iconButton: {
     width: 40,
@@ -743,6 +742,45 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: StyleSheet.hairlineWidth,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  statCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 10,
+  },
+  statIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  quickAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 14,
+    borderWidth: StyleSheet.hairlineWidth,
+    gap: 8,
+  },
+  quickActionIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   moreFeaturesLink: {
     flexDirection: 'row',
@@ -759,101 +797,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    height: 46,
-    borderWidth: StyleSheet.hairlineWidth,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    paddingVertical: 0,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 18,
-    gap: 10,
-  },
-  statCard: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 16,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: 10,
-  },
-  statIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  statTextWrap: {
-    flex: 1,
-  },
-  statNumber: {
-    fontSize: 19,
-    fontWeight: '700',
-    lineHeight: 22,
-    letterSpacing: -0.3,
-  },
-  statPercent: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  statLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    marginTop: 2,
-    letterSpacing: 0.1,
-  },
-  quickActionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 16,
-    paddingBottom: 18,
-    gap: 8,
-  },
-  quickAction: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderRadius: 14,
-    borderWidth: StyleSheet.hairlineWidth,
-    gap: 8,
-    minWidth: '30%',
-    flexGrow: 1,
-  },
-  quickActionIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  quickActionText: {
-    fontSize: 13,
-    fontWeight: '500',
-    letterSpacing: 0.1,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    paddingBottom: 8,
-    gap: 8,
-  },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -861,9 +804,6 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     borderRadius: 999,
     borderWidth: StyleSheet.hairlineWidth,
-  },
-  chipIcon: {
-    marginRight: 5,
   },
   chipDot: {
     width: 7,
@@ -875,45 +815,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
   },
-  moreSection: {
-    paddingTop: 8,
-  },
-  moreSectionHeader: {
-    paddingHorizontal: 20,
-    paddingBottom: 8,
-  },
-  moreSectionTitle: {
-    fontSize: 11,
-    fontWeight: '600',
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-  },
-  list: {
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 100,
-  },
-  emptyState: {
-    alignItems: 'center',
-    paddingVertical: 64,
-    paddingHorizontal: 32,
-  },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
-    marginBottom: 6,
-    letterSpacing: -0.2,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: 'center',
-  },
   reorderHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
@@ -927,18 +831,16 @@ const styles = StyleSheet.create({
   reorderRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginVertical: 4,
     paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingVertical: 10,
     borderRadius: 12,
     borderWidth: StyleSheet.hairlineWidth,
-    gap: 12,
-    minHeight: 64,
+    marginVertical: 3,
   },
   reorderIndex: {
-    width: 24,
+    width: 28,
     alignItems: 'center',
+    marginRight: 8,
   },
   priorityDot: {
     width: 8,

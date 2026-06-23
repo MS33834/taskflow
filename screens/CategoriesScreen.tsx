@@ -18,6 +18,7 @@ import { useAppStore } from '../src/shared/store';
 import { RootStackParamList, Category } from '../src/shared/types';
 import { Button } from '../src/shared/components/common';
 import { toast } from '../src/shared/components/common/Toast';
+import { useResponsiveLayout } from '../src/shared/hooks/useResponsiveLayout';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Categories'>;
 type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
@@ -30,6 +31,28 @@ const PRESET_COLORS = [
 ];
 
 export default function CategoriesScreen() {
+  const layout = useResponsiveLayout();
+  const {
+    isXSmall,
+    isSmall,
+    isLarge,
+    screenPadding,
+    sectionSpacing,
+    cardSpacing,
+    bottomInset,
+    contentMaxWidth,
+  } = layout;
+
+  const headerPaddingV = isXSmall ? 10 : isSmall ? 11 : 12;
+  const headerTitleSize = isXSmall ? 16 : isSmall ? 17 : 18;
+  const iconSize = isXSmall ? 20 : isSmall ? 22 : 24;
+  const bodyTextSize = isXSmall ? 13 : 14;
+  const contentWrapperStyle = isLarge ? {
+    maxWidth: contentMaxWidth,
+    alignSelf: 'center' as const,
+    width: '100%' as const,
+  } : {};
+
   const navigation = useNavigation<NavigationProp>();
   const {
     theme,
@@ -142,23 +165,23 @@ export default function CategoriesScreen() {
   );
 
   const renderHeader = () => (
-    <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.header, { backgroundColor: theme.colors.surface, paddingHorizontal: screenPadding, paddingVertical: headerPaddingV }]}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+        <MaterialIcons name="arrow-back" size={iconSize} color={theme.colors.primary} />
       </TouchableOpacity>
-      <Text style={[styles.headerTitle, { color: theme.colors.text }]}>分类管理</Text>
+      <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: headerTitleSize }]}>分类管理</Text>
       <TouchableOpacity onPress={() => setShowAddModal(true)} style={styles.addButton}>
-        <Text style={[styles.addButtonText, { color: theme.colors.primary }]}>+ 新建</Text>
+        <Text style={[styles.addButtonText, { color: theme.colors.primary, fontSize: bodyTextSize }]}>+ 新建</Text>
       </TouchableOpacity>
     </View>
   );
 
   const renderSearchBar = () => (
-    <View style={[styles.searchBar, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.searchBar, { backgroundColor: theme.colors.surface, padding: screenPadding }]}>
       <View style={[styles.searchInputContainer, { backgroundColor: theme.colors.background }]}>
-        <MaterialIcons name="search" size={16} color={theme.colors.textSecondary} style={{ marginRight: 8 }} />
+        <MaterialIcons name="search" size={isXSmall ? 14 : 16} color={theme.colors.textSecondary} style={{ marginRight: 8 }} />
         <TextInput
-          style={[styles.searchInput, { color: theme.colors.text }]}
+          style={[styles.searchInput, { color: theme.colors.text, fontSize: bodyTextSize }]}
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="搜索分类..."
@@ -166,7 +189,7 @@ export default function CategoriesScreen() {
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <MaterialIcons name="close" size={20} color={theme.colors.textSecondary} />
+            <MaterialIcons name="close" size={isXSmall ? 18 : 20} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -428,11 +451,12 @@ export default function CategoriesScreen() {
       {renderSearchBar()}
 
       <FlatList
+        style={contentWrapperStyle}
         data={filteredCategories}
         keyExtractor={(item) => item.id}
         renderItem={renderCategoryItem}
         ListEmptyComponent={renderEmptyState}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, { padding: screenPadding, paddingBottom: bottomInset }]}
         showsVerticalScrollIndicator={false}
       />
 
