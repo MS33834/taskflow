@@ -305,6 +305,10 @@ describe('syncStorage', () => {
       `taskflow-sync-storage-other-${Date.now()}.db`
     );
     if (fs.existsSync(otherDbPath)) fs.unlinkSync(otherDbPath);
+
+    // Swap out the global db so openDatabase does not leak the default handle.
+    closeDatabase();
+
     const otherDb = openDatabase(testKey, otherDbPath);
     runMigrations();
     insertSyncRecord(
@@ -324,8 +328,10 @@ describe('syncStorage', () => {
     expect(records).toHaveLength(1);
     expect(records[0].recordId).toBe('7');
 
-    closeDatabase();
     otherDb.close();
     safeRemoveSync(otherDbPath);
+
+    // Restore the default test database so afterEach can clean it up.
+    openDatabase(testKey, testDbPath);
   });
 });
