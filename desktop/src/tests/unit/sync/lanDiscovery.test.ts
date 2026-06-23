@@ -37,9 +37,9 @@ describe('lanDiscovery', () => {
     await serviceA.start();
     await serviceB.start();
 
-    const aPort = (serviceA as any).socket.address().port;
-    const bPort = (serviceB as any).socket.address().port;
-    const aHash = (serviceA as any).accountHash;
+    const aPort = (serviceA as unknown as { socket: dgram.Socket; accountHash: string }).socket.address().port;
+    const bPort = (serviceB as unknown as { socket: dgram.Socket }).socket.address().port;
+    const aHash = (serviceA as unknown as { accountHash: string }).accountHash;
     const packet = Buffer.from(
       JSON.stringify({
         type: 'taskflow-lan',
@@ -71,7 +71,7 @@ describe('lanDiscovery', () => {
     await serviceA.start();
     await serviceB.start();
 
-    const bPort = (serviceB as any).socket.address().port;
+    const bPort = (serviceB as unknown as { socket: dgram.Socket }).socket.address().port;
     const packet = Buffer.from(
       JSON.stringify({
         type: 'taskflow-lan',

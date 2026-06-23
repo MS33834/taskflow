@@ -3,8 +3,18 @@ import { getDatabase } from '../services/dbService';
 import { encryptWithMasterKey, decryptWithMasterKey } from '../services/authService';
 import type { VaultItem, VaultField } from '../../shared/types';
 
+interface VaultItemRow {
+  id: string;
+  type: VaultItem['type'];
+  title: string;
+  fields: string;
+  is_hidden: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export function listVaultItems(): VaultItem[] {
-  const rows = getDatabase().prepare('SELECT * FROM vault_items ORDER BY updated_at DESC').all();
+  const rows = getDatabase().prepare('SELECT * FROM vault_items ORDER BY updated_at DESC').all() as VaultItemRow[];
   return rows.map(parseVaultItem);
 }
 
@@ -34,7 +44,7 @@ export function createVaultItem(item: Omit<VaultItem, 'id' | 'createdAt' | 'upda
 }
 
 export function updateVaultItem(id: string, updates: Partial<VaultItem>): VaultItem {
-  const existing = getDatabase().prepare('SELECT * FROM vault_items WHERE id = ?').get(id);
+  const existing = getDatabase().prepare('SELECT * FROM vault_items WHERE id = ?').get(id) as VaultItemRow | undefined;
   if (!existing) throw new Error('Vault item not found');
 
   const item = parseVaultItem(existing);
@@ -66,7 +76,7 @@ function serializeFields(fields: VaultField[]): string {
   return JSON.stringify(encryptedFields);
 }
 
-function parseVaultItem(row: any): VaultItem {
+function parseVaultItem(row: VaultItemRow): VaultItem {
   const fields: VaultField[] = JSON.parse(row.fields || '[]');
   const decryptedFields = fields.map((field) => ({
     ...field,

@@ -33,8 +33,8 @@ describe('dbService', () => {
     const tables = getDatabase()
       .prepare("SELECT name FROM sqlite_master WHERE type='table'")
       .all();
-    expect(tables.map((t: any) => t.name)).toContain('tasks');
-    expect(tables.map((t: any) => t.name)).toContain('vault_items');
+    expect(tables.map((t: { name: string }) => t.name)).toContain('tasks');
+    expect(tables.map((t: { name: string }) => t.name)).toContain('vault_items');
   });
 
   it('should encrypt the database file so it cannot be opened without the key', () => {
@@ -56,7 +56,7 @@ describe('dbService', () => {
     const tables = getDatabase()
       .prepare("SELECT name FROM sqlite_master WHERE type='table'")
       .all();
-    expect(tables.map((t: any) => t.name)).toContain('tasks');
+    expect(tables.map((t: { name: string }) => t.name)).toContain('tasks');
   });
 
   it('should reject an incorrect key for an encrypted database', () => {

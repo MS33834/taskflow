@@ -2,8 +2,23 @@ import { randomUUID } from 'crypto';
 import { getDatabase } from '../services/dbService';
 import type { Task } from '../../shared/types';
 
+interface TaskRow {
+  id: string;
+  title: string;
+  description: string | null;
+  due_date: string | null;
+  reminder_at: string | null;
+  repeat_rule: string | null;
+  priority: Task['priority'];
+  status: Task['status'];
+  category_id: string | null;
+  tag_ids: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export function listTasks(): Task[] {
-  const rows = getDatabase().prepare('SELECT * FROM tasks ORDER BY due_date ASC').all();
+  const rows = getDatabase().prepare('SELECT * FROM tasks ORDER BY due_date ASC').all() as TaskRow[];
   return rows.map(parseTask);
 }
 
@@ -39,7 +54,7 @@ export function createTask(task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): 
 }
 
 export function updateTask(id: string, updates: Partial<Task>): Task {
-  const existing = getDatabase().prepare('SELECT * FROM tasks WHERE id = ?').get(id);
+  const existing = getDatabase().prepare('SELECT * FROM tasks WHERE id = ?').get(id) as TaskRow | undefined;
   if (!existing) throw new Error('Task not found');
 
   const task = parseTask(existing);
@@ -73,7 +88,7 @@ export function deleteTask(id: string): void {
   getDatabase().prepare('DELETE FROM tasks WHERE id = ?').run(id);
 }
 
-function parseTask(row: any): Task {
+function parseTask(row: TaskRow): Task {
   return {
     id: row.id,
     title: row.title,

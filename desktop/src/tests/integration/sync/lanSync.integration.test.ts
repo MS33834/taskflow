@@ -127,7 +127,7 @@ describe('LAN sync integration', () => {
 
     const stored = dbB.prepare('SELECT * FROM sync_records WHERE id = ?').get(record.id);
     expect(stored).toBeDefined();
-    expect((stored as any).record_id).toBe('1');
+    expect((stored as { record_id: string }).record_id).toBe('1');
 
     dbA.close();
     closeDatabase();

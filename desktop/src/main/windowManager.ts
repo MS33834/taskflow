@@ -1,4 +1,4 @@
-import { BrowserWindow, globalShortcut } from 'electron';
+import { BrowserWindow, globalShortcut, app } from 'electron';
 import path from 'path';
 
 let mainWindow: BrowserWindow | null = null;
@@ -20,7 +20,7 @@ export function createMainWindow(): BrowserWindow {
     },
   });
 
-  if (process.env.VITE_DEV_SERVER_URL) {
+  if (!app.isPackaged && process.env.VITE_DEV_SERVER_URL) {
     mainWindow.loadURL(process.env.VITE_DEV_SERVER_URL);
     mainWindow.webContents.openDevTools();
   } else {
