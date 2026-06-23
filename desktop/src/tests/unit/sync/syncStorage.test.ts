@@ -35,8 +35,8 @@ function safeRemoveSync(target: string, maxRetries = 10): void {
         fs.unlinkSync(target);
       }
       return;
-    } catch (err: any) {
-      if (err.code === 'EBUSY' && i < maxRetries - 1) {
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code === 'EBUSY' && i < maxRetries - 1) {
         Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
         continue;
       }
