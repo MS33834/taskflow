@@ -5,12 +5,12 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.config import settings
+from app.core.exceptions import handle_api_error
 from app.plugins.manager import plugin_manager
-from app.utils.logger import logger
 
 router = APIRouter(prefix="/plugins", tags=["plugins"])
 
@@ -25,7 +25,7 @@ class LoadPluginRequest(BaseModel):
     """加载插件请求"""
     name: str
     module_path: str
-    expected_hash: Optional[str] = None
+    expected_hash: str
 
 
 def _validate_plugin_name(name: str) -> None:
@@ -68,7 +68,8 @@ def _resolve_plugin_path(module_path: str) -> Path:
 
     # 安全清洗：插件路径只能是纯文件名，禁止目录分隔符与向上逃逸
     filename = Path(module_path).name
-    if not filename or filename != module_path or not re.match(r"^[\w\-\.]+\.py$", filename):
+    is_valid_name = re.match(r"^[\w\-\.]+\.py$", filename)
+    if not filename or filename != module_path or not is_valid_name:
         raise ValueError("插件路径必须为 plugins_dir 下的纯 Python 文件名")
     if ".." in filename or "/" in filename or "\\" in filename:
         raise ValueError("插件路径包含非法字符")
@@ -81,14 +82,13 @@ def _resolve_plugin_path(module_path: str) -> Path:
     return target
 
 
-def _verify_plugin_hash(file_path: Path, expected_hash: Optional[str]) -> None:
-    """校验插件文件 SHA-256 哈希。"""
+def _verify_plugin_hash(file_path: Path, expected_hash: Optional[str]) -> bool:
+    """校验插件文件 SHA-256 哈希。缺少哈希或校验失败均返回 False。"""
     if not expected_hash:
-        return
+        return False
 
     actual_hash = hashlib.sha256(file_path.read_bytes()).hexdigest()
-    if not hmac.compare_digest(actual_hash.lower(), expected_hash.strip().lower()):
-        raise ValueError("插件文件 SHA-256 哈希校验失败")
+    return hmac.compare_digest(actual_hash.lower(), expected_hash.strip().lower())
 
 
 @router.get("/", response_model=List[PluginResponse])
@@ -110,7 +110,8 @@ async def load_plugin(request: LoadPluginRequest):
 
         _validate_plugin_name(request.name)
         target_path = _resolve_plugin_path(request.module_path)
-        _verify_plugin_hash(target_path, request.expected_hash)
+        if not _verify_plugin_hash(target_path, request.expected_hash):
+            raise ValueError("插件 SHA-256 哈希校验失败或缺失")
 
         # 动态加载模块
         spec = importlib.util.spec_from_file_location(
@@ -132,8 +133,7 @@ async def load_plugin(request: LoadPluginRequest):
             "message": f"插件 {request.name} 加载成功"
         }
     except Exception as e:
-        logger.error(f"加载插件失败: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise handle_api_error(e, status_code=400, log_message="加载插件失败")
 
 
 @router.post("/unload/{plugin_name}")
@@ -146,8 +146,7 @@ async def unload_plugin(plugin_name: str):
             "message": f"插件 {plugin_name} 已卸载"
         }
     except Exception as e:
-        logger.error(f"卸载插件失败: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise handle_api_error(e, status_code=400, log_message="卸载插件失败")
 
 
 @router.post("/discover")
@@ -162,5 +161,4 @@ async def discover_plugins():
             "plugins": plugins
         }
     except Exception as e:
-        logger.error(f"发现插件失败: {e}")
-        raise HTTPException(status_code=400, detail=str(e))
+        raise handle_api_error(e, status_code=400, log_message="发现插件失败")
