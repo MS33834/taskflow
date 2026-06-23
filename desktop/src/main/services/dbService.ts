@@ -17,10 +17,14 @@ export function openDatabase(key: Buffer, dbPath?: string): Database.Database {
   db = new Database(resolvedPath);
 
   // Enable SQLCipher-compatible encryption using better-sqlite3-multiple-ciphers.
-  // The key is provided as a 64-character hex string representing 32 bytes.
+  // The key is provided as a raw 32-byte Buffer.
+  if (key.length !== 32) {
+    db.close();
+    throw new Error('Invalid database encryption key length');
+  }
   db.pragma("cipher = 'sqlcipher'");
   db.pragma('legacy = 4');
-  db.pragma(`key = "x'${key.toString('hex')}'"`);
+  db.key(key);
 
   // Verify the key is correct by attempting a simple query.
   // If the database is encrypted with a different key, this will throw.
