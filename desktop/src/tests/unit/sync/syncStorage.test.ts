@@ -325,6 +325,7 @@ describe('syncStorage', () => {
     expect(records[0].recordId).toBe('7');
 
     closeDatabase();
+    otherDb.close();
     safeRemoveSync(otherDbPath);
   });
 });
