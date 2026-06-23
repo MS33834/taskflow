@@ -12,8 +12,11 @@ import { isBiometricAvailable, promptBiometric } from './biometricService';
 
 let masterKey: Buffer | null = null;
 let autoLockTimer: NodeJS.Timeout | null = null;
+let clipboardClearTimer: NodeJS.Timeout | null = null;
 
 const MIN_PASSWORD_LENGTH = 8;
+const MIN_CLIPBOARD_CLEAR_SECONDS = 0;
+const MAX_CLIPBOARD_CLEAR_SECONDS = 600;
 
 export function isUnlocked(): boolean {
   return masterKey !== null;
@@ -127,11 +130,28 @@ export function resetAutoLock(minutes: number): void {
 }
 
 export function scheduleClipboardClear(seconds: number): void {
-  setTimeout(() => {
-    if (process.platform !== 'linux') {
-      clipboard.clear();
-    }
-  }, seconds * 1000);
+  if (clipboardClearTimer) {
+    clearTimeout(clipboardClearTimer);
+    clipboardClearTimer = null;
+  }
+
+  const safeSeconds = Math.max(
+    MIN_CLIPBOARD_CLEAR_SECONDS,
+    Math.min(MAX_CLIPBOARD_CLEAR_SECONDS, Math.floor(Number(seconds) || 0))
+  );
+  if (safeSeconds <= 0) {
+    clipboard.clear();
+    return;
+  }
+
+  if (process.platform !== 'darwin' && process.platform !== 'win32') {
+    console.debug('Clipboard clear scheduled on non-darwin/win32 platform');
+  }
+
+  clipboardClearTimer = setTimeout(() => {
+    clipboard.clear();
+    clipboardClearTimer = null;
+  }, safeSeconds * 1000);
 }
 
 export function isBiometricEnabled(): boolean {
