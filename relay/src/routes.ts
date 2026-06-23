@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import { RelayStore } from './store';
 import { buildAuthMessage, nowSeconds } from './auth';
 import { getDeviceFingerprint, verifyDeviceSignature } from './identity';
@@ -11,14 +12,43 @@ interface AuthenticatedRequest extends Request {
   token?: string;
 }
 
+function isValidPublicKey(publicKey: unknown): publicKey is string {
+  if (typeof publicKey !== 'string') return false;
+  const pk = publicKey.trim();
+  return (
+    pk.length > 0 &&
+    pk.startsWith('-----BEGIN PUBLIC KEY-----') &&
+    pk.endsWith('-----END PUBLIC KEY-----')
+  );
+}
+
 export function createRoutes(store: RelayStore, publicWsUrl: string): Router {
   const router = Router();
   router.use(express.json({ limit: '100kb' }));
 
-  router.post('/register-device', (req, res) => {
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests' },
+  });
+
+  const claimPairingCodeLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Too many requests' },
+  });
+
+  router.post('/register-device', authLimiter, (req, res) => {
     const { deviceId, publicKey, timestamp, signature } = req.body;
     if (!deviceId || !publicKey || typeof timestamp !== 'number' || !signature) {
       return res.status(400).json({ error: 'missing fields' });
+    }
+    if (!isValidPublicKey(publicKey)) {
+      return res.status(400).json({ error: 'Invalid public key' });
     }
     if (Math.abs(nowSeconds() - timestamp) > TIMESTAMP_TOLERANCE_SECONDS) {
       return res.status(400).json({ error: 'timestamp out of tolerance' });
@@ -59,10 +89,13 @@ export function createRoutes(store: RelayStore, publicWsUrl: string): Router {
     return res.status(200).json({ code, expiresAt: Date.now() + 5 * 60 * 1000 });
   });
 
-  router.post('/claim-pairing-code', (req, res) => {
+  router.post('/claim-pairing-code', claimPairingCodeLimiter, authLimiter, (req, res) => {
     const { code, deviceId, publicKey, timestamp, signature } = req.body;
     if (!code || !deviceId || !publicKey || typeof timestamp !== 'number' || !signature) {
       return res.status(400).json({ error: 'missing fields' });
+    }
+    if (!isValidPublicKey(publicKey)) {
+      return res.status(400).json({ error: 'Invalid public key' });
     }
     if (Math.abs(nowSeconds() - timestamp) > TIMESTAMP_TOLERANCE_SECONDS) {
       return res.status(400).json({ error: 'timestamp out of tolerance' });
@@ -83,7 +116,7 @@ export function createRoutes(store: RelayStore, publicWsUrl: string): Router {
     return res.status(200).json({ deviceId, token, wsUrl: publicWsUrl, pairedDeviceId: createdByDeviceId });
   });
 
-  router.post('/refresh-token', requireAuth(store), (req, res) => {
+  router.post('/refresh-token', authLimiter, requireAuth(store), (req, res) => {
     const deviceId = (req as AuthenticatedRequest).deviceId as string;
     const oldToken = (req as AuthenticatedRequest).token as string;
     const { timestamp, signature } = req.body;
