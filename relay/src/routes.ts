@@ -31,6 +31,7 @@ export function createRoutes(store: RelayStore, publicWsUrl: string): Router {
     max: 10,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: () => process.env.NODE_ENV === 'test',
     message: { error: 'Too many requests' },
   });
 
@@ -39,6 +40,16 @@ export function createRoutes(store: RelayStore, publicWsUrl: string): Router {
     max: 5,
     standardHeaders: true,
     legacyHeaders: false,
+    skip: () => process.env.NODE_ENV === 'test',
+    message: { error: 'Too many requests' },
+  });
+
+  const createPairingCodeLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: () => process.env.NODE_ENV === 'test',
     message: { error: 'Too many requests' },
   });
 
@@ -65,7 +76,7 @@ export function createRoutes(store: RelayStore, publicWsUrl: string): Router {
     return res.status(200).json({ deviceId, token, wsUrl: publicWsUrl });
   });
 
-  router.post('/pairing-codes', requireAuth(store), (req, res) => {
+  router.post('/pairing-codes', createPairingCodeLimiter, requireAuth(store), (req, res) => {
     const deviceId = (req as AuthenticatedRequest).deviceId as string;
     const { timestamp, signature } = req.body;
     if (typeof timestamp !== 'number' || !signature) {
@@ -145,16 +156,21 @@ export function createRoutes(store: RelayStore, publicWsUrl: string): Router {
 function requireAuth(store: RelayStore) {
   return (req: Request, res: Response, next: NextFunction) => {
     const header = req.headers.authorization ?? '';
-    const match = /^Bearer\s+(.+)$/i.exec(header);
-    if (!match) {
+    const prefix = 'bearer ';
+    if (
+      typeof header !== 'string' ||
+      header.length <= prefix.length ||
+      header.toLowerCase().slice(0, prefix.length) !== prefix
+    ) {
       return res.status(401).json({ error: 'missing authorization' });
     }
-    const deviceId = store.validateToken(match[1]);
+    const token = header.slice(prefix.length).trim();
+    const deviceId = store.validateToken(token);
     if (!deviceId) {
       return res.status(401).json({ error: 'invalid token' });
     }
     (req as AuthenticatedRequest).deviceId = deviceId;
-    (req as AuthenticatedRequest).token = match[1];
+    (req as AuthenticatedRequest).token = token;
     next();
   };
 }

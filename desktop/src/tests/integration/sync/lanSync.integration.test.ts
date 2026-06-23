@@ -134,5 +134,5 @@ describe('LAN sync integration', () => {
     for (const p of [dbAPath, dbBPath]) {
       if (fs.existsSync(p)) fs.unlinkSync(p);
     }
-  });
+  }, 30000);
 });

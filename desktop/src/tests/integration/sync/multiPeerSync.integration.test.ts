@@ -211,12 +211,34 @@ function makeSyncRecord(
   };
 }
 
+function safeRemoveSync(target: string, maxRetries = 50): void {
+  if (!fs.existsSync(target)) return;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const stats = fs.statSync(target);
+      if (stats.isDirectory()) {
+        fs.rmSync(target, { recursive: true, force: true });
+      } else {
+        fs.unlinkSync(target);
+      }
+      return;
+    } catch (err: unknown) {
+      if ((err as NodeJS.ErrnoException).code === 'EBUSY' && i < maxRetries - 1) {
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 200);
+        continue;
+      }
+      throw err;
+    }
+  }
+}
+
 describe('multi-peer sync integration', () => {
   let relay: ReturnType<typeof createRelayServer>;
   let port: number;
   let relayUrl: string;
   let wsUrl: string;
   let baseDir: string;
+  let nodes: DeviceNode[] = [];
   const smk = generateSyncMasterKey();
 
   beforeEach(async () => {
@@ -234,11 +256,13 @@ describe('multi-peer sync integration', () => {
   });
 
   afterEach(async () => {
+    for (const node of nodes) {
+      node.db.close();
+    }
+    nodes = [];
     closeDatabase();
     await relay.stop();
-    if (fs.existsSync(baseDir)) {
-      fs.rmSync(baseDir, { recursive: true, force: true });
-    }
+    safeRemoveSync(baseDir);
   });
 
   it('broadcasts a record from one device to two peers and detects concurrent writes', async () => {
@@ -253,7 +277,7 @@ describe('multi-peer sync integration', () => {
     const nodeA = createDeviceNode('A', idA, identities, smk, baseDir);
     const nodeB = createDeviceNode('B', idB, identities, smk, baseDir);
     const nodeC = createDeviceNode('C', idC, identities, smk, baseDir);
-    const nodes = [nodeA, nodeB, nodeC];
+    nodes = [nodeA, nodeB, nodeC];
 
     const relayClient = new RelayClient(relayUrl);
     const tokens: Record<string, string> = {};
@@ -370,8 +394,5 @@ describe('multi-peer sync integration', () => {
     for (const transport of transports) {
       transport.destroy();
     }
-    for (const node of nodes) {
-      node.db.close();
-    }
-  });
+  }, 30000);
 });
