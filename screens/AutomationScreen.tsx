@@ -87,8 +87,6 @@ export default function AutomationScreen() {
     isSmall,
     isLarge,
     screenPadding,
-    sectionSpacing,
-    cardSpacing,
     bottomInset,
     contentMaxWidth,
   } = layout;

@@ -30,7 +30,6 @@ export default function GoalsScreen() {
     isLarge,
     screenPadding,
     sectionSpacing,
-    cardSpacing,
     bottomInset,
     contentMaxWidth,
   } = layout;
