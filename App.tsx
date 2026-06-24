@@ -42,17 +42,20 @@ const CalendarStack = createNativeStackNavigator<CalendarStackParamList>();
 const AnalyticsStack = createNativeStackNavigator<AnalyticsStackParamList>();
 const SearchStack = createNativeStackNavigator<SearchStackParamList>();
 
+// 所有 Stack Navigator 共享的 header 样式，避免在每个 StackScreen 中重复定义
+function createStackScreenOptions(theme: { colors: { surface: string; text: string } }) {
+  return {
+    headerStyle: { backgroundColor: theme.colors.surface },
+    headerTintColor: theme.colors.text,
+    headerTitleStyle: { fontWeight: 'bold' as const },
+    headerShadowVisible: false,
+  };
+}
+
 function HomeStackScreen() {
   const { theme } = useAppStore();
   return (
-    <HomeStack.Navigator
-      screenOptions={{
-        headerStyle: { backgroundColor: theme.colors.surface },
-        headerTintColor: theme.colors.text,
-        headerTitleStyle: { fontWeight: 'bold' },
-        headerShadowVisible: false,
-      }}
-    >
+    <HomeStack.Navigator screenOptions={createStackScreenOptions(theme)}>
       <HomeStack.Screen name="Home" component={HomeScreen} options={{ title: 'TaskFlow' }} />
       <HomeStack.Screen name="TaskDetail" component={TaskDetailScreen} />
       <HomeStack.Screen name="Categories" component={CategoriesScreen} />
@@ -74,14 +77,7 @@ function HomeStackScreen() {
 function CalendarStackScreen() {
   const { theme } = useAppStore();
   return (
-    <CalendarStack.Navigator
-      screenOptions={{
-        headerStyle: { backgroundColor: theme.colors.surface },
-        headerTintColor: theme.colors.text,
-        headerTitleStyle: { fontWeight: 'bold' },
-        headerShadowVisible: false,
-      }}
-    >
+    <CalendarStack.Navigator screenOptions={createStackScreenOptions(theme)}>
       <CalendarStack.Screen name="Calendar" component={CalendarScreen} options={{ title: '日历' }} />
       <CalendarStack.Screen name="TaskDetail" component={TaskDetailScreen} options={{ title: '任务详情' }} />
     </CalendarStack.Navigator>
@@ -91,14 +87,7 @@ function CalendarStackScreen() {
 function AnalyticsStackScreen() {
   const { theme } = useAppStore();
   return (
-    <AnalyticsStack.Navigator
-      screenOptions={{
-        headerStyle: { backgroundColor: theme.colors.surface },
-        headerTintColor: theme.colors.text,
-        headerTitleStyle: { fontWeight: 'bold' },
-        headerShadowVisible: false,
-      }}
-    >
+    <AnalyticsStack.Navigator screenOptions={createStackScreenOptions(theme)}>
       <AnalyticsStack.Screen name="Analytics" component={AnalyticsScreen} options={{ title: '统计' }} />
     </AnalyticsStack.Navigator>
   );
@@ -107,14 +96,7 @@ function AnalyticsStackScreen() {
 function SearchStackScreen() {
   const { theme } = useAppStore();
   return (
-    <SearchStack.Navigator
-      screenOptions={{
-        headerStyle: { backgroundColor: theme.colors.surface },
-        headerTintColor: theme.colors.text,
-        headerTitleStyle: { fontWeight: 'bold' },
-        headerShadowVisible: false,
-      }}
-    >
+    <SearchStack.Navigator screenOptions={createStackScreenOptions(theme)}>
       <SearchStack.Screen name="Search" component={SearchScreen} options={{ title: '搜索' }} />
       <SearchStack.Screen name="TaskDetail" component={TaskDetailScreen} options={{ title: '任务详情' }} />
     </SearchStack.Navigator>
@@ -186,7 +168,6 @@ function MainTabsScreen() {
     tabBarBottomOffset,
     tabBarHorizontalInset,
     contentMaxWidth,
-    screenPadding,
   } = layout;
 
   useKeyboardShortcuts({

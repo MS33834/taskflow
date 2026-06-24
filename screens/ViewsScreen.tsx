@@ -42,7 +42,6 @@ export default function ViewsScreen() {
     isLarge,
     screenPadding,
     sectionSpacing,
-    cardSpacing,
     bottomInset,
     contentMaxWidth,
   } = layout;

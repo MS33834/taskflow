@@ -49,7 +49,7 @@ export function SideDrawer({
   theme,
 }: SideDrawerProps) {
   const layout = useResponsiveLayout();
-  const { width, isWeb, isXSmall, isSmall, isLarge } = layout;
+  const { width, isWeb, isXSmall, isLarge } = layout;
 
   const drawerWidth = isWeb
     ? isLarge ? 360 : 320
