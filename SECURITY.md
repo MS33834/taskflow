@@ -28,6 +28,8 @@ TaskFlow follows these security practices:
 - Sensitive settings protected by user-defined lock methods.
 - Automated secret scanning via gitleaks in CI.
 - Dependency review and OSSF Scorecard monitoring enabled.
+- Property-based fuzz testing with Hypothesis (see [docs/fuzzing.md](docs/fuzzing.md)).
+- All changes require PR review before merge.
 
 ## Disclosure Policy
 
