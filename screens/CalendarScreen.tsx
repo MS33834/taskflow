@@ -7,7 +7,6 @@ import {
   SafeAreaView,
   Platform,
   ScrollView,
-  Dimensions,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -15,16 +14,27 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useAppStore } from '../src/shared/store';
 import { RootStackParamList, Task } from '../src/shared/types';
 import { TaskCard } from '../src/shared/components/common';
+import { useResponsiveLayout } from '../src/shared/hooks/useResponsiveLayout';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Calendar'>;
-
-const { width } = Dimensions.get('window');
 
 type CalendarView = 'day' | 'week' | 'month';
 
 export default function CalendarScreen() {
   const navigation = useNavigation<NavigationProp>();
   const { theme, tasks } = useAppStore();
+  const layout = useResponsiveLayout();
+  const {
+    width,
+    isXSmall,
+    isSmall,
+    isLarge,
+    screenPadding,
+    sectionSpacing,
+    cardSpacing,
+    bottomInset,
+    contentMaxWidth,
+  } = layout;
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarView, setCalendarView] = useState<CalendarView>('month');
@@ -149,23 +159,54 @@ export default function CalendarScreen() {
     return colors[priority] || theme.colors.primary;
   };
 
+  const headerPaddingV = isXSmall ? 10 : isSmall ? 11 : 12;
+  const headerTitleSize = isXSmall ? 16 : isSmall ? 17 : 18;
+  const backIconSize = isXSmall ? 20 : isSmall ? 22 : 24;
+  const navIconSize = isXSmall ? 24 : isSmall ? 26 : 28;
+  const sectionPadding = isXSmall ? 10 : isSmall ? 11 : 12;
+  const viewSwitcherMargin = isXSmall ? 10 : isSmall ? 11 : 12;
+  const cellPadding = isXSmall ? 2 : isSmall ? 3 : 4;
+  const dayTextSize = isXSmall ? 12 : isSmall ? 13 : 14;
+  const monthTitleSize = isXSmall ? 16 : isSmall ? 17 : 18;
+  const weekTitleSize = isXSmall ? 14 : isSmall ? 15 : 16;
+  const dayDateTextSize = isXSmall ? 16 : isSmall ? 17 : 18;
+  const detailsPadding = isXSmall ? 12 : isSmall ? 14 : 16;
+  const weekDayNumberSize = isXSmall ? 17 : isSmall ? 18 : 20;
+  const hourLabelWidth = isXSmall ? 50 : 60;
+
+  const contentWrapperStyle = isLarge ? {
+    maxWidth: contentMaxWidth,
+    alignSelf: 'center' as const,
+    width: '100%' as const,
+  } : {};
+
   const renderHeader = () => (
-    <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.header, {
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: screenPadding,
+      paddingVertical: headerPaddingV,
+    }]}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+        <MaterialIcons name="arrow-back" size={backIconSize} color={theme.colors.primary} />
       </TouchableOpacity>
-      <Text style={[styles.headerTitle, { color: theme.colors.text }]}>日历</Text>
+      <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: headerTitleSize }]}>日历</Text>
       <TouchableOpacity onPress={goToToday} style={styles.todayButton}>
-        <Text style={[styles.todayButtonText, { color: theme.colors.primary }]}>今天</Text>
+        <Text style={[styles.todayButtonText, { color: theme.colors.primary, fontSize: isXSmall ? 13 : 14 }]}>今天</Text>
       </TouchableOpacity>
     </View>
   );
 
   const renderViewSwitcher = () => (
-    <View style={[styles.viewSwitcher, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.viewSwitcher, {
+      backgroundColor: theme.colors.surface,
+      padding: sectionPadding - 4,
+      marginHorizontal: screenPadding,
+      marginTop: viewSwitcherMargin,
+    }]}>
       <TouchableOpacity
         style={[
           styles.viewButton,
+          { paddingVertical: sectionPadding - 4 },
           calendarView === 'day' && { backgroundColor: theme.colors.primary },
         ]}
         onPress={() => setCalendarView('day')}
@@ -173,7 +214,7 @@ export default function CalendarScreen() {
         <Text
           style={[
             styles.viewButtonText,
-            { color: calendarView === 'day' ? '#FFFFFF' : theme.colors.text },
+            { color: calendarView === 'day' ? '#FFFFFF' : theme.colors.text, fontSize: isXSmall ? 13 : 14 },
           ]}
         >
           日
@@ -182,6 +223,7 @@ export default function CalendarScreen() {
       <TouchableOpacity
         style={[
           styles.viewButton,
+          { paddingVertical: sectionPadding - 4 },
           calendarView === 'week' && { backgroundColor: theme.colors.primary },
         ]}
         onPress={() => setCalendarView('week')}
@@ -189,7 +231,7 @@ export default function CalendarScreen() {
         <Text
           style={[
             styles.viewButtonText,
-            { color: calendarView === 'week' ? '#FFFFFF' : theme.colors.text },
+            { color: calendarView === 'week' ? '#FFFFFF' : theme.colors.text, fontSize: isXSmall ? 13 : 14 },
           ]}
         >
           周
@@ -198,6 +240,7 @@ export default function CalendarScreen() {
       <TouchableOpacity
         style={[
           styles.viewButton,
+          { paddingVertical: sectionPadding - 4 },
           calendarView === 'month' && { backgroundColor: theme.colors.primary },
         ]}
         onPress={() => setCalendarView('month')}
@@ -205,7 +248,7 @@ export default function CalendarScreen() {
         <Text
           style={[
             styles.viewButtonText,
-            { color: calendarView === 'month' ? '#FFFFFF' : theme.colors.text },
+            { color: calendarView === 'month' ? '#FFFFFF' : theme.colors.text, fontSize: isXSmall ? 13 : 14 },
           ]}
         >
           月
@@ -218,23 +261,23 @@ export default function CalendarScreen() {
     const days = getDaysInMonth(currentDate);
     
     return (
-      <View style={styles.monthContainer}>
-        <View style={styles.monthHeader}>
+      <View style={[styles.monthContainer, { paddingHorizontal: screenPadding }]}>
+        <View style={[styles.monthHeader, { marginBottom: sectionSpacing }]}>
           <TouchableOpacity onPress={() => navigateMonth(-1)} style={styles.navButton}>
-            <MaterialIcons name="chevron-left" size={28} color={theme.colors.primary} />
+            <MaterialIcons name="chevron-left" size={navIconSize} color={theme.colors.primary} />
           </TouchableOpacity>
-          <Text style={[styles.monthTitle, { color: theme.colors.text }]}>
+          <Text style={[styles.monthTitle, { color: theme.colors.text, fontSize: monthTitleSize }]}>
             {currentDate.getFullYear()}年 {monthNames[currentDate.getMonth()]}
           </Text>
           <TouchableOpacity onPress={() => navigateMonth(1)} style={styles.navButton}>
-            <MaterialIcons name="chevron-right" size={28} color={theme.colors.primary} />
+            <MaterialIcons name="chevron-right" size={navIconSize} color={theme.colors.primary} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.weekDaysRow}>
+        <View style={[styles.weekDaysRow, { marginBottom: cardSpacing }]}>
           {weekDays.map((day, index) => (
-            <View key={index} style={styles.weekDayCell}>
-              <Text style={[styles.weekDayText, { color: theme.colors.textSecondary }]}>{day}</Text>
+            <View key={index} style={[styles.weekDayCell, { paddingVertical: sectionPadding - 4 }]}>
+              <Text style={[styles.weekDayText, { color: theme.colors.textSecondary, fontSize: isXSmall ? 11 : 12 }]}>{day}</Text>
             </View>
           ))}
         </View>
@@ -251,6 +294,7 @@ export default function CalendarScreen() {
                 key={index}
                 style={[
                   styles.dayCell,
+                  { padding: cellPadding, borderRadius: isXSmall ? 6 : 8 },
                   !isCurrentMonth(date) && styles.otherMonthDay,
                   isToday(date) && { backgroundColor: theme.colors.primary + '20' },
                   isSelected(date) && { backgroundColor: theme.colors.primary },
@@ -260,7 +304,7 @@ export default function CalendarScreen() {
                 <Text
                   style={[
                     styles.dayText,
-                    { color: isSelected(date) ? '#FFFFFF' : theme.colors.text },
+                    { color: isSelected(date) ? '#FFFFFF' : theme.colors.text, fontSize: dayTextSize },
                     !isCurrentMonth(date) && { color: theme.colors.textSecondary },
                   ]}
                 >
@@ -296,31 +340,36 @@ export default function CalendarScreen() {
   };
 
   const renderWeekView = () => {
-    const weekDays = getWeekDays();
+    const weekDaysList = getWeekDays();
+    const weekColWidth = isXSmall ? width * 0.45 : width * 0.4;
     
     return (
       <View style={styles.weekContainer}>
-        <View style={styles.weekHeader}>
+        <View style={[styles.weekHeader, {
+          paddingHorizontal: screenPadding,
+          marginBottom: sectionSpacing,
+        }]}>
           <TouchableOpacity onPress={() => navigateWeek(-1)} style={styles.navButton}>
-            <MaterialIcons name="chevron-left" size={28} color={theme.colors.primary} />
+            <MaterialIcons name="chevron-left" size={navIconSize} color={theme.colors.primary} />
           </TouchableOpacity>
-          <Text style={[styles.weekTitle, { color: theme.colors.text }]}>
-            {weekDays[0].getMonth() + 1}月 {weekDays[0].getDate()}日 - {weekDays[6].getMonth() + 1}月 {weekDays[6].getDate()}日
+          <Text style={[styles.weekTitle, { color: theme.colors.text, fontSize: weekTitleSize }]}>
+            {weekDaysList[0].getMonth() + 1}月 {weekDaysList[0].getDate()}日 - {weekDaysList[6].getMonth() + 1}月 {weekDaysList[6].getDate()}日
           </Text>
           <TouchableOpacity onPress={() => navigateWeek(1)} style={styles.navButton}>
-            <MaterialIcons name="chevron-right" size={28} color={theme.colors.primary} />
+            <MaterialIcons name="chevron-right" size={navIconSize} color={theme.colors.primary} />
           </TouchableOpacity>
         </View>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {weekDays.map((date, index) => {
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: screenPadding }}>
+          {weekDaysList.map((date, index) => {
             const dayTasks = getTasksForDate(date);
             
             return (
-              <View key={index} style={styles.weekDayColumn}>
+              <View key={index} style={[styles.weekDayColumn, { width: weekColWidth, marginHorizontal: cardSpacing / 2 }]}>
                 <TouchableOpacity
                   style={[
                     styles.weekDayHeader,
+                    { padding: sectionPadding - 4, borderRadius: isXSmall ? 6 : 8, marginBottom: cardSpacing },
                     isToday(date) && { backgroundColor: theme.colors.primary + '20' },
                     isSelected(date) && { backgroundColor: theme.colors.primary },
                   ]}
@@ -329,7 +378,7 @@ export default function CalendarScreen() {
                   <Text
                     style={[
                       styles.weekDayName,
-                      { color: isSelected(date) ? '#FFFFFF' : theme.colors.textSecondary },
+                      { color: isSelected(date) ? '#FFFFFF' : theme.colors.textSecondary, fontSize: isXSmall ? 11 : 12 },
                     ]}
                   >
                     {['日', '一', '二', '三', '四', '五', '六'][date.getDay()]}
@@ -337,18 +386,23 @@ export default function CalendarScreen() {
                   <Text
                     style={[
                       styles.weekDayNumber,
-                      { color: isSelected(date) ? '#FFFFFF' : theme.colors.text },
+                      { color: isSelected(date) ? '#FFFFFF' : theme.colors.text, fontSize: weekDayNumberSize },
                     ]}
                   >
                     {date.getDate()}
                   </Text>
                 </TouchableOpacity>
 
-                <ScrollView style={styles.weekDayContent} showsVerticalScrollIndicator={false}>
+                <ScrollView style={[styles.weekDayContent, { maxHeight: isXSmall ? 250 : 300 }]} showsVerticalScrollIndicator={false}>
                   {dayTasks.map((task) => (
                     <TouchableOpacity
                       key={task.id}
-                      style={[styles.weekTaskCard, { backgroundColor: getPriorityColor(task.priority) + '20' }]}
+                      style={[styles.weekTaskCard, {
+                        backgroundColor: getPriorityColor(task.priority) + '20',
+                        padding: isXSmall ? 6 : 8,
+                        borderRadius: isXSmall ? 5 : 6,
+                        marginBottom: isXSmall ? 4 : 6,
+                      }]}
                       onPress={() => navigation.navigate('TaskDetail', { taskId: task.id })}
                     >
                       <View
@@ -357,11 +411,11 @@ export default function CalendarScreen() {
                           { backgroundColor: getPriorityColor(task.priority) },
                         ]}
                       />
-                      <Text style={[styles.weekTaskTitle, { color: theme.colors.text }]} numberOfLines={2}>
+                      <Text style={[styles.weekTaskTitle, { color: theme.colors.text, fontSize: isXSmall ? 11 : 12 }]} numberOfLines={2}>
                         {task.title}
                       </Text>
                       {task.dueTime && (
-                        <Text style={[styles.weekTaskTime, { color: theme.colors.textSecondary }]}>
+                        <Text style={[styles.weekTaskTime, { color: theme.colors.textSecondary, fontSize: isXSmall ? 9 : 10 }]}>
                           {new Date(task.dueTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </Text>
                       )}
@@ -378,27 +432,31 @@ export default function CalendarScreen() {
 
   const renderDayView = () => {
     const hours = Array.from({ length: 24 }, (_, i) => i);
+    const hourMinHeight = isXSmall ? 50 : 60;
     
     return (
       <View style={styles.dayContainer}>
-        <View style={styles.dayHeader}>
+        <View style={[styles.dayHeader, {
+          paddingHorizontal: screenPadding,
+          marginBottom: sectionSpacing,
+        }]}>
           <TouchableOpacity onPress={() => navigateDay(-1)} style={styles.navButton}>
-            <MaterialIcons name="chevron-left" size={28} color={theme.colors.primary} />
+            <MaterialIcons name="chevron-left" size={navIconSize} color={theme.colors.primary} />
           </TouchableOpacity>
           <View style={styles.dayHeaderCenter}>
-            <Text style={[styles.dayDateText, { color: theme.colors.text }]}>
+            <Text style={[styles.dayDateText, { color: theme.colors.text, fontSize: dayDateTextSize }]}>
               {selectedDate.getFullYear()}年 {selectedDate.getMonth() + 1}月 {selectedDate.getDate()}日
             </Text>
-            <Text style={[styles.dayWeekText, { color: theme.colors.textSecondary }]}>
+            <Text style={[styles.dayWeekText, { color: theme.colors.textSecondary, fontSize: isXSmall ? 13 : 14, marginTop: cardSpacing / 2 }]}>
               {['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'][selectedDate.getDay()]}
             </Text>
           </View>
           <TouchableOpacity onPress={() => navigateDay(1)} style={styles.navButton}>
-            <MaterialIcons name="chevron-right" size={28} color={theme.colors.primary} />
+            <MaterialIcons name="chevron-right" size={navIconSize} color={theme.colors.primary} />
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.daySchedule} showsVerticalScrollIndicator={false}>
+        <ScrollView style={[styles.daySchedule, { paddingHorizontal: screenPadding }]} showsVerticalScrollIndicator={false}>
           {hours.map((hour) => {
             const hourTasks = selectedDateTasks.filter((task) => {
               if (!task.dueTime) return false;
@@ -406,30 +464,39 @@ export default function CalendarScreen() {
             });
 
             return (
-              <View key={hour} style={styles.hourRow}>
-                <View style={styles.hourLabel}>
-                  <Text style={[styles.hourText, { color: theme.colors.textSecondary }]}>
+              <View key={hour} style={[styles.hourRow, { minHeight: hourMinHeight }]}>
+                <View style={[styles.hourLabel, { width: hourLabelWidth, paddingVertical: cellPadding * 2 }]}>
+                  <Text style={[styles.hourText, { color: theme.colors.textSecondary, fontSize: isXSmall ? 11 : 12 }]}>
                     {hour.toString().padStart(2, '0')}:00
                   </Text>
                 </View>
-                <View style={[styles.hourContent, { borderColor: theme.colors.border }]}>
+                <View style={[styles.hourContent, {
+                  borderColor: theme.colors.border,
+                  paddingVertical: cellPadding,
+                  paddingLeft: cellPadding * 2,
+                }]}>
                   {hourTasks.map((task) => (
                     <TouchableOpacity
                       key={task.id}
-                      style={[styles.hourTaskCard, { backgroundColor: getPriorityColor(task.priority) + '20' }]}
+                      style={[styles.hourTaskCard, {
+                        backgroundColor: getPriorityColor(task.priority) + '20',
+                        padding: isXSmall ? 6 : 8,
+                        borderRadius: isXSmall ? 5 : 6,
+                        marginBottom: cellPadding,
+                      }]}
                       onPress={() => navigation.navigate('TaskDetail', { taskId: task.id })}
                     >
                       <View
                         style={[
                           styles.hourTaskIndicator,
-                          { backgroundColor: getPriorityColor(task.priority) },
+                          { backgroundColor: getPriorityColor(task.priority), marginRight: cellPadding * 2 },
                         ]}
                       />
-                      <Text style={[styles.hourTaskTitle, { color: theme.colors.text }]}>
+                      <Text style={[styles.hourTaskTitle, { color: theme.colors.text, fontSize: isXSmall ? 12 : 13 }]}>
                         {task.title}
                       </Text>
                       {task.estimatedTime && (
-                        <Text style={[styles.hourTaskDuration, { color: theme.colors.textSecondary }]}>
+                        <Text style={[styles.hourTaskDuration, { color: theme.colors.textSecondary, fontSize: isXSmall ? 10 : 11 }]}>
                           {task.estimatedTime}分钟
                         </Text>
                       )}
@@ -445,17 +512,22 @@ export default function CalendarScreen() {
   };
 
   const renderSelectedDateDetails = () => (
-    <View style={[styles.selectedDateDetails, { backgroundColor: theme.colors.surface }]}>
-      <View style={styles.detailsHeader}>
-        <Text style={[styles.detailsDate, { color: theme.colors.text }]}>
+    <View style={[styles.selectedDateDetails, {
+      backgroundColor: theme.colors.surface,
+      padding: detailsPadding,
+      marginTop: sectionSpacing,
+      paddingBottom: bottomInset + detailsPadding,
+    }, contentWrapperStyle]}>
+      <View style={[styles.detailsHeader, { marginBottom: sectionSpacing }]}>
+        <Text style={[styles.detailsDate, { color: theme.colors.text, fontSize: isXSmall ? 14 : 16 }]}>
           {selectedDate.getMonth() + 1}月{selectedDate.getDate()}日 {['日', '一', '二', '三', '四', '五', '六'][selectedDate.getDay()]}
         </Text>
-        <Text style={[styles.detailsCount, { color: theme.colors.textSecondary }]}>
+        <Text style={[styles.detailsCount, { color: theme.colors.textSecondary, fontSize: isXSmall ? 13 : 14 }]}>
           {selectedDateTasks.length}个任务
         </Text>
       </View>
 
-      <ScrollView style={styles.detailsContent} showsVerticalScrollIndicator={false}>
+      <ScrollView style={[styles.detailsContent, { maxHeight: isXSmall ? 140 : 180 }]} showsVerticalScrollIndicator={false}>
         {selectedDateTasks.length > 0 ? (
           selectedDateTasks.map((task) => (
             <TaskCard
@@ -466,8 +538,8 @@ export default function CalendarScreen() {
             />
           ))
         ) : (
-          <View style={styles.noTasksContainer}>
-            <Text style={[styles.noTasksText, { color: theme.colors.textSecondary }]}>
+          <View style={[styles.noTasksContainer, { padding: isXSmall ? 14 : 20 }]}>
+            <Text style={[styles.noTasksText, { color: theme.colors.textSecondary, fontSize: isXSmall ? 13 : 14 }]}>
               当天没有任务
             </Text>
           </View>
@@ -478,13 +550,15 @@ export default function CalendarScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      {renderHeader()}
-      {renderViewSwitcher()}
+      <View style={contentWrapperStyle}>
+        {renderHeader()}
+        {renderViewSwitcher()}
 
-      <View style={styles.content}>
-        {calendarView === 'month' && renderMonthView()}
-        {calendarView === 'week' && renderWeekView()}
-        {calendarView === 'day' && renderDayView()}
+        <View style={[styles.content, { marginTop: viewSwitcherMargin }]}>
+          {calendarView === 'month' && renderMonthView()}
+          {calendarView === 'week' && renderWeekView()}
+          {calendarView === 'day' && renderDayView()}
+        </View>
       </View>
 
       {calendarView !== 'day' && renderSelectedDateDetails()}
@@ -500,81 +574,58 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'rgba(0,0,0,0.1)',
   },
   backButton: {
     padding: 4,
   },
-  backButtonText: {
-    fontSize: 16,
-  },
   headerTitle: {
-    fontSize: 18,
     fontWeight: '600',
   },
   todayButton: {
     padding: 4,
   },
   todayButtonText: {
-    fontSize: 14,
     fontWeight: '600',
   },
   viewSwitcher: {
     flexDirection: 'row',
-    padding: 8,
-    marginHorizontal: 16,
-    marginTop: 12,
     borderRadius: 8,
   },
   viewButton: {
     flex: 1,
-    paddingVertical: 8,
     alignItems: 'center',
     borderRadius: 6,
   },
   viewButtonText: {
-    fontSize: 14,
     fontWeight: '600',
   },
   content: {
     flex: 1,
-    marginTop: 12,
   },
   monthContainer: {
     flex: 1,
-    paddingHorizontal: 16,
   },
   monthHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
   },
   navButton: {
     padding: 8,
   },
-  navButtonText: {
-    fontSize: 24,
-    fontWeight: '300',
-  },
   monthTitle: {
-    fontSize: 18,
     fontWeight: '600',
   },
   weekDaysRow: {
     flexDirection: 'row',
-    marginBottom: 8,
   },
   weekDayCell: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 8,
   },
   weekDayText: {
-    fontSize: 12,
     fontWeight: '600',
   },
   daysGrid: {
@@ -586,14 +637,11 @@ const styles = StyleSheet.create({
     aspectRatio: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 4,
-    borderRadius: 8,
   },
   otherMonthDay: {
     opacity: 0.4,
   },
   dayText: {
-    fontSize: 14,
     fontWeight: '500',
   },
   taskIndicators: {
@@ -624,38 +672,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 12,
   },
   weekTitle: {
-    fontSize: 16,
     fontWeight: '600',
   },
   weekDayColumn: {
-    width: width * 0.4,
-    marginHorizontal: 4,
   },
   weekDayHeader: {
     alignItems: 'center',
-    padding: 8,
-    borderRadius: 8,
-    marginBottom: 8,
   },
   weekDayName: {
-    fontSize: 12,
     marginBottom: 4,
   },
   weekDayNumber: {
-    fontSize: 20,
     fontWeight: '600',
   },
   weekDayContent: {
-    maxHeight: 300,
   },
   weekTaskCard: {
-    padding: 8,
-    borderRadius: 6,
-    marginBottom: 6,
   },
   weekTaskIndicator: {
     width: 4,
@@ -664,11 +698,9 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   weekTaskTitle: {
-    fontSize: 12,
     marginBottom: 2,
   },
   weekTaskTime: {
-    fontSize: 10,
   },
   dayContainer: {
     flex: 1,
@@ -677,69 +709,48 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 12,
   },
   dayHeaderCenter: {
     alignItems: 'center',
   },
   dayDateText: {
-    fontSize: 18,
     fontWeight: '600',
   },
   dayWeekText: {
-    fontSize: 14,
-    marginTop: 4,
   },
   daySchedule: {
     flex: 1,
-    paddingHorizontal: 16,
   },
   hourRow: {
     flexDirection: 'row',
-    minHeight: 60,
-    borderBottomWidth: 1,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'rgba(0,0,0,0.05)',
   },
   hourLabel: {
-    width: 60,
-    paddingVertical: 8,
   },
   hourText: {
-    fontSize: 12,
   },
   hourContent: {
     flex: 1,
-    paddingVertical: 4,
-    borderLeftWidth: 1,
-    paddingLeft: 8,
+    borderLeftWidth: StyleSheet.hairlineWidth,
   },
   hourTaskCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 8,
-    borderRadius: 6,
-    marginBottom: 4,
   },
   hourTaskIndicator: {
     width: 4,
     height: 20,
     borderRadius: 2,
-    marginRight: 8,
   },
   hourTaskTitle: {
     flex: 1,
-    fontSize: 13,
   },
   hourTaskDuration: {
-    fontSize: 11,
   },
   selectedDateDetails: {
-    maxHeight: 250,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
-    padding: 16,
-    marginTop: 12,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -756,23 +767,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
   },
   detailsDate: {
-    fontSize: 16,
     fontWeight: '600',
   },
   detailsCount: {
-    fontSize: 14,
   },
   detailsContent: {
-    maxHeight: 180,
   },
   noTasksContainer: {
-    padding: 20,
     alignItems: 'center',
   },
   noTasksText: {
-    fontSize: 14,
   },
 });

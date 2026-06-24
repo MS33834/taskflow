@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { Appearance } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   clearStoredAuth,
@@ -1844,7 +1845,8 @@ export const useAppStore = create<AppStore>((set, get) => ({
       set({ theme: defaultTheme });
       get().saveData();
     } else if ('type' in theme && theme.type === 'system') {
-      set({ theme: defaultTheme });
+      const systemTheme = Appearance.getColorScheme();
+      set({ theme: systemTheme === 'dark' ? darkTheme : defaultTheme });
       get().saveData();
     } else {
       set({ theme: { ...get().theme, ...(theme as Partial<ThemePreset>) } as ThemePreset });
@@ -2536,9 +2538,30 @@ export const useAppStore = create<AppStore>((set, get) => ({
           updatedAt: new Date(v.updatedAt as string | number | Date),
         })) });
       }
-      if (importData.goals) set({ goals: importData.goals });
-      if (importData.habits) set({ habits: importData.habits });
-      if (importData.notes) set({ notes: importData.notes });
+      if (importData.goals) {
+        set({ goals: importData.goals.map((g: Record<string, unknown>) => ({
+          ...g,
+          startDate: g.startDate ? new Date(g.startDate as string | number | Date) : new Date(),
+          endDate: g.endDate ? new Date(g.endDate as string | number | Date) : new Date(),
+          completedAt: g.completedAt ? new Date(g.completedAt as string | number | Date) : null,
+          createdAt: g.createdAt ? new Date(g.createdAt as string | number | Date) : new Date(),
+          updatedAt: g.updatedAt ? new Date(g.updatedAt as string | number | Date) : new Date(),
+        })) });
+      }
+      if (importData.habits) {
+        set({ habits: importData.habits.map((h: Record<string, unknown>) => ({
+          ...h,
+          createdAt: h.createdAt ? new Date(h.createdAt as string | number | Date) : new Date(),
+          updatedAt: h.updatedAt ? new Date(h.updatedAt as string | number | Date) : new Date(),
+        })) });
+      }
+      if (importData.notes) {
+        set({ notes: importData.notes.map((n: Record<string, unknown>) => ({
+          ...n,
+          createdAt: n.createdAt ? new Date(n.createdAt as string | number | Date) : new Date(),
+          updatedAt: n.updatedAt ? new Date(n.updatedAt as string | number | Date) : new Date(),
+        })) });
+      }
       if (importData.settings?.theme) set({ theme: importData.settings.theme });
 
       get().saveData();

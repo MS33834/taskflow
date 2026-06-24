@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -18,6 +18,7 @@ import { ToastContainer } from './src/shared/components/common/Toast';
 import { ErrorBoundary } from './src/shared/components/common/ErrorBoundary';
 import { QuickAddTask } from './src/shared/components/common/QuickAddTask';
 import { useKeyboardShortcuts } from './src/shared/hooks/useKeyboardShortcuts';
+import { useResponsiveLayout } from './src/shared/hooks/useResponsiveLayout';
 import HomeScreen from './screens/HomeScreen';
 import TaskDetailScreen from './screens/TaskDetailScreen';
 import CategoriesScreen from './screens/CategoriesScreen';
@@ -120,8 +121,9 @@ function SearchStackScreen() {
   );
 }
 
-function CreateTabButton({ onPress }: { onPress: () => void }) {
+function CreateTabButton({ onPress, layout }: { onPress: () => void; layout: ReturnType<typeof useResponsiveLayout> }) {
   const { theme } = useAppStore();
+  const fabSize = layout.isXSmall ? 48 : 56;
 
   return (
     <TouchableOpacity
@@ -129,8 +131,18 @@ function CreateTabButton({ onPress }: { onPress: () => void }) {
       activeOpacity={0.85}
       onPress={onPress}
     >
-      <View style={[styles.fab, { backgroundColor: theme.colors.primary, shadowColor: theme.colors.primary }]}>
-        <MaterialIcons name="add" size={30} color={theme.colors.onPrimary} />
+      <View style={[
+        styles.fab,
+        {
+          backgroundColor: theme.colors.primary,
+          shadowColor: theme.colors.primary,
+          width: fabSize,
+          height: fabSize,
+          borderRadius: fabSize / 2,
+          marginTop: -fabSize / 2,
+        },
+      ]}>
+        <MaterialIcons name="add" size={fabSize * 0.54} color={theme.colors.onPrimary} />
       </View>
     </TouchableOpacity>
   );
@@ -140,8 +152,9 @@ function CreatePlaceholder() {
   return <View />;
 }
 
-function getTabBarIcon(routeName: string, focused: boolean, color: string, _size: number) {
+function getTabBarIcon(routeName: string, focused: boolean, color: string, isSmall: boolean) {
   let iconName: keyof typeof MaterialIcons.glyphMap = 'circle';
+  const iconSize = isSmall ? (focused ? 22 : 20) : (focused ? 24 : 22);
 
   switch (routeName) {
     case 'HomeTab':
@@ -151,19 +164,30 @@ function getTabBarIcon(routeName: string, focused: boolean, color: string, _size
       iconName = focused ? 'event' : 'event-available';
       break;
     case 'AnalyticsTab':
-      iconName = focused ? 'insights' : 'insights';
+      iconName = 'insights';
       break;
     case 'SearchTab':
       iconName = 'search';
       break;
   }
 
-  return <MaterialIcons name={iconName} size={focused ? 24 : 22} color={color} />;
+  return <MaterialIcons name={iconName} size={iconSize} color={color} />;
 }
 
 function MainTabsScreen() {
   const { theme } = useAppStore();
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+  const layout = useResponsiveLayout();
+  const {
+    isWeb,
+    isXSmall,
+    isSmall,
+    tabBarHeight,
+    tabBarBottomOffset,
+    tabBarHorizontalInset,
+    contentMaxWidth,
+    screenPadding,
+  } = layout;
 
   useKeyboardShortcuts({
     'mod+k': () => {
@@ -173,88 +197,105 @@ function MainTabsScreen() {
     escape: () => setShowQuickAdd(false),
   });
 
+  const tabLabelSize = isXSmall ? 10 : isSmall ? 11 : isWeb ? 12 : 11;
+
   return (
-    <View style={{ flex: 1 }}>
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textTertiary,
-        tabBarStyle: {
-          position: 'absolute',
-          left: 16,
-          right: 16,
-          bottom: 12,
-          backgroundColor: theme.colors.glassBackground,
-          borderTopWidth: 0,
-          borderRadius: 24,
-          height: 64,
-          paddingTop: 6,
-          paddingBottom: 6,
-          paddingHorizontal: 8,
-          shadowColor: '#0F172A',
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: 0.12,
-          shadowRadius: 24,
-          elevation: 12,
-          borderWidth: 1,
-          borderColor: theme.colors.glassBorder,
-        },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '600',
-          letterSpacing: 0.2,
-          marginTop: 2,
-        },
-        tabBarItemStyle: {
-          paddingVertical: 4,
-        },
-        tabBarIcon: ({ focused, color, size }) =>
-          getTabBarIcon(route.name, focused, color, size),
-      })}
-    >
-      <Tab.Screen
-        name="HomeTab"
-        component={HomeStackScreen}
-        options={{ tabBarLabel: '任务' }}
-      />
-      <Tab.Screen
-        name="CalendarTab"
-        component={CalendarStackScreen}
-        options={{ tabBarLabel: '日历' }}
-      />
-      <Tab.Screen
-        name="CreateTab"
-        component={CreatePlaceholder}
-        listeners={{
-          tabPress: (e) => {
-            e.preventDefault();
-            setShowQuickAdd(true);
-          },
-        }}
-        options={{
-          tabBarLabel: '',
-          tabBarButton: () => <CreateTabButton onPress={() => setShowQuickAdd(true)} />,
-        }}
-      />
-      <Tab.Screen
-        name="AnalyticsTab"
-        component={AnalyticsStackScreen}
-        options={{ tabBarLabel: '统计' }}
-      />
-      <Tab.Screen
-        name="SearchTab"
-        component={SearchStackScreen}
-        options={{ tabBarLabel: '搜索' }}
-      />
-    </Tab.Navigator>
-    <QuickAddTask visible={showQuickAdd} onClose={() => setShowQuickAdd(false)} />
+    <View style={styles.tabScreenRoot}>
+      <View style={[
+        styles.tabContentWrapper,
+        contentMaxWidth ? { maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%' } : null,
+      ]}>
+        <Tab.Navigator
+          screenOptions={({ route }) => ({
+            headerShown: false,
+            tabBarActiveTintColor: theme.colors.primary,
+            tabBarInactiveTintColor: theme.colors.textTertiary,
+            tabBarShowLabel: true,
+            tabBarLabelPosition: 'below-icon',
+            tabBarIconStyle: {
+              marginBottom: 0,
+            },
+            tabBarStyle: {
+              position: 'absolute',
+              left: tabBarHorizontalInset,
+              right: tabBarHorizontalInset,
+              bottom: tabBarBottomOffset,
+              backgroundColor: theme.colors.glassBackground,
+              borderTopWidth: 0,
+              borderRadius: 20,
+              height: tabBarHeight,
+              minHeight: tabBarHeight,
+              paddingTop: 0,
+              paddingBottom: 0,
+              paddingHorizontal: isXSmall ? 2 : 6,
+              shadowColor: '#0F172A',
+              shadowOffset: { width: 0, height: 6 },
+              shadowOpacity: 0.1,
+              shadowRadius: 16,
+              elevation: 8,
+              borderWidth: StyleSheet.hairlineWidth,
+              borderColor: theme.colors.glassBorder,
+            },
+            tabBarLabelStyle: {
+              fontSize: tabLabelSize,
+              fontWeight: '600',
+              letterSpacing: 0.1,
+              lineHeight: tabLabelSize + 3,
+              marginTop: 2,
+              marginBottom: Platform.OS === 'web' ? 4 : 2,
+            },
+            tabBarItemStyle: {
+              paddingVertical: isWeb ? 6 : 4,
+              minHeight: tabBarHeight - 4,
+            },
+            tabBarIcon: ({ focused, color }) =>
+              getTabBarIcon(route.name, focused, color, isXSmall || isSmall),
+          })}
+        >
+          <Tab.Screen
+            name="HomeTab"
+            component={HomeStackScreen}
+            options={{ tabBarLabel: '任务' }}
+          />
+          <Tab.Screen
+            name="CalendarTab"
+            component={CalendarStackScreen}
+            options={{ tabBarLabel: '日历' }}
+          />
+          <Tab.Screen
+            name="CreateTab"
+            component={CreatePlaceholder}
+            listeners={{
+              tabPress: (e) => {
+                e.preventDefault();
+                setShowQuickAdd(true);
+              },
+            }}
+            options={{
+              tabBarLabel: () => null,
+              tabBarButton: () => <CreateTabButton onPress={() => setShowQuickAdd(true)} layout={layout} />,
+            }}
+          />
+          <Tab.Screen
+            name="AnalyticsTab"
+            component={AnalyticsStackScreen}
+            options={{ tabBarLabel: '统计' }}
+          />
+          <Tab.Screen
+            name="SearchTab"
+            component={SearchStackScreen}
+            options={{ tabBarLabel: '搜索' }}
+          />
+        </Tab.Navigator>
+      </View>
+      <QuickAddTask visible={showQuickAdd} onClose={() => setShowQuickAdd(false)} />
     </View>
   );
 }
 
 export default function App() {
   const { theme, loadData } = useAppStore();
+  const layout = useResponsiveLayout();
 
   useEffect(() => {
     loadData();
@@ -280,36 +321,52 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-    <NavigationContainer theme={navigationTheme}>
-      <RootStack.Navigator
-        screenOptions={{ headerShown: false }}
-        initialRouteName="MainTabs"
-      >
-        <RootStack.Screen name="MainTabs" component={MainTabsScreen} />
-      </RootStack.Navigator>
-      <StatusBar style={theme.type === 'dark' ? 'light' : 'dark'} />
-      <ToastContainer />
-    </NavigationContainer>
+      <View style={[
+        styles.appRoot,
+        { backgroundColor: theme.colors.background },
+        layout.isWeb && styles.appRootWeb,
+      ]}>
+        <NavigationContainer theme={navigationTheme}>
+          <RootStack.Navigator
+            screenOptions={{ headerShown: false }}
+            initialRouteName="MainTabs"
+          >
+            <RootStack.Screen name="MainTabs" component={MainTabsScreen} />
+          </RootStack.Navigator>
+          <StatusBar style={theme.type === 'dark' ? 'light' : 'dark'} />
+          <ToastContainer />
+        </NavigationContainer>
+      </View>
     </ErrorBoundary>
   );
 }
 
 const styles = StyleSheet.create({
+  appRoot: {
+    flex: 1,
+  },
+  appRootWeb: {
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+  },
+  tabScreenRoot: {
+    flex: 1,
+  },
+  tabContentWrapper: {
+    flex: 1,
+  },
   fabContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   fab: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -28,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
 });

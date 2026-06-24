@@ -15,6 +15,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useAppStore } from '../src/shared/store';
 import { RootStackParamList, Task, Priority, TaskStatus } from '../src/shared/types';
 import { TaskCard } from '../src/shared/components/common';
+import { useResponsiveLayout } from '../src/shared/hooks/useResponsiveLayout';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Search'>;
 
@@ -26,6 +27,19 @@ interface SearchFilter {
 }
 
 export default function SearchScreen() {
+  const layout = useResponsiveLayout();
+  const {
+    width,
+    isXSmall,
+    isSmall,
+    isLarge,
+    screenPadding,
+    sectionSpacing,
+    cardSpacing,
+    bottomInset,
+    contentMaxWidth,
+  } = layout;
+
   const navigation = useNavigation<NavigationProp>();
   const {
     theme,
@@ -45,6 +59,31 @@ export default function SearchScreen() {
   const [showFilters, setShowFilters] = useState(false);
   const [showSortOptions, setShowSortOptions] = useState(false);
   const [recentTasks, setRecentTasks] = useState<Task[]>([]);
+
+  const headerPaddingV = isXSmall ? 10 : isSmall ? 11 : 12;
+  const headerTitleSize = isXSmall ? 16 : isSmall ? 17 : 18;
+  const backIconSize = isXSmall ? 20 : isSmall ? 22 : 24;
+  const searchIconSize = isXSmall ? 14 : isSmall ? 15 : 16;
+  const closeIconSize = isXSmall ? 18 : isSmall ? 19 : 20;
+  const sortIconSize = isXSmall ? 16 : isSmall ? 17 : 18;
+  const sectionPadding = isXSmall ? 12 : isSmall ? 14 : 16;
+  const sectionTitleSize = isXSmall ? 14 : isSmall ? 15 : 16;
+  const buttonTextSize = isXSmall ? 12 : isSmall ? 13 : 14;
+  const chipTextSize = isXSmall ? 11 : 12;
+  const optionTextSize = isXSmall ? 13 : 14;
+  const inputTextSize = isXSmall ? 14 : isSmall ? 15 : 16;
+  const historyTitleSize = isXSmall ? 13 : 14;
+  const recentItemWidth = isXSmall ? 170 : isSmall ? 185 : 200;
+  const emptyIconSize = isXSmall ? 48 : isSmall ? 56 : 64;
+  const emptyTitleSize = isXSmall ? 16 : isSmall ? 17 : 18;
+  const emptySubtitleSize = isXSmall ? 12 : isSmall ? 13 : 14;
+  const arrowIconSize = isXSmall ? 14 : 16;
+
+  const contentWrapperStyle = isLarge ? {
+    maxWidth: contentMaxWidth,
+    alignSelf: 'center' as const,
+    width: '100%' as const,
+  } : {};
 
   useEffect(() => {
     const recent = tasks
@@ -293,11 +332,11 @@ export default function SearchScreen() {
   };
 
   const renderSearchBar = () => (
-    <View style={[styles.searchBar, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.searchBar, { backgroundColor: theme.colors.surface, paddingHorizontal: screenPadding, paddingVertical: headerPaddingV }]}>
       <View style={[styles.searchInputContainer, { backgroundColor: theme.colors.background }]}>
-        <MaterialIcons name="search" size={16} color={theme.colors.textSecondary} style={styles.searchIcon} />
+        <MaterialIcons name="search" size={searchIconSize} color={theme.colors.textSecondary} style={styles.searchIcon} />
         <TextInput
-          style={[styles.searchInput, { color: theme.colors.text }]}
+          style={[styles.searchInput, { color: theme.colors.text, fontSize: inputTextSize }]}
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="搜索任务、项目、标签..."
@@ -308,97 +347,97 @@ export default function SearchScreen() {
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <MaterialIcons name="close" size={20} color={theme.colors.textSecondary} />
+            <MaterialIcons name="close" size={closeIconSize} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
       <TouchableOpacity
-        style={[styles.filterButton, { backgroundColor: filters.length > 0 ? theme.colors.primary : theme.colors.background }]}
+        style={[styles.filterButton, { backgroundColor: filters.length > 0 ? theme.colors.primary : theme.colors.background, paddingHorizontal: isXSmall ? 10 : 12, paddingVertical: isXSmall ? 6 : 8 }]}
         onPress={() => setShowFilters(!showFilters)}
       >
-        <Text style={[styles.filterButtonText, { color: filters.length > 0 ? '#FFFFFF' : theme.colors.primary }]}>
+        <Text style={[styles.filterButtonText, { color: filters.length > 0 ? '#FFFFFF' : theme.colors.primary, fontSize: buttonTextSize }]}>
           筛选 {filters.length > 0 && `(${filters.length})`}
         </Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.sortButton, { backgroundColor: theme.colors.background }]}
+        style={[styles.sortButton, { backgroundColor: theme.colors.background, padding: isXSmall ? 6 : 8 }]}
         onPress={() => setShowSortOptions(!showSortOptions)}
       >
-        <MaterialIcons name="swap-vert" size={18} color={theme.colors.primary} />
+        <MaterialIcons name="swap-vert" size={sortIconSize} color={theme.colors.primary} />
       </TouchableOpacity>
     </View>
   );
 
   const renderFilterPanel = () => (
-    <View style={[styles.filterPanel, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.filterPanel, { backgroundColor: theme.colors.surface, padding: sectionPadding }]}>
       <View style={styles.filterPanelHeader}>
-        <Text style={[styles.filterPanelTitle, { color: theme.colors.text }]}>筛选条件</Text>
+        <Text style={[styles.filterPanelTitle, { color: theme.colors.text, fontSize: sectionTitleSize }]}>筛选条件</Text>
         <TouchableOpacity onPress={clearAllFilters}>
-          <Text style={[styles.clearFiltersText, { color: theme.colors.error }]}>清除全部</Text>
+          <Text style={[styles.clearFiltersText, { color: theme.colors.error, fontSize: buttonTextSize }]}>清除全部</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
         <TouchableOpacity
-          style={[styles.filterChip, { backgroundColor: theme.colors.background }]}
+          style={[styles.filterChip, { backgroundColor: theme.colors.background, paddingHorizontal: isXSmall ? 10 : 12, paddingVertical: isXSmall ? 5 : 6 }]}
           onPress={() => addFilter('status', 'equals', 'in-progress')}
         >
-          <Text style={[styles.filterChipText, { color: theme.colors.text }]}>进行中</Text>
+          <Text style={[styles.filterChipText, { color: theme.colors.text, fontSize: chipTextSize }]}>进行中</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.filterChip, { backgroundColor: theme.colors.background }]}
+          style={[styles.filterChip, { backgroundColor: theme.colors.background, paddingHorizontal: isXSmall ? 10 : 12, paddingVertical: isXSmall ? 5 : 6 }]}
           onPress={() => addFilter('priority', 'equals', 'high')}
         >
-          <Text style={[styles.filterChipText, { color: theme.colors.text }]}>高优先级</Text>
+          <Text style={[styles.filterChipText, { color: theme.colors.text, fontSize: chipTextSize }]}>高优先级</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.filterChip, { backgroundColor: theme.colors.background }]}
+          style={[styles.filterChip, { backgroundColor: theme.colors.background, paddingHorizontal: isXSmall ? 10 : 12, paddingVertical: isXSmall ? 5 : 6 }]}
           onPress={() => addFilter('isOverdue')}
         >
-          <Text style={[styles.filterChipText, { color: theme.colors.text }]}>已逾期</Text>
+          <Text style={[styles.filterChipText, { color: theme.colors.text, fontSize: chipTextSize }]}>已逾期</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.filterChip, { backgroundColor: theme.colors.background }]}
+          style={[styles.filterChip, { backgroundColor: theme.colors.background, paddingHorizontal: isXSmall ? 10 : 12, paddingVertical: isXSmall ? 5 : 6 }]}
           onPress={() => addFilter('dueToday')}
         >
-          <Text style={[styles.filterChipText, { color: theme.colors.text }]}>今日截止</Text>
+          <Text style={[styles.filterChipText, { color: theme.colors.text, fontSize: chipTextSize }]}>今日截止</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.filterChip, { backgroundColor: theme.colors.background }]}
+          style={[styles.filterChip, { backgroundColor: theme.colors.background, paddingHorizontal: isXSmall ? 10 : 12, paddingVertical: isXSmall ? 5 : 6 }]}
           onPress={() => addFilter('isStarred')}
         >
-          <Text style={[styles.filterChipText, { color: theme.colors.text }]}>已标记</Text>
+          <Text style={[styles.filterChipText, { color: theme.colors.text, fontSize: chipTextSize }]}>已标记</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.filterChip, { backgroundColor: theme.colors.background }]}
+          style={[styles.filterChip, { backgroundColor: theme.colors.background, paddingHorizontal: isXSmall ? 10 : 12, paddingVertical: isXSmall ? 5 : 6 }]}
           onPress={() => addFilter('isCompleted', 'equals', true)}
         >
-          <Text style={[styles.filterChipText, { color: theme.colors.text }]}>已完成</Text>
+          <Text style={[styles.filterChipText, { color: theme.colors.text, fontSize: chipTextSize }]}>已完成</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.filterChip, { backgroundColor: theme.colors.background }]}
+          style={[styles.filterChip, { backgroundColor: theme.colors.background, paddingHorizontal: isXSmall ? 10 : 12, paddingVertical: isXSmall ? 5 : 6 }]}
           onPress={() => addFilter('hasSubtasks')}
         >
-          <Text style={[styles.filterChipText, { color: theme.colors.text }]}>有子任务</Text>
+          <Text style={[styles.filterChipText, { color: theme.colors.text, fontSize: chipTextSize }]}>有子任务</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.filterChip, { backgroundColor: theme.colors.background }]}
+          style={[styles.filterChip, { backgroundColor: theme.colors.background, paddingHorizontal: isXSmall ? 10 : 12, paddingVertical: isXSmall ? 5 : 6 }]}
           onPress={() => addFilter('hasAttachments')}
         >
-          <Text style={[styles.filterChipText, { color: theme.colors.text }]}>有附件</Text>
+          <Text style={[styles.filterChipText, { color: theme.colors.text, fontSize: chipTextSize }]}>有附件</Text>
         </TouchableOpacity>
       </ScrollView>
 
       <View style={styles.filterSections}>
-        <Text style={[styles.filterSectionTitle, { color: theme.colors.textSecondary }]}>按状态</Text>
+        <Text style={[styles.filterSectionTitle, { color: theme.colors.textSecondary, fontSize: chipTextSize }]}>按状态</Text>
         <View style={styles.filterRow}>
           {(['todo', 'in-progress', 'waiting', 'delegated', 'completed'] as TaskStatus[]).map((status) => (
             <TouchableOpacity
               key={status}
-              style={[styles.statusFilterChip, { backgroundColor: theme.colors.background }]}
+              style={[styles.statusFilterChip, { backgroundColor: theme.colors.background, paddingHorizontal: isXSmall ? 10 : 12, paddingVertical: isXSmall ? 5 : 6 }]}
               onPress={() => addFilter('status', 'equals', status)}
             >
-              <Text style={[styles.filterChipText, { color: theme.colors.text }]}>
+              <Text style={[styles.filterChipText, { color: theme.colors.text, fontSize: chipTextSize }]}>
                 {status === 'todo' ? '待办' :
                  status === 'in-progress' ? '进行中' :
                  status === 'waiting' ? '等待中' :
@@ -408,15 +447,15 @@ export default function SearchScreen() {
           ))}
         </View>
 
-        <Text style={[styles.filterSectionTitle, { color: theme.colors.textSecondary }]}>按优先级</Text>
+        <Text style={[styles.filterSectionTitle, { color: theme.colors.textSecondary, fontSize: chipTextSize }]}>按优先级</Text>
         <View style={styles.filterRow}>
           {(['critical', 'urgent', 'high', 'medium', 'low'] as Priority[]).map((priority) => (
             <TouchableOpacity
               key={priority}
-              style={[styles.priorityFilterChip, { backgroundColor: theme.colors.background }]}
+              style={[styles.priorityFilterChip, { backgroundColor: theme.colors.background, paddingHorizontal: isXSmall ? 10 : 12, paddingVertical: isXSmall ? 5 : 6 }]}
               onPress={() => addFilter('priority', 'equals', priority)}
             >
-              <Text style={[styles.filterChipText, { color: theme.colors.text }]}>
+              <Text style={[styles.filterChipText, { color: theme.colors.text, fontSize: chipTextSize }]}>
                 {priority === 'critical' ? '紧急且重要' :
                  priority === 'urgent' ? '紧急' :
                  priority === 'high' ? '高' :
@@ -426,28 +465,28 @@ export default function SearchScreen() {
           ))}
         </View>
 
-        <Text style={[styles.filterSectionTitle, { color: theme.colors.textSecondary }]}>按项目</Text>
+        <Text style={[styles.filterSectionTitle, { color: theme.colors.textSecondary, fontSize: chipTextSize }]}>按项目</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {projects.map((project) => (
             <TouchableOpacity
               key={project.id}
-              style={[styles.projectFilterChip, { backgroundColor: project.color + '20' }]}
+              style={[styles.projectFilterChip, { backgroundColor: project.color + '20', paddingHorizontal: isXSmall ? 10 : 12, paddingVertical: isXSmall ? 5 : 6 }]}
               onPress={() => addFilter('project', 'equals', project.id)}
             >
-              <Text style={[styles.filterChipText, { color: project.color }]}>{project.name}</Text>
+              <Text style={[styles.filterChipText, { color: project.color, fontSize: chipTextSize }]}>{project.name}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        <Text style={[styles.filterSectionTitle, { color: theme.colors.textSecondary }]}>按分类</Text>
+        <Text style={[styles.filterSectionTitle, { color: theme.colors.textSecondary, fontSize: chipTextSize }]}>按分类</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
           {categories.map((category) => (
             <TouchableOpacity
               key={category.id}
-              style={[styles.projectFilterChip, { backgroundColor: category.color + '20' }]}
+              style={[styles.projectFilterChip, { backgroundColor: category.color + '20', paddingHorizontal: isXSmall ? 10 : 12, paddingVertical: isXSmall ? 5 : 6 }]}
               onPress={() => addFilter('category', 'equals', category.id)}
             >
-              <Text style={[styles.filterChipText, { color: category.color }]}>{category.name}</Text>
+              <Text style={[styles.filterChipText, { color: category.color, fontSize: chipTextSize }]}>{category.name}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -455,15 +494,15 @@ export default function SearchScreen() {
 
       {filters.length > 0 && (
         <View style={styles.activeFilters}>
-          <Text style={[styles.activeFiltersTitle, { color: theme.colors.textSecondary }]}>已选条件:</Text>
+          <Text style={[styles.activeFiltersTitle, { color: theme.colors.textSecondary, fontSize: chipTextSize }]}>已选条件:</Text>
           <View style={styles.activeFiltersRow}>
             {filters.map((filter, index) => (
               <TouchableOpacity
                 key={index}
-                style={[styles.activeFilterChip, { backgroundColor: theme.colors.primary + '20' }]}
+                style={[styles.activeFilterChip, { backgroundColor: theme.colors.primary + '20', paddingHorizontal: isXSmall ? 10 : 12, paddingVertical: isXSmall ? 5 : 6 }]}
                 onPress={() => removeFilter(index)}
               >
-                <Text style={[styles.activeFilterText, { color: theme.colors.primary }]}>
+                <Text style={[styles.activeFilterText, { color: theme.colors.primary, fontSize: chipTextSize }]}>
                   {getFilterDisplayText(filter)} ×
                 </Text>
               </TouchableOpacity>
@@ -475,21 +514,22 @@ export default function SearchScreen() {
   );
 
   const renderSortOptions = () => (
-    <View style={[styles.sortPanel, { backgroundColor: theme.colors.surface }]}>
-      <Text style={[styles.sortPanelTitle, { color: theme.colors.text }]}>排序方式</Text>
+    <View style={[styles.sortPanel, { backgroundColor: theme.colors.surface, padding: sectionPadding }]}>
+      <Text style={[styles.sortPanelTitle, { color: theme.colors.text, fontSize: sectionTitleSize }]}>排序方式</Text>
       <View style={styles.sortOptions}>
         <TouchableOpacity
           style={[
             styles.sortOption,
+            { paddingVertical: isXSmall ? 10 : 12, paddingHorizontal: isXSmall ? 10 : 12 },
             sortBy === 'updatedAt' && { backgroundColor: theme.colors.primary + '20' },
           ]}
           onPress={() => setSortBy('updatedAt')}
         >
-          <Text style={[styles.sortOptionText, { color: theme.colors.text }]}>最近更新</Text>
+          <Text style={[styles.sortOptionText, { color: theme.colors.text, fontSize: optionTextSize }]}>最近更新</Text>
           {sortBy === 'updatedAt' && (
             <MaterialIcons
               name={sortOrder === 'desc' ? 'arrow-downward' : 'arrow-upward'}
-              size={16}
+              size={arrowIconSize}
               color={theme.colors.primary}
             />
           )}
@@ -497,15 +537,16 @@ export default function SearchScreen() {
         <TouchableOpacity
           style={[
             styles.sortOption,
+            { paddingVertical: isXSmall ? 10 : 12, paddingHorizontal: isXSmall ? 10 : 12 },
             sortBy === 'createdAt' && { backgroundColor: theme.colors.primary + '20' },
           ]}
           onPress={() => setSortBy('createdAt')}
         >
-          <Text style={[styles.sortOptionText, { color: theme.colors.text }]}>创建时间</Text>
+          <Text style={[styles.sortOptionText, { color: theme.colors.text, fontSize: optionTextSize }]}>创建时间</Text>
           {sortBy === 'createdAt' && (
             <MaterialIcons
               name={sortOrder === 'desc' ? 'arrow-downward' : 'arrow-upward'}
-              size={16}
+              size={arrowIconSize}
               color={theme.colors.primary}
             />
           )}
@@ -513,15 +554,16 @@ export default function SearchScreen() {
         <TouchableOpacity
           style={[
             styles.sortOption,
+            { paddingVertical: isXSmall ? 10 : 12, paddingHorizontal: isXSmall ? 10 : 12 },
             sortBy === 'dueDate' && { backgroundColor: theme.colors.primary + '20' },
           ]}
           onPress={() => setSortBy('dueDate')}
         >
-          <Text style={[styles.sortOptionText, { color: theme.colors.text }]}>截止日期</Text>
+          <Text style={[styles.sortOptionText, { color: theme.colors.text, fontSize: optionTextSize }]}>截止日期</Text>
           {sortBy === 'dueDate' && (
             <MaterialIcons
               name={sortOrder === 'desc' ? 'arrow-downward' : 'arrow-upward'}
-              size={16}
+              size={arrowIconSize}
               color={theme.colors.primary}
             />
           )}
@@ -529,15 +571,16 @@ export default function SearchScreen() {
         <TouchableOpacity
           style={[
             styles.sortOption,
+            { paddingVertical: isXSmall ? 10 : 12, paddingHorizontal: isXSmall ? 10 : 12 },
             sortBy === 'priority' && { backgroundColor: theme.colors.primary + '20' },
           ]}
           onPress={() => setSortBy('priority')}
         >
-          <Text style={[styles.sortOptionText, { color: theme.colors.text }]}>优先级</Text>
+          <Text style={[styles.sortOptionText, { color: theme.colors.text, fontSize: optionTextSize }]}>优先级</Text>
           {sortBy === 'priority' && (
             <MaterialIcons
               name={sortOrder === 'desc' ? 'arrow-downward' : 'arrow-upward'}
-              size={16}
+              size={arrowIconSize}
               color={theme.colors.primary}
             />
           )}
@@ -545,29 +588,30 @@ export default function SearchScreen() {
         <TouchableOpacity
           style={[
             styles.sortOption,
+            { paddingVertical: isXSmall ? 10 : 12, paddingHorizontal: isXSmall ? 10 : 12 },
             sortBy === 'title' && { backgroundColor: theme.colors.primary + '20' },
           ]}
           onPress={() => setSortBy('title')}
         >
-          <Text style={[styles.sortOptionText, { color: theme.colors.text }]}>标题</Text>
+          <Text style={[styles.sortOptionText, { color: theme.colors.text, fontSize: optionTextSize }]}>标题</Text>
           {sortBy === 'title' && (
             <MaterialIcons
               name={sortOrder === 'desc' ? 'arrow-downward' : 'arrow-upward'}
-              size={16}
+              size={arrowIconSize}
               color={theme.colors.primary}
             />
           )}
         </TouchableOpacity>
       </View>
       <TouchableOpacity
-        style={styles.sortOrderToggle}
+        style={[styles.sortOrderToggle, { paddingVertical: isXSmall ? 6 : 8 }]}
         onPress={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
       >
-        <Text style={[styles.sortOrderToggleText, { color: theme.colors.primary }]}>
+        <Text style={[styles.sortOrderToggleText, { color: theme.colors.primary, fontSize: optionTextSize }]}>
           {sortOrder === 'asc' ? '升序' : '降序'}
           <MaterialIcons
             name={sortOrder === 'asc' ? 'arrow-upward' : 'arrow-downward'}
-            size={14}
+            size={isXSmall ? 12 : 14}
             color={theme.colors.primary}
           />
         </Text>
@@ -576,23 +620,23 @@ export default function SearchScreen() {
   );
 
   const renderSearchHistory = () => (
-    <View style={styles.historySection}>
+    <View style={[styles.historySection, { marginBottom: sectionSpacing }]}>
       {searchHistory.length > 0 && (
         <>
           <View style={styles.historyHeader}>
-            <Text style={[styles.historyTitle, { color: theme.colors.textSecondary }]}>搜索历史</Text>
+            <Text style={[styles.historyTitle, { color: theme.colors.textSecondary, fontSize: historyTitleSize }]}>搜索历史</Text>
             <TouchableOpacity onPress={clearSearchHistory}>
-              <Text style={[styles.clearHistoryText, { color: theme.colors.error }]}>清除</Text>
+              <Text style={[styles.clearHistoryText, { color: theme.colors.error, fontSize: chipTextSize }]}>清除</Text>
             </TouchableOpacity>
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {searchHistory.map((history, index) => (
               <TouchableOpacity
                 key={index}
-                style={[styles.historyChip, { backgroundColor: theme.colors.surface }]}
+                style={[styles.historyChip, { backgroundColor: theme.colors.surface, paddingHorizontal: isXSmall ? 12 : 16, paddingVertical: isXSmall ? 6 : 8 }]}
                 onPress={() => setSearchQuery(history)}
               >
-                <Text style={[styles.historyChipText, { color: theme.colors.text }]}>{history}</Text>
+                <Text style={[styles.historyChipText, { color: theme.colors.text, fontSize: buttonTextSize }]}>{history}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -602,20 +646,20 @@ export default function SearchScreen() {
   );
 
   const renderRecentSection = () => (
-    <View style={styles.recentSection}>
-      <Text style={[styles.recentTitle, { color: theme.colors.textSecondary }]}>最近查看</Text>
+    <View style={[styles.recentSection, { marginBottom: sectionSpacing }]}>
+      <Text style={[styles.recentTitle, { color: theme.colors.textSecondary, fontSize: historyTitleSize }]}>最近查看</Text>
       <FlatList
         data={recentTasks}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[styles.recentItem, { backgroundColor: theme.colors.surface }]}
+            style={[styles.recentItem, { backgroundColor: theme.colors.surface, width: recentItemWidth, padding: isXSmall ? 10 : 12, marginRight: cardSpacing }]}
             onPress={() => navigation.navigate('TaskDetail', { taskId: item.id })}
           >
-            <Text style={[styles.recentItemTitle, { color: theme.colors.text }]} numberOfLines={1}>
+            <Text style={[styles.recentItemTitle, { color: theme.colors.text, fontSize: buttonTextSize }]} numberOfLines={1}>
               {item.title}
             </Text>
-            <Text style={[styles.recentItemDate, { color: theme.colors.textSecondary }]}>
+            <Text style={[styles.recentItemDate, { color: theme.colors.textSecondary, fontSize: chipTextSize }]}>
               {new Date(item.updatedAt).toLocaleDateString()}
             </Text>
           </TouchableOpacity>
@@ -637,51 +681,58 @@ export default function SearchScreen() {
         />
       )}
       ListHeaderComponent={() => (
-        <View style={styles.resultsHeader}>
-          <Text style={[styles.resultsCount, { color: theme.colors.textSecondary }]}>
+        <View style={[styles.resultsHeader, { padding: screenPadding }]}>
+          <Text style={[styles.resultsCount, { color: theme.colors.textSecondary, fontSize: buttonTextSize }]}>
             找到 {performSearch.length} 个结果
           </Text>
         </View>
       )}
       ListEmptyComponent={() => (
-        <View style={styles.emptyResults}>
-          <MaterialIcons name="search" size={64} color={theme.colors.textSecondary} />
-          <Text style={[styles.emptyTitle, { color: theme.colors.text }]}>
+        <View style={[styles.emptyResults, { padding: isXSmall ? 24 : isSmall ? 32 : 40, marginTop: isXSmall ? 30 : 60 }]}>
+          <MaterialIcons name="search" size={emptyIconSize} color={theme.colors.textSecondary} />
+          <Text style={[styles.emptyTitle, { color: theme.colors.text, fontSize: emptyTitleSize }]}>
             {searchQuery || filters.length > 0 ? '未找到匹配的任务' : '开始搜索'}
           </Text>
-          <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary }]}>
+          <Text style={[styles.emptySubtitle, { color: theme.colors.textSecondary, fontSize: emptySubtitleSize }]}>
             {searchQuery || filters.length > 0
               ? '尝试调整搜索条件或筛选器'
               : '输入关键词搜索任务、项目或标签'}
           </Text>
         </View>
       )}
-      contentContainerStyle={styles.resultsList}
+      contentContainerStyle={[styles.resultsList, { padding: screenPadding, paddingBottom: bottomInset }]}
+      style={contentWrapperStyle}
     />
   );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
+      <View style={[styles.header, { backgroundColor: theme.colors.surface, paddingHorizontal: screenPadding, paddingVertical: headerPaddingV }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+          <MaterialIcons name="arrow-back" size={backIconSize} color={theme.colors.primary} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>搜索</Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: headerTitleSize }]}>搜索</Text>
         <View style={styles.headerRight} />
       </View>
 
-      {renderSearchBar()}
-      {showFilters && renderFilterPanel()}
-      {showSortOptions && renderSortOptions()}
+      <View style={contentWrapperStyle}>
+        {renderSearchBar()}
+        {showFilters && renderFilterPanel()}
+        {showSortOptions && renderSortOptions()}
 
-      {searchQuery.length === 0 && filters.length === 0 ? (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {renderSearchHistory()}
-          {renderRecentSection()}
-        </ScrollView>
-      ) : (
-        renderResults()
-      )}
+        {searchQuery.length === 0 && filters.length === 0 ? (
+          <ScrollView 
+            style={styles.content} 
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ padding: screenPadding, paddingBottom: bottomInset }}
+          >
+            {renderSearchHistory()}
+            {renderRecentSection()}
+          </ScrollView>
+        ) : (
+          renderResults()
+        )}
+      </View>
     </SafeAreaView>
   );
 }
@@ -694,19 +745,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,0,0,0.1)',
   },
   backButton: {
     padding: 4,
   },
-  backButtonText: {
-    fontSize: 16,
-  },
   headerTitle: {
-    fontSize: 18,
     fontWeight: '600',
   },
   headerRight: {
@@ -715,8 +760,6 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
   },
   searchInputContainer: {
     flex: 1,
@@ -727,37 +770,23 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   searchIcon: {
-    fontSize: 16,
     marginRight: 8,
   },
   searchInput: {
     flex: 1,
-    fontSize: 16,
     paddingVertical: 8,
-  },
-  clearIcon: {
-    fontSize: 20,
-    padding: 4,
   },
   filterButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
     borderRadius: 8,
     marginRight: 8,
   },
   filterButtonText: {
-    fontSize: 14,
     fontWeight: '600',
   },
   sortButton: {
-    padding: 8,
     borderRadius: 8,
   },
-  sortIcon: {
-    fontSize: 18,
-  },
   filterPanel: {
-    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,0,0,0.1)',
   },
@@ -768,29 +797,23 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   filterPanelTitle: {
-    fontSize: 16,
     fontWeight: '600',
   },
   clearFiltersText: {
-    fontSize: 14,
   },
   filterChips: {
     marginBottom: 12,
   },
   filterChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
     borderRadius: 16,
     marginRight: 8,
   },
   filterChipText: {
-    fontSize: 12,
   },
   filterSections: {
     marginTop: 8,
   },
   filterSectionTitle: {
-    fontSize: 12,
     fontWeight: '600',
     marginBottom: 8,
     marginTop: 12,
@@ -800,22 +823,16 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   statusFilterChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
     borderRadius: 8,
     marginRight: 8,
     marginBottom: 8,
   },
   priorityFilterChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
     borderRadius: 8,
     marginRight: 8,
     marginBottom: 8,
   },
   projectFilterChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
     borderRadius: 8,
     marginRight: 8,
   },
@@ -826,7 +843,6 @@ const styles = StyleSheet.create({
     borderTopColor: 'rgba(0,0,0,0.1)',
   },
   activeFiltersTitle: {
-    fontSize: 12,
     marginBottom: 8,
   },
   activeFiltersRow: {
@@ -836,22 +852,17 @@ const styles = StyleSheet.create({
   activeFilterChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
     borderRadius: 16,
     marginRight: 8,
     marginBottom: 8,
   },
   activeFilterText: {
-    fontSize: 12,
   },
   sortPanel: {
-    padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(0,0,0,0.1)',
   },
   sortPanelTitle: {
-    fontSize: 16,
     fontWeight: '600',
     marginBottom: 12,
   },
@@ -862,32 +873,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
     borderRadius: 8,
     marginBottom: 4,
   },
   sortOptionText: {
-    fontSize: 14,
-  },
-  sortOrderIcon: {
-    fontSize: 16,
-    fontWeight: '600',
   },
   sortOrderToggle: {
     alignItems: 'center',
-    paddingVertical: 8,
   },
   sortOrderToggleText: {
-    fontSize: 14,
     fontWeight: '600',
   },
   content: {
     flex: 1,
-    padding: 16,
   },
   historySection: {
-    marginBottom: 24,
   },
   historyHeader: {
     flexDirection: 'row',
@@ -896,71 +896,49 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   historyTitle: {
-    fontSize: 14,
     fontWeight: '600',
   },
   clearHistoryText: {
-    fontSize: 12,
   },
   historyChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
     borderRadius: 16,
     marginRight: 8,
   },
   historyChipText: {
-    fontSize: 14,
   },
   recentSection: {
-    marginBottom: 24,
   },
   recentTitle: {
-    fontSize: 14,
     fontWeight: '600',
     marginBottom: 12,
   },
   recentItem: {
-    width: 200,
-    padding: 12,
     borderRadius: 8,
-    marginRight: 12,
   },
   recentItemTitle: {
-    fontSize: 14,
     fontWeight: '500',
     marginBottom: 4,
   },
   recentItemDate: {
-    fontSize: 12,
   },
   resultsHeader: {
-    padding: 16,
   },
   resultsCount: {
-    fontSize: 14,
   },
   resultsList: {
-    padding: 16,
+    flexGrow: 1,
   },
   emptyResults: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
-    marginTop: 60,
-  },
-  emptyIcon: {
-    fontSize: 64,
-    marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 18,
     fontWeight: '600',
     marginBottom: 8,
     textAlign: 'center',
   },
   emptySubtitle: {
-    fontSize: 14,
     textAlign: 'center',
   },
 });

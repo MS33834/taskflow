@@ -9,9 +9,9 @@ import {
   Alert,
   SafeAreaView,
   Platform,
-  Dimensions,
   Linking,
   Share,
+  Dimensions,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -23,11 +23,10 @@ import { Button } from '../src/shared/components/common';
 import { toast } from '../src/shared/components/common/Toast';
 import { Pomodoro } from '../src/shared/components/common/Pomodoro';
 import { MentionInput, renderMentionText, type MentionUser } from '../src/shared/components/common/MentionInput';
+import { useResponsiveLayout } from '../src/shared/hooks/useResponsiveLayout';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'TaskDetail'>;
 type RouteType = RouteProp<RootStackParamList, 'TaskDetail'>;
-
-const { width } = Dimensions.get('window');
 
 const MENTION_USERS: MentionUser[] = [
   { id: 'current-user', name: '当前用户', username: 'me', color: '#3b82f6' },
@@ -39,6 +38,35 @@ const MENTION_USERS: MentionUser[] = [
 ];
 
 export default function TaskDetailScreen() {
+  const layout = useResponsiveLayout();
+  const {
+    width,
+    isXSmall,
+    isSmall,
+    isLarge,
+    screenPadding,
+    sectionSpacing,
+    cardSpacing,
+    bottomInset,
+    contentMaxWidth,
+  } = layout;
+
+  const headerPaddingV = isXSmall ? 10 : isSmall ? 11 : 12;
+  const sectionPadding = isXSmall ? 12 : isSmall ? 14 : 16;
+  const sectionTitleSize = isXSmall ? 14 : isSmall ? 15 : 16;
+  const titleSize = isXSmall ? 20 : isSmall ? 22 : 24;
+  const bodyTextSize = isXSmall ? 13 : 14;
+  const smallTextSize = isXSmall ? 11 : 12;
+  const iconSizeSmall = isXSmall ? 16 : 18;
+  const iconSizeMedium = isXSmall ? 20 : isSmall ? 22 : 24;
+  const iconSizeLarge = isXSmall ? 24 : isSmall ? 28 : 32;
+  const attachmentWidth = (width - screenPadding * 2 - sectionPadding * 2 - cardSpacing * 2) / 3;
+  const contentWrapperStyle = isLarge ? {
+    maxWidth: contentMaxWidth,
+    alignSelf: 'center' as const,
+    width: '100%' as const,
+  } : {};
+
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<RouteType>();
   const { taskId } = route.params;
@@ -277,30 +305,30 @@ export default function TaskDetailScreen() {
     : 0;
 
   const renderHeader = () => (
-    <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.header, { backgroundColor: theme.colors.surface, paddingHorizontal: screenPadding, paddingVertical: headerPaddingV }]}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerButton}>
-        <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+        <MaterialIcons name="arrow-back" size={iconSizeMedium} color={theme.colors.primary} />
       </TouchableOpacity>
       <View style={styles.headerActions}>
         <TouchableOpacity
           onPress={() => setShowPomodoro(true)}
-          style={[styles.headerIconBtn, { backgroundColor: theme.colors.primary + '14' }]}
+          style={[styles.headerIconBtn, { backgroundColor: theme.colors.primary + '14', width: isXSmall ? 28 : 32, height: isXSmall ? 28 : 32 }]}
         >
-          <MaterialIcons name="timer" size={18} color={theme.colors.primary} />
+          <MaterialIcons name="timer" size={iconSizeSmall} color={theme.colors.primary} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleShare} style={styles.headerButton}>
-          <Text style={[styles.headerButtonText, { color: theme.colors.primary }]}>分享</Text>
+        <TouchableOpacity onPress={handleShare} style={[styles.headerButton, { paddingHorizontal: isXSmall ? 6 : 8 }]}>
+          <Text style={[styles.headerButtonText, { color: theme.colors.primary, fontSize: bodyTextSize }]}>分享</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleDuplicate} style={styles.headerButton}>
-          <Text style={[styles.headerButtonText, { color: theme.colors.primary }]}>复制</Text>
+        <TouchableOpacity onPress={handleDuplicate} style={[styles.headerButton, { paddingHorizontal: isXSmall ? 6 : 8 }]}>
+          <Text style={[styles.headerButtonText, { color: theme.colors.primary, fontSize: bodyTextSize }]}>复制</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleArchive} style={styles.headerButton}>
-          <Text style={[styles.headerButtonText, { color: theme.colors.primary }]}>
+        <TouchableOpacity onPress={handleArchive} style={[styles.headerButton, { paddingHorizontal: isXSmall ? 6 : 8 }]}>
+          <Text style={[styles.headerButtonText, { color: theme.colors.primary, fontSize: bodyTextSize }]}>
             {task.isArchived ? '取消归档' : '归档'}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleDelete} style={styles.headerButton}>
-          <Text style={[styles.headerButtonText, { color: theme.colors.error }]}>删除</Text>
+        <TouchableOpacity onPress={handleDelete} style={[styles.headerButton, { paddingHorizontal: isXSmall ? 6 : 8 }]}>
+          <Text style={[styles.headerButtonText, { color: theme.colors.error, fontSize: bodyTextSize }]}>删除</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -817,28 +845,36 @@ export default function TaskDetailScreen() {
     </View>
   );
 
+  const sectionStyle = {
+    marginHorizontal: screenPadding,
+    marginTop: sectionSpacing,
+    padding: sectionPadding,
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {renderHeader()}
       
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {renderTitle()}
-        {renderDescription()}
-        {renderDates()}
-        {renderProject()}
-        {renderCategory()}
-        {renderTags()}
-        {renderSubtasks()}
-        {renderChecklist()}
-        {renderTimeEstimate()}
-        {renderComments()}
-        {renderAttachments()}
-        {renderMetadata()}
-        
-        <View style={styles.bottomPadding} />
+      <ScrollView 
+        style={[styles.scrollView, contentWrapperStyle]} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: bottomInset + 80 }}
+      >
+        {React.cloneElement(renderTitle(), { style: [styles.section, { backgroundColor: theme.colors.surface, ...sectionStyle }] })}
+        {React.cloneElement(renderDescription(), { style: [styles.section, { backgroundColor: theme.colors.surface, ...sectionStyle }] })}
+        {React.cloneElement(renderDates(), { style: [styles.section, { backgroundColor: theme.colors.surface, ...sectionStyle }] })}
+        {React.cloneElement(renderProject(), { style: [styles.section, { backgroundColor: theme.colors.surface, ...sectionStyle }] })}
+        {React.cloneElement(renderCategory(), { style: [styles.section, { backgroundColor: theme.colors.surface, ...sectionStyle }] })}
+        {React.cloneElement(renderTags(), { style: [styles.section, { backgroundColor: theme.colors.surface, ...sectionStyle }] })}
+        {React.cloneElement(renderSubtasks(), { style: [styles.section, { backgroundColor: theme.colors.surface, ...sectionStyle }] })}
+        {React.cloneElement(renderChecklist(), { style: [styles.section, { backgroundColor: theme.colors.surface, ...sectionStyle }] })}
+        {React.cloneElement(renderTimeEstimate(), { style: [styles.section, { backgroundColor: theme.colors.surface, ...sectionStyle }] })}
+        {React.cloneElement(renderComments(), { style: [styles.section, { backgroundColor: theme.colors.surface, ...sectionStyle }] })}
+        {React.cloneElement(renderAttachments(), { style: [styles.section, { backgroundColor: theme.colors.surface, ...sectionStyle }] })}
+        {React.cloneElement(renderMetadata(), { style: [styles.section, { backgroundColor: theme.colors.surface, ...sectionStyle }] })}
       </ScrollView>
 
-      <View style={[styles.footer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border }]}>
+      <View style={[styles.footer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border, padding: screenPadding, paddingBottom: isLarge ? screenPadding : bottomInset }]}>
         <Button
           title={isEditing ? '保存' : '编辑'}
           onPress={isEditing ? handleSave : () => setIsEditing(true)}
@@ -865,6 +901,8 @@ export default function TaskDetailScreen() {
     </SafeAreaView>
   );
 }
+
+const { width } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {

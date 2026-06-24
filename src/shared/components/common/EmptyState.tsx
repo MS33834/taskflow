@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAppStore } from '../../store';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 interface EmptyStateProps {
   icon?: keyof typeof MaterialIcons.glyphMap;
@@ -33,31 +34,82 @@ export function EmptyState({
   style,
 }: EmptyStateProps) {
   const { theme } = useAppStore();
+  const layout = useResponsiveLayout();
+  const { isXSmall, isSmall } = layout;
   const ill = ILLUSTRATIONS[illustration];
   const iconName = icon || ill.icon;
   const bgColor = ill.bg;
   const fgColor = ill.fg;
 
+  const iconCircleSize = isXSmall ? 72 : isSmall ? 80 : 88;
+  const iconSize = isXSmall ? 28 : isSmall ? 32 : 36;
+  const iconRingSize = isXSmall ? 88 : isSmall ? 98 : 108;
+  const titleFontSize = isXSmall ? 15 : isSmall ? 16 : 17;
+  const descriptionFontSize = isXSmall ? 13 : 14;
+  const actionPaddingH = isXSmall ? 16 : 20;
+  const actionPaddingV = isXSmall ? 8 : 10;
+  const actionFontSize = isXSmall ? 13 : 14;
+  const marginTop = isXSmall ? 16 : 20;
+  const paddingV = isXSmall ? 32 : 48;
+  const paddingH = isXSmall ? 16 : 24;
+  const iconMarginBottom = isXSmall ? 12 : 16;
+  const titleMarginBottom = isXSmall ? 4 : 6;
+
   return (
-    <View style={[styles.container, style]}>
-      <View style={[styles.iconCircle, { backgroundColor: bgColor }]}>
-        <View style={[styles.iconRing, { borderColor: fgColor + '30' }]} />
-        <MaterialIcons name={iconName} size={36} color={fgColor} />
+    <View style={[styles.container, { paddingVertical: paddingV, paddingHorizontal: paddingH }, style]}>
+      <View
+        style={[
+          styles.iconCircle,
+          {
+            backgroundColor: bgColor,
+            width: iconCircleSize,
+            height: iconCircleSize,
+            borderRadius: iconCircleSize / 2,
+            marginBottom: iconMarginBottom,
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.iconRing,
+            {
+              borderColor: fgColor + '30',
+              width: iconRingSize,
+              height: iconRingSize,
+              borderRadius: iconRingSize / 2,
+            },
+          ]}
+        />
+        <MaterialIcons name={iconName} size={iconSize} color={fgColor} />
       </View>
-      <Text style={[styles.title, { color: theme.colors.text }]}>{title}</Text>
+      <Text style={[styles.title, { color: theme.colors.text, fontSize: titleFontSize, marginBottom: titleMarginBottom }]}>{title}</Text>
       {description && (
-        <Text style={[styles.description, { color: theme.colors.textSecondary }]}>
+        <Text
+          style={[
+            styles.description,
+            { color: theme.colors.textSecondary, fontSize: descriptionFontSize, lineHeight: isXSmall ? 18 : 20, maxWidth: isXSmall ? 240 : 280 },
+          ]}
+        >
           {description}
         </Text>
       )}
       {actionLabel && onAction && (
         <TouchableOpacity
-          style={[styles.action, { backgroundColor: theme.colors.primary }]}
+          style={[
+            styles.action,
+            {
+              backgroundColor: theme.colors.primary,
+              paddingHorizontal: actionPaddingH,
+              paddingVertical: actionPaddingV,
+              marginTop: marginTop,
+              borderRadius: 999,
+            },
+          ]}
           onPress={onAction}
           activeOpacity={0.85}
         >
-          <MaterialIcons name="add" size={18} color={theme.colors.onPrimary} />
-          <Text style={[styles.actionText, { color: theme.colors.onPrimary }]}>
+          <MaterialIcons name="add" size={isXSmall ? 16 : 18} color={theme.colors.onPrimary} />
+          <Text style={[styles.actionText, { color: theme.colors.onPrimary, fontSize: actionFontSize, marginLeft: isXSmall ? 4 : 6 }]}>
             {actionLabel}
           </Text>
         </TouchableOpacity>
@@ -71,47 +123,27 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 48,
-    paddingHorizontal: 24,
   },
   iconCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
   },
   iconRing: {
     position: 'absolute',
-    width: 108,
-    height: 108,
-    borderRadius: 54,
     borderWidth: 1,
   },
   title: {
-    fontSize: 17,
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 6,
   },
   description: {
-    fontSize: 14,
     textAlign: 'center',
-    lineHeight: 20,
-    maxWidth: 280,
   },
   action: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 999,
-    marginTop: 20,
   },
   actionText: {
-    fontSize: 14,
     fontWeight: '600',
-    marginLeft: 6,
   },
 });

@@ -6,13 +6,13 @@ import {
   Modal,
   TouchableOpacity,
   Animated,
-  Dimensions,
   ScrollView,
   PanResponder,
   Platform,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { ThemePreset } from '../../types';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 export interface DrawerItem {
   key: string;
@@ -39,9 +39,6 @@ export interface SideDrawerProps {
 type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
 type IoniconsName = React.ComponentProps<typeof Ionicons>['name'];
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const DRAWER_WIDTH = Math.min(320, SCREEN_WIDTH * 0.85);
-
 export function SideDrawer({
   visible,
   onClose,
@@ -51,7 +48,14 @@ export function SideDrawer({
   completedToday = 0,
   theme,
 }: SideDrawerProps) {
-  const translateX = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
+  const layout = useResponsiveLayout();
+  const { width, isWeb, isXSmall, isSmall, isLarge } = layout;
+
+  const drawerWidth = isWeb
+    ? isLarge ? 360 : 320
+    : isXSmall ? Math.min(280, width * 0.88) : Math.min(320, width * 0.85);
+
+  const translateX = useRef(new Animated.Value(-drawerWidth)).current;
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const lastDx = useRef(0);
 
@@ -72,7 +76,7 @@ export function SideDrawer({
     } else {
       Animated.parallel([
         Animated.timing(translateX, {
-          toValue: -DRAWER_WIDTH,
+          toValue: -drawerWidth,
           duration: 200,
           useNativeDriver: Platform.OS !== 'web',
         }),
@@ -83,7 +87,7 @@ export function SideDrawer({
         }),
       ]).start();
     }
-  }, [visible, translateX, backdropOpacity]);
+  }, [visible, translateX, backdropOpacity, drawerWidth]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -96,9 +100,9 @@ export function SideDrawer({
         }
       },
       onPanResponderRelease: () => {
-        if (lastDx.current < -DRAWER_WIDTH * 0.3) {
+        if (lastDx.current < -drawerWidth * 0.3) {
           Animated.timing(translateX, {
-            toValue: -DRAWER_WIDTH,
+            toValue: -drawerWidth,
             duration: 180,
             useNativeDriver: Platform.OS !== 'web',
           }).start(() => onClose());
@@ -130,6 +134,14 @@ export function SideDrawer({
     setTimeout(() => onNavigate(target), 200);
   };
 
+  const paddingH = isXSmall ? 16 : 20;
+  const iconSize = isXSmall ? 18 : 20;
+  const brandIconSize = isXSmall ? 24 : 28;
+  const brandTitleSize = isXSmall ? 18 : 20;
+  const itemIconSize = isXSmall ? 32 : 36;
+  const itemLabelSize = isXSmall ? 14 : 15;
+  const closeBtnSize = isXSmall ? 28 : 32;
+
   return (
     <Modal
       visible={visible}
@@ -154,228 +166,300 @@ export function SideDrawer({
           />
         </Animated.View>
 
-        <Animated.View
-          style={[
-            styles.drawer,
-            {
-              width: DRAWER_WIDTH,
-              backgroundColor: theme.colors.card,
-              borderRightColor: theme.colors.border,
-              transform: [{ translateX }],
-            },
-          ]}
-          {...panResponder.panHandlers}
-        >
-          <View
+        <View style={isWeb ? styles.webDrawerContainer : null}>
+          <Animated.View
             style={[
-              styles.drawerHeader,
-              { borderBottomColor: theme.colors.border },
+              styles.drawer,
+              {
+                width: drawerWidth,
+                backgroundColor: theme.colors.card,
+                borderRightColor: theme.colors.border,
+                transform: [{ translateX }],
+              },
             ]}
+            {...panResponder.panHandlers}
           >
             <View
               style={[
-                styles.brandIcon,
-                { backgroundColor: theme.colors.primary + '18' },
+                styles.drawerHeader,
+                {
+                  borderBottomColor: theme.colors.border,
+                  paddingHorizontal: paddingH,
+                  paddingTop: Platform.OS === 'ios' ? (isXSmall ? 44 : 56) : (isXSmall ? 36 : 44),
+                  paddingBottom: isXSmall ? 14 : 18,
+                },
               ]}
             >
-              <MaterialIcons
-                name="check-circle"
-                size={28}
-                color={theme.colors.primary}
-              />
-            </View>
-            <View style={{ flex: 1, marginLeft: 14 }}>
-              <Text
+              <View
                 style={[
-                  styles.brandTitle,
-                  { color: theme.colors.text },
+                  styles.brandIcon,
+                  {
+                    backgroundColor: theme.colors.primary + '18',
+                    width: isXSmall ? 38 : 44,
+                    height: isXSmall ? 38 : 44,
+                    borderRadius: isXSmall ? 12 : 14,
+                  },
                 ]}
               >
-                TaskFlow
-              </Text>
-              <Text
+                <MaterialIcons
+                  name="check-circle"
+                  size={brandIconSize}
+                  color={theme.colors.primary}
+                />
+              </View>
+              <View style={{ flex: 1, marginLeft: isXSmall ? 10 : 14 }}>
+                <Text
+                  style={[
+                    styles.brandTitle,
+                    { color: theme.colors.text, fontSize: brandTitleSize },
+                  ]}
+                >
+                  TaskFlow
+                </Text>
+                <Text
+                  style={[
+                    styles.brandSubtitle,
+                    { color: theme.colors.textSecondary, fontSize: isXSmall ? 11 : 12 },
+                  ]}
+                >
+                  任务管理 · 智能建议
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={onClose}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 style={[
-                  styles.brandSubtitle,
-                  { color: theme.colors.textSecondary },
+                  styles.closeBtn,
+                  {
+                    width: closeBtnSize,
+                    height: closeBtnSize,
+                    borderRadius: closeBtnSize / 3,
+                  },
                 ]}
               >
-                任务管理 · 智能建议
-              </Text>
+                <MaterialIcons
+                  name="close"
+                  size={isXSmall ? 18 : 20}
+                  color={theme.colors.textSecondary}
+                />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              onPress={onClose}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              style={styles.closeBtn}
-            >
-              <MaterialIcons
-                name="close"
-                size={20}
-                color={theme.colors.textSecondary}
-              />
-            </TouchableOpacity>
-          </View>
 
-          <View style={styles.statsRow}>
             <View
               style={[
-                styles.statChip,
-                { backgroundColor: theme.colors.primary + '12' },
+                styles.statsRow,
+                {
+                  gap: isXSmall ? 6 : 8,
+                  paddingHorizontal: paddingH,
+                  paddingVertical: isXSmall ? 10 : 14,
+                },
               ]}
             >
-              <MaterialIcons
-                name="schedule"
-                size={14}
-                color={theme.colors.primary}
-              />
-              <Text
+              <View
                 style={[
-                  styles.statChipText,
-                  { color: theme.colors.primary },
+                  styles.statChip,
+                  {
+                    backgroundColor: theme.colors.primary + '12',
+                    gap: isXSmall ? 4 : 6,
+                    paddingHorizontal: isXSmall ? 8 : 10,
+                    paddingVertical: isXSmall ? 5 : 6,
+                  },
                 ]}
               >
-                {pendingCount} 待办
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.statChip,
-                { backgroundColor: theme.colors.success + '12' },
-              ]}
-            >
-              <MaterialIcons
-                name="check-circle"
-                size={14}
-                color={theme.colors.success}
-              />
-              <Text
+                <MaterialIcons
+                  name="schedule"
+                  size={isXSmall ? 12 : 14}
+                  color={theme.colors.primary}
+                />
+                <Text
+                  style={[
+                    styles.statChipText,
+                    { color: theme.colors.primary, fontSize: isXSmall ? 11 : 12 },
+                  ]}
+                >
+                  {pendingCount} 待办
+                </Text>
+              </View>
+              <View
                 style={[
-                  styles.statChipText,
-                  { color: theme.colors.success },
+                  styles.statChip,
+                  {
+                    backgroundColor: theme.colors.success + '12',
+                    gap: isXSmall ? 4 : 6,
+                    paddingHorizontal: isXSmall ? 8 : 10,
+                    paddingVertical: isXSmall ? 5 : 6,
+                  },
                 ]}
               >
-                {completedToday} 今日完成
-              </Text>
+                <MaterialIcons
+                  name="check-circle"
+                  size={isXSmall ? 12 : 14}
+                  color={theme.colors.success}
+                />
+                <Text
+                  style={[
+                    styles.statChipText,
+                    { color: theme.colors.success, fontSize: isXSmall ? 11 : 12 },
+                  ]}
+                >
+                  {completedToday} 今日完成
+                </Text>
+              </View>
             </View>
-          </View>
 
-          <ScrollView
-            style={styles.scroll}
-            showsVerticalScrollIndicator={false}
-          >
-            {(['organize', 'insight', 'manage', 'tool'] as const).map(
-              (groupKey) => {
-                const groupItems = grouped[groupKey];
-                if (groupItems.length === 0) return null;
-                const labels = {
-                  organize: '组织',
-                  insight: '洞察',
-                  manage: '管理',
-                  tool: '工具',
-                };
-                return (
-                  <View key={groupKey} style={styles.group}>
-                    <Text
+            <ScrollView
+              style={styles.scroll}
+              showsVerticalScrollIndicator={false}
+            >
+              {(['organize', 'insight', 'manage', 'tool'] as const).map(
+                (groupKey) => {
+                  const groupItems = grouped[groupKey];
+                  if (groupItems.length === 0) return null;
+                  const labels = {
+                    organize: '组织',
+                    insight: '洞察',
+                    manage: '管理',
+                    tool: '工具',
+                  };
+                  return (
+                    <View
+                      key={groupKey}
                       style={[
-                        styles.groupTitle,
-                        { color: theme.colors.textTertiary },
+                        styles.group,
+                        {
+                          paddingTop: isXSmall ? 10 : 14,
+                          paddingBottom: isXSmall ? 4 : 6,
+                        },
                       ]}
                     >
-                      {labels[groupKey]}
-                    </Text>
-                    {groupItems.map((item) => {
-                      return (
-                        <TouchableOpacity
-                          key={item.key}
-                          style={[
-                            styles.item,
-                            { borderBottomColor: theme.colors.border + '60' },
-                          ]}
-                          onPress={() => handleItemPress(item.target)}
-                          activeOpacity={0.6}
-                        >
-                          <View
+                      <Text
+                        style={[
+                          styles.groupTitle,
+                          {
+                            color: theme.colors.textTertiary,
+                            paddingHorizontal: paddingH + 2,
+                            fontSize: isXSmall ? 10 : 11,
+                            marginBottom: isXSmall ? 4 : 6,
+                          },
+                        ]}
+                      >
+                        {labels[groupKey]}
+                      </Text>
+                      {groupItems.map((item) => {
+                        return (
+                          <TouchableOpacity
+                            key={item.key}
                             style={[
-                              styles.itemIcon,
-                              { backgroundColor: item.color + '18' },
+                              styles.item,
+                              {
+                                borderBottomColor: theme.colors.border + '60',
+                                paddingVertical: isXSmall ? 10 : 12,
+                                paddingHorizontal: paddingH,
+                              },
                             ]}
+                            onPress={() => handleItemPress(item.target)}
+                            activeOpacity={0.6}
                           >
-                            {item.iconType === 'ionicons' ? (
-                              <Ionicons
-                                name={item.icon as unknown as IoniconsName}
-                                size={20}
-                                color={item.color}
-                              />
-                            ) : (
-                              <MaterialIcons
-                                name={item.icon as unknown as MaterialIconName}
-                                size={20}
-                                color={item.color}
-                              />
-                            )}
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            <Text
-                              style={[
-                                styles.itemLabel,
-                                { color: theme.colors.text },
-                              ]}
-                            >
-                              {item.label}
-                            </Text>
-                            {item.description && (
-                              <Text
-                                style={[
-                                  styles.itemDesc,
-                                  { color: theme.colors.textTertiary },
-                                ]}
-                                numberOfLines={1}
-                              >
-                                {item.description}
-                              </Text>
-                            )}
-                          </View>
-                          {item.badge != null && item.badge > 0 && (
                             <View
                               style={[
-                                styles.badge,
-                                { backgroundColor: item.color },
+                                styles.itemIcon,
+                                {
+                                  backgroundColor: item.color + '18',
+                                  width: itemIconSize,
+                                  height: itemIconSize,
+                                  borderRadius: isXSmall ? 8 : 10,
+                                  marginRight: isXSmall ? 10 : 14,
+                                },
                               ]}
                             >
-                              <Text style={styles.badgeText}>
-                                {item.badge}
-                              </Text>
+                              {item.iconType === 'ionicons' ? (
+                                <Ionicons
+                                  name={item.icon as unknown as IoniconsName}
+                                  size={iconSize}
+                                  color={item.color}
+                                />
+                              ) : (
+                                <MaterialIcons
+                                  name={item.icon as unknown as MaterialIconName}
+                                  size={iconSize}
+                                  color={item.color}
+                                />
+                              )}
                             </View>
-                          )}
-                          <MaterialIcons
-                            name="chevron-right"
-                            size={18}
-                            color={theme.colors.textTertiary}
-                          />
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                );
-              }
-            )}
-          </ScrollView>
+                            <View style={{ flex: 1 }}>
+                              <Text
+                                style={[
+                                  styles.itemLabel,
+                                  { color: theme.colors.text, fontSize: itemLabelSize },
+                                ]}
+                              >
+                                {item.label}
+                              </Text>
+                              {item.description && (
+                                <Text
+                                  style={[
+                                    styles.itemDesc,
+                                    { color: theme.colors.textTertiary, fontSize: isXSmall ? 11 : 12 },
+                                  ]}
+                                  numberOfLines={1}
+                                >
+                                  {item.description}
+                                </Text>
+                              )}
+                            </View>
+                            {item.badge != null && item.badge > 0 && (
+                              <View
+                                style={[
+                                  styles.badge,
+                                  {
+                                    backgroundColor: item.color,
+                                    minWidth: isXSmall ? 20 : 22,
+                                    height: isXSmall ? 20 : 22,
+                                    borderRadius: isXSmall ? 10 : 11,
+                                    marginRight: isXSmall ? 6 : 8,
+                                  },
+                                ]}
+                              >
+                                <Text style={[styles.badgeText, { fontSize: isXSmall ? 10 : 11 }]}>
+                                  {item.badge}
+                                </Text>
+                              </View>
+                            )}
+                            <MaterialIcons
+                              name="chevron-right"
+                              size={isXSmall ? 16 : 18}
+                              color={theme.colors.textTertiary}
+                            />
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  );
+                }
+              )}
+            </ScrollView>
 
-          <View
-            style={[
-              styles.drawerFooter,
-              { borderTopColor: theme.colors.border },
-            ]}
-          >
-            <Text
+            <View
               style={[
-                styles.footerText,
-                { color: theme.colors.textTertiary },
+                styles.drawerFooter,
+                {
+                  borderTopColor: theme.colors.border,
+                  paddingHorizontal: paddingH + 2,
+                  paddingVertical: isXSmall ? 10 : 14,
+                },
               ]}
             >
-              v1.1.0 · {pendingCount + completedToday} 任务
-            </Text>
-          </View>
-        </Animated.View>
+              <Text
+                style={[
+                  styles.footerText,
+                  { color: theme.colors.textTertiary, fontSize: isXSmall ? 10 : 11 },
+                ]}
+              >
+                v1.1.0 · {pendingCount + completedToday} 任务
+              </Text>
+            </View>
+          </Animated.View>
+        </View>
       </View>
     </Modal>
   );
@@ -392,6 +476,10 @@ const styles = StyleSheet.create({
     top: 0,
     bottom: 0,
   },
+  webDrawerContainer: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
   drawer: {
     position: 'absolute',
     top: 0,
@@ -407,111 +495,71 @@ const styles = StyleSheet.create({
   drawerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 56,
-    paddingBottom: 18,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   brandIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
   },
   brandTitle: {
-    fontSize: 20,
     fontWeight: '700',
     letterSpacing: -0.3,
   },
   brandSubtitle: {
-    fontSize: 12,
     marginTop: 2,
   },
   closeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
   statsRow: {
     flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
   },
   statChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
     borderRadius: 12,
   },
   statChipText: {
-    fontSize: 12,
     fontWeight: '600',
   },
   scroll: {
     flex: 1,
   },
-  group: {
-    paddingTop: 14,
-    paddingBottom: 6,
-  },
+  group: {},
   groupTitle: {
-    fontSize: 11,
     fontWeight: '600',
     letterSpacing: 0.6,
     textTransform: 'uppercase',
-    paddingHorizontal: 22,
-    marginBottom: 6,
   },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
   itemIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 14,
   },
   itemLabel: {
-    fontSize: 15,
     fontWeight: '600',
   },
   itemDesc: {
-    fontSize: 12,
     marginTop: 2,
   },
   badge: {
-    minWidth: 22,
-    height: 22,
-    borderRadius: 11,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 6,
-    marginRight: 8,
   },
   badgeText: {
     color: '#fff',
-    fontSize: 11,
     fontWeight: '700',
   },
   drawerFooter: {
-    paddingHorizontal: 22,
-    paddingVertical: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
   },
   footerText: {
-    fontSize: 11,
     letterSpacing: 0.3,
   },
 });

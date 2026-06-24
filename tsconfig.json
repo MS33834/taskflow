@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "strict": true,
-    "noImplicitAny": false,
     "moduleResolution": "bundler",
     "paths": {
       "@/*": [

@@ -17,6 +17,7 @@ import { useAppStore } from '../src/shared/store';
 import { RootStackParamList, Note } from '../src/shared/types';
 
 import { toast } from '../src/shared/components/common/Toast';
+import { useResponsiveLayout } from '../src/shared/hooks/useResponsiveLayout';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Notes'>;
 type MaterialIconName = React.ComponentProps<typeof MaterialIcons>['name'];
@@ -33,6 +34,29 @@ const NOTE_ICONS: (keyof typeof MaterialIcons.glyphMap)[] = [
 ];
 
 export default function NotesScreen() {
+  const layout = useResponsiveLayout();
+  const {
+    isXSmall,
+    isSmall,
+    isLarge,
+    screenPadding,
+    sectionSpacing,
+    cardSpacing,
+    bottomInset,
+    contentMaxWidth,
+  } = layout;
+
+  const headerPaddingV = isXSmall ? 10 : isSmall ? 11 : 12;
+  const headerTitleSize = isXSmall ? 16 : isSmall ? 17 : 18;
+  const iconSize = isXSmall ? 20 : isSmall ? 22 : 24;
+  const sectionTitleSize = isXSmall ? 14 : isSmall ? 15 : 16;
+  const bodyTextSize = isXSmall ? 13 : 14;
+  const contentWrapperStyle = isLarge ? {
+    maxWidth: contentMaxWidth,
+    alignSelf: 'center' as const,
+    width: '100%' as const,
+  } : {};
+
   const navigation = useNavigation<NavigationProp>();
   const {
     theme,
@@ -452,28 +476,28 @@ export default function NotesScreen() {
   );
 
   const renderHeader = () => (
-    <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.header, { backgroundColor: theme.colors.surface, paddingHorizontal: screenPadding, paddingVertical: headerPaddingV }]}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+        <MaterialIcons name="arrow-back" size={iconSize} color={theme.colors.primary} />
       </TouchableOpacity>
-      <Text style={[styles.headerTitle, { color: theme.colors.text }]}>笔记</Text>
+      <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: headerTitleSize }]}>笔记</Text>
       <View style={styles.headerActions}>
         <TouchableOpacity
         style={styles.viewModeButton}
         onPress={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
       >
-        <MaterialIcons name={viewMode === 'grid' ? 'format-list-bulleted' : 'grid-view'} size={20} color={theme.colors.primary} />
+        <MaterialIcons name={viewMode === 'grid' ? 'format-list-bulleted' : 'grid-view'} size={isXSmall ? 18 : 20} color={theme.colors.primary} />
       </TouchableOpacity>
       </View>
     </View>
   );
 
   const renderSearchBar = () => (
-    <View style={[styles.searchBar, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.searchBar, { backgroundColor: theme.colors.surface, padding: screenPadding }]}>
       <View style={[styles.searchInputContainer, { backgroundColor: theme.colors.surface }]}>
-        <MaterialIcons name="search" size={16} color={theme.colors.textSecondary} style={{ marginRight: 8 }} />
+        <MaterialIcons name="search" size={isXSmall ? 14 : 16} color={theme.colors.textSecondary} style={{ marginRight: 8 }} />
         <TextInput
-          style={[styles.searchInput, { color: theme.colors.text }]}
+          style={[styles.searchInput, { color: theme.colors.text, fontSize: bodyTextSize }]}
           value={searchQuery}
           onChangeText={setSearchQuery}
           placeholder="搜索笔记..."
@@ -481,7 +505,7 @@ export default function NotesScreen() {
         />
         {searchQuery.length > 0 && (
           <TouchableOpacity onPress={() => setSearchQuery('')}>
-            <MaterialIcons name="close" size={20} color={theme.colors.textSecondary} />
+            <MaterialIcons name="close" size={isXSmall ? 18 : 20} color={theme.colors.textSecondary} />
           </TouchableOpacity>
         )}
       </View>
@@ -497,13 +521,14 @@ export default function NotesScreen() {
         renderEmptyState()
       ) : (
         <ScrollView
-          contentContainerStyle={styles.notesContainer}
+          style={contentWrapperStyle}
+          contentContainerStyle={[styles.notesContainer, { padding: screenPadding, paddingBottom: bottomInset + 80 }]}
           showsVerticalScrollIndicator={false}
         >
           <View>
             {pinnedNotes.length > 0 && (
-                <View style={styles.section}>
-                  <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>
+                <View style={[styles.section, { marginBottom: sectionSpacing }]}>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary, fontSize: sectionTitleSize }]}>
                     置顶笔记 ({pinnedNotes.length})
                   </Text>
                   <View style={viewMode === 'grid' ? styles.notesGrid : styles.notesList}>
@@ -513,8 +538,8 @@ export default function NotesScreen() {
               )}
 
               {otherNotes.length > 0 && (
-                <View style={styles.section}>
-                  <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>
+                <View style={[styles.section, { marginBottom: sectionSpacing }]}>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary, fontSize: sectionTitleSize }]}>
                     其他笔记 ({otherNotes.length})
                   </Text>
                   <View style={viewMode === 'grid' ? styles.notesGrid : styles.notesList}>
@@ -525,7 +550,7 @@ export default function NotesScreen() {
 
               {filteredNotes.length === 0 && searchQuery && (
                 <View style={styles.noResults}>
-                  <Text style={[styles.noResultsText, { color: theme.colors.textSecondary }]}>
+                  <Text style={[styles.noResultsText, { color: theme.colors.textSecondary, fontSize: bodyTextSize }]}>
                     没有找到匹配的笔记
                   </Text>
                 </View>
@@ -535,7 +560,7 @@ export default function NotesScreen() {
       )}
 
       <TouchableOpacity
-        style={[styles.fab, { backgroundColor: theme.colors.primary }]}
+        style={[styles.fab, { backgroundColor: theme.colors.primary, bottom: bottomInset + 16 }]}
         onPress={() => setShowAddModal(true)}
       >
         <Text style={styles.fabIcon}>+</Text>

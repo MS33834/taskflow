@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ThemePreset } from '../../types';
+import { useResponsiveLayout } from '../../hooks/useResponsiveLayout';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -25,7 +26,6 @@ export interface CollapsibleSectionProps {
   children: React.ReactNode;
   theme: ThemePreset;
   headerRight?: React.ReactNode;
-  /** 紧凑模式：减少 padding */
   compact?: boolean;
 }
 
@@ -42,6 +42,8 @@ export function CollapsibleSection({
   headerRight,
   compact = false,
 }: CollapsibleSectionProps) {
+  const layout = useResponsiveLayout();
+  const { screenPadding, isXSmall, isSmall } = layout;
   const [expanded, setExpanded] = useState(defaultExpanded);
   const rotateAnim = useRef(new Animated.Value(defaultExpanded ? 1 : 0)).current;
 
@@ -58,7 +60,6 @@ export function CollapsibleSection({
       try {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       } catch (_) {
-        // LayoutAnimation may not be available on all platforms
       }
     }
     setExpanded((v) => !v);
@@ -69,6 +70,15 @@ export function CollapsibleSection({
     outputRange: ['0deg', '180deg'],
   });
 
+  const iconSize = compact ? (isXSmall ? 12 : 14) : (isXSmall ? 14 : 16);
+  const titleFontSize = compact ? (isXSmall ? 12 : 13) : (isXSmall ? 13 : 14);
+  const subtitleFontSize = isXSmall ? 10 : 11;
+  const iconWrapSize = isXSmall ? 24 : 28;
+  const paddingH = isXSmall ? screenPadding - 2 : screenPadding - 2;
+  const paddingV = compact ? (isXSmall ? 8 : 10) : (isXSmall ? 10 : 12);
+  const contentPadding = isXSmall ? screenPadding - 4 : screenPadding - 4;
+  const arrowSize = isXSmall ? 18 : 20;
+
   return (
     <View
       style={[
@@ -76,12 +86,24 @@ export function CollapsibleSection({
         {
           backgroundColor: theme.colors.card,
           borderColor: theme.colors.border,
+          marginHorizontal: 0,
+          borderRadius: isXSmall ? 10 : 14,
         },
-        compact && styles.containerCompact,
+        compact && {
+          marginVertical: isXSmall ? 3 : 4,
+          borderRadius: isXSmall ? 10 : 12,
+        },
       ]}
     >
       <TouchableOpacity
-        style={[styles.header, compact && styles.headerCompact]}
+        style={[
+          styles.header,
+          {
+            paddingHorizontal: paddingH,
+            paddingVertical: paddingV,
+            gap: isXSmall ? 8 : 10,
+          },
+        ]}
         onPress={toggle}
         activeOpacity={0.7}
         accessibilityRole="button"
@@ -91,12 +113,17 @@ export function CollapsibleSection({
           <View
             style={[
               styles.iconWrap,
-              { backgroundColor: (iconColor || theme.colors.primary) + '14' },
+              {
+                backgroundColor: (iconColor || theme.colors.primary) + '14',
+                width: iconWrapSize,
+                height: iconWrapSize,
+                borderRadius: isXSmall ? 6 : 8,
+              },
             ]}
           >
             <MaterialIcons
               name={icon as unknown as MaterialIconName}
-              size={compact ? 14 : 16}
+              size={iconSize}
               color={iconColor || theme.colors.primary}
             />
           </View>
@@ -105,8 +132,10 @@ export function CollapsibleSection({
           <Text
             style={[
               styles.title,
-              { color: theme.colors.text },
-              compact && styles.titleCompact,
+              {
+                color: theme.colors.text,
+                fontSize: titleFontSize,
+              },
             ]}
           >
             {title}
@@ -115,7 +144,11 @@ export function CollapsibleSection({
             <Text
               style={[
                 styles.subtitle,
-                { color: theme.colors.textSecondary },
+                {
+                  color: theme.colors.textSecondary,
+                  fontSize: subtitleFontSize,
+                  marginTop: isXSmall ? 1 : 2,
+                },
               ]}
               numberOfLines={1}
             >
@@ -127,60 +160,48 @@ export function CollapsibleSection({
         <Animated.View style={{ transform: [{ rotate: rotation }] }}>
           <MaterialIcons
             name="expand-more"
-            size={20}
+            size={arrowSize}
             color={theme.colors.textTertiary}
           />
         </Animated.View>
       </TouchableOpacity>
-      {expanded && <View style={styles.content}>{children}</View>}
+      {expanded && (
+        <View
+          style={[
+            styles.content,
+            {
+              paddingHorizontal: contentPadding,
+              paddingBottom: isXSmall ? 10 : 12,
+            },
+          ]}
+        >
+          {children}
+        </View>
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
-    marginHorizontal: 16,
     marginVertical: 6,
     overflow: 'hidden',
-  },
-  containerCompact: {
-    marginHorizontal: 16,
-    marginVertical: 4,
-    borderRadius: 12,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 10,
-  },
-  headerCompact: {
-    paddingVertical: 10,
   },
   iconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
-    fontSize: 14,
     fontWeight: '700',
     letterSpacing: -0.1,
   },
-  titleCompact: {
-    fontSize: 13,
-  },
   subtitle: {
-    fontSize: 11,
-    marginTop: 2,
+    lineHeight: 14,
   },
-  content: {
-    paddingHorizontal: 12,
-    paddingBottom: 12,
-  },
+  content: {},
 });

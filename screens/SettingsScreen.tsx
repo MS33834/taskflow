@@ -16,12 +16,36 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useAppStore } from '../src/shared/store';
 import { RootStackParamList, Theme } from '../src/shared/types';
 import { toast } from '../src/shared/components/common/Toast';
+import { useResponsiveLayout } from '../src/shared/hooks/useResponsiveLayout';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Settings'>;
 
 const APP_VERSION = '1.0.0';
 
 export default function SettingsScreen() {
+  const layout = useResponsiveLayout();
+  const {
+    isXSmall,
+    isSmall,
+    isLarge,
+    screenPadding,
+    sectionSpacing,
+    cardSpacing,
+    bottomInset,
+    contentMaxWidth,
+  } = layout;
+
+  const headerPaddingV = isXSmall ? 10 : isSmall ? 11 : 12;
+  const headerTitleSize = isXSmall ? 16 : isSmall ? 17 : 18;
+  const iconSize = isXSmall ? 20 : isSmall ? 22 : 24;
+  const sectionTitleSize = isXSmall ? 14 : isSmall ? 15 : 16;
+  const bodyTextSize = isXSmall ? 13 : 14;
+  const contentWrapperStyle = isLarge ? {
+    maxWidth: contentMaxWidth,
+    alignSelf: 'center' as const,
+    width: '100%' as const,
+  } : {};
+
   const navigation = useNavigation<NavigationProp>();
   const {
     theme,
@@ -154,18 +178,18 @@ export default function SettingsScreen() {
   };
 
   const renderHeader = () => (
-    <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
+    <View style={[styles.header, { backgroundColor: theme.colors.surface, paddingHorizontal: screenPadding, paddingVertical: headerPaddingV }]}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+        <MaterialIcons name="arrow-back" size={iconSize} color={theme.colors.primary} />
       </TouchableOpacity>
-      <Text style={[styles.headerTitle, { color: theme.colors.text }]}>设置</Text>
+      <Text style={[styles.headerTitle, { color: theme.colors.text, fontSize: headerTitleSize }]}>设置</Text>
       <View style={styles.headerRight} />
     </View>
   );
 
   const renderSection = (title: string, children: React.ReactNode) => (
-    <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>{title}</Text>
+    <View style={[styles.section, { marginBottom: sectionSpacing }]}>
+      <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary, fontSize: sectionTitleSize }]}>{title}</Text>
       <View style={[styles.sectionContent, { backgroundColor: theme.colors.surface }]}>
         {children}
       </View>
@@ -279,7 +303,11 @@ export default function SettingsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
       {renderHeader()}
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={[styles.scrollView, contentWrapperStyle]}
+        contentContainerStyle={{ padding: screenPadding, paddingBottom: bottomInset }}
+        showsVerticalScrollIndicator={false}
+      >
         {renderSection(
           '外观',
           <>
