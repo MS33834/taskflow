@@ -30,7 +30,6 @@ export default function SettingsScreen() {
     isLarge,
     screenPadding,
     sectionSpacing,
-    cardSpacing,
     bottomInset,
     contentMaxWidth,
   } = layout;
@@ -39,7 +38,6 @@ export default function SettingsScreen() {
   const headerTitleSize = isXSmall ? 16 : isSmall ? 17 : 18;
   const iconSize = isXSmall ? 20 : isSmall ? 22 : 24;
   const sectionTitleSize = isXSmall ? 14 : isSmall ? 15 : 16;
-  const bodyTextSize = isXSmall ? 13 : 14;
   const contentWrapperStyle = isLarge ? {
     maxWidth: contentMaxWidth,
     alignSelf: 'center' as const,

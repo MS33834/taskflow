@@ -41,7 +41,6 @@ export default function NotesScreen() {
     isLarge,
     screenPadding,
     sectionSpacing,
-    cardSpacing,
     bottomInset,
     contentMaxWidth,
   } = layout;

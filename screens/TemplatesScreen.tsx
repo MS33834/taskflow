@@ -37,8 +37,6 @@ export default function TemplatesScreen() {
     isSmall,
     isLarge,
     screenPadding,
-    sectionSpacing,
-    cardSpacing,
     bottomInset,
     contentMaxWidth,
   } = layout;

@@ -38,7 +38,7 @@ export function QuickAddTask({ visible, onClose }: QuickAddTaskProps) {
   const categories = useAppStore((s) => s.categories);
   const tags = useAppStore((s) => s.tags);
   const layout = useResponsiveLayout();
-  const { isXSmall, isSmall, screenPadding } = layout;
+  const { isXSmall, screenPadding } = layout;
 
   const [text, setText] = useState('');
   const [showHints, setShowHints] = useState(false);
