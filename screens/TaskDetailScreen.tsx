@@ -40,27 +40,20 @@ const MENTION_USERS: MentionUser[] = [
 export default function TaskDetailScreen() {
   const layout = useResponsiveLayout();
   const {
-    width,
     isXSmall,
     isSmall,
     isLarge,
     screenPadding,
     sectionSpacing,
-    cardSpacing,
     bottomInset,
     contentMaxWidth,
   } = layout;
 
   const headerPaddingV = isXSmall ? 10 : isSmall ? 11 : 12;
   const sectionPadding = isXSmall ? 12 : isSmall ? 14 : 16;
-  const sectionTitleSize = isXSmall ? 14 : isSmall ? 15 : 16;
-  const titleSize = isXSmall ? 20 : isSmall ? 22 : 24;
   const bodyTextSize = isXSmall ? 13 : 14;
-  const smallTextSize = isXSmall ? 11 : 12;
   const iconSizeSmall = isXSmall ? 16 : 18;
   const iconSizeMedium = isXSmall ? 20 : isSmall ? 22 : 24;
-  const iconSizeLarge = isXSmall ? 24 : isSmall ? 28 : 32;
-  const attachmentWidth = (width - screenPadding * 2 - sectionPadding * 2 - cardSpacing * 2) / 3;
   const contentWrapperStyle = isLarge ? {
     maxWidth: contentMaxWidth,
     alignSelf: 'center' as const,

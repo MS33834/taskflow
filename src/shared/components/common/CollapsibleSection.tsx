@@ -43,7 +43,7 @@ export function CollapsibleSection({
   compact = false,
 }: CollapsibleSectionProps) {
   const layout = useResponsiveLayout();
-  const { screenPadding, isXSmall, isSmall } = layout;
+  const { screenPadding, isXSmall } = layout;
   const [expanded, setExpanded] = useState(defaultExpanded);
   const rotateAnim = useRef(new Animated.Value(defaultExpanded ? 1 : 0)).current;
 
@@ -60,6 +60,7 @@ export function CollapsibleSection({
       try {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
       } catch (_) {
+        // 无操作
       }
     }
     setExpanded((v) => !v);

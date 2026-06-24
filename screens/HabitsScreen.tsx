@@ -37,8 +37,6 @@ export default function HabitsScreen() {
     isSmall,
     isLarge,
     screenPadding,
-    sectionSpacing,
-    cardSpacing,
     bottomInset,
     contentMaxWidth,
   } = layout;
@@ -46,7 +44,6 @@ export default function HabitsScreen() {
   const headerPaddingV = isXSmall ? 10 : isSmall ? 11 : 12;
   const headerTitleSize = isXSmall ? 16 : isSmall ? 17 : 18;
   const iconSize = isXSmall ? 20 : isSmall ? 22 : 24;
-  const sectionTitleSize = isXSmall ? 14 : isSmall ? 15 : 16;
   const bodyTextSize = isXSmall ? 13 : 14;
   const contentWrapperStyle = isLarge ? {
     maxWidth: contentMaxWidth,

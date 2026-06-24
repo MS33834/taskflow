@@ -38,7 +38,7 @@ export function MultiSelectBar({
 }: MultiSelectBarProps) {
   const { theme } = useAppStore();
   const layout = useResponsiveLayout();
-  const { isXSmall, isSmall, bottomInset, screenPadding } = layout;
+  const { isXSmall, bottomInset, screenPadding } = layout;
   const allSelected = count > 0 && count === total;
 
   const closeIconSize = isXSmall ? 20 : 22;

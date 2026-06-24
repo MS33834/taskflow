@@ -29,7 +29,6 @@ interface SearchFilter {
 export default function SearchScreen() {
   const layout = useResponsiveLayout();
   const {
-    width,
     isXSmall,
     isSmall,
     isLarge,

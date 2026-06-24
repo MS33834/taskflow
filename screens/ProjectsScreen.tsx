@@ -40,13 +40,11 @@ const PROJECT_ICONS = [
 export default function ProjectsScreen() {
   const layout = useResponsiveLayout();
   const {
-    width,
     isXSmall,
     isSmall,
     isLarge,
     screenPadding,
     sectionSpacing,
-    cardSpacing,
     bottomInset,
     contentMaxWidth,
   } = layout;
@@ -54,7 +52,6 @@ export default function ProjectsScreen() {
   const headerPaddingV = isXSmall ? 10 : isSmall ? 11 : 12;
   const headerTitleSize = isXSmall ? 16 : isSmall ? 17 : 18;
   const iconSize = isXSmall ? 20 : isSmall ? 22 : 24;
-  const sectionPadding = isXSmall ? 12 : isSmall ? 14 : 16;
   const bodyTextSize = isXSmall ? 13 : 14;
   const contentWrapperStyle = isLarge ? {
     maxWidth: contentMaxWidth,

@@ -37,8 +37,6 @@ export default function TagsScreen() {
     isSmall,
     isLarge,
     screenPadding,
-    sectionSpacing,
-    cardSpacing,
     bottomInset,
     contentMaxWidth,
   } = layout;
