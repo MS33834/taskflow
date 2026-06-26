@@ -80,6 +80,9 @@ ios/
 
 # Python (backend)
 __pycache__/
+.env
+.env.*
+!**/.env.example
 *.py[cod]
 *.pyo
 *.egg-info/
