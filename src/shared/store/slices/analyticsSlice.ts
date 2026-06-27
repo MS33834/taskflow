@@ -111,32 +111,46 @@ export const createAnalyticsSlice: StateCreator<AppStore, [], [], AnalyticsSlice
   },
 
   getTaskStats: (taskIds) => {
-    const tasks = get().tasks.filter((t) => taskIds.includes(t.id));
-    return {
-      total: tasks.length,
-      completed: tasks.filter((t) => t.completed).length,
-      inProgress: tasks.filter((t) => t.status === 'in-progress').length,
-      overdue: tasks.filter((t) => !t.completed && t.dueDate && new Date(t.dueDate) < new Date()).length,
-    };
+    const idSet = new Set(taskIds);
+    let total = 0;
+    let completed = 0;
+    let inProgress = 0;
+    let overdue = 0;
+    const now = new Date();
+    for (const t of get().tasks) {
+      if (!idSet.has(t.id)) continue;
+      total++;
+      if (t.completed) completed++;
+      if (t.status === 'in-progress') inProgress++;
+      if (!t.completed && t.dueDate && new Date(t.dueDate) < now) overdue++;
+    }
+    return { total, completed, inProgress, overdue };
   },
 
   getProductivityScore: () => {
-    const tasks = get().tasks.filter((t) => !t.isArchived && !t.isDeleted);
-    const completed = tasks.filter((t) => t.completed);
-    const onTime = completed.filter((t) => {
-      if (!t.completedAt || !t.dueDate) return false;
-      return new Date(t.completedAt) <= new Date(t.dueDate);
-    });
-
-    if (completed.length === 0) return 0;
-    return Math.round((onTime.length / completed.length) * 100);
+    let completed = 0;
+    let onTime = 0;
+    for (const t of get().tasks) {
+      if (t.isArchived || t.isDeleted || !t.completed) continue;
+      completed++;
+      if (t.completedAt && t.dueDate && new Date(t.completedAt) <= new Date(t.dueDate)) {
+        onTime++;
+      }
+    }
+    if (completed === 0) return 0;
+    return Math.round((onTime / completed) * 100);
   },
 
   getCompletionRate: () => {
-    const tasks = get().tasks.filter((t) => !t.isArchived && !t.isDeleted);
-    const completed = tasks.filter((t) => t.completed);
-    if (tasks.length === 0) return 0;
-    return Math.round((completed.length / tasks.length) * 100);
+    let total = 0;
+    let completed = 0;
+    for (const t of get().tasks) {
+      if (t.isArchived || t.isDeleted) continue;
+      total++;
+      if (t.completed) completed++;
+    }
+    if (total === 0) return 0;
+    return Math.round((completed / total) * 100);
   },
 
   getStreak: () => {

@@ -55,7 +55,10 @@ export const createTemplatesSlice: StateCreator<AppStore, [], [], TemplatesSlice
     let content = deepClone(template.content);
     Object.entries(variables).forEach(([key, value]) => {
       const placeholder = `{{${key}}}`;
-      content = JSON.parse(JSON.stringify(content).replace(new RegExp(escapeRegExp(placeholder), 'g'), String(value)));
+      // 用 JSON.stringify 转义值后再去掉外层引号，确保含 " \ 换行等
+      // 特殊字符的变量值不会破坏外层 JSON 字符串结构。
+      const escaped = JSON.stringify(String(value)).slice(1, -1);
+      content = JSON.parse(JSON.stringify(content).replace(new RegExp(escapeRegExp(placeholder), 'g'), escaped));
     });
 
     return content;

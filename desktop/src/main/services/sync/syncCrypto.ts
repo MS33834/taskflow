@@ -99,7 +99,11 @@ export function decryptSyncRecord(ciphertext: Buffer, smk: Buffer): SyncRecordPa
   const decipher = createDecipheriv('aes-256-gcm', smk, iv);
   decipher.setAuthTag(authTag);
   const plaintext = Buffer.concat([decipher.update(encrypted), decipher.final()]);
-  return JSON.parse(plaintext.toString('utf8')) as SyncRecordPayload;
+  try {
+    return JSON.parse(plaintext.toString('utf8')) as SyncRecordPayload;
+  } catch {
+    throw new Error('Invalid sync record payload: not valid JSON');
+  }
 }
 
 export function deriveSessionKey(

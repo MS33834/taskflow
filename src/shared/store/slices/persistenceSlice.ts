@@ -74,89 +74,100 @@ export const createPersistenceSlice: StateCreator<AppStore, [], [], PersistenceS
         endDate: data.endDate ? new Date(data.endDate as string | number | Date) : null,
       });
 
+      // 单个键的持久化数据损坏时跳过该键并继续加载其余键，
+      // 避免一条坏数据导致所有本地数据都无法恢复。
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const safeParseArray = (raw: string, mapFn: (data: Record<string, unknown>) => any): any[] | null => {
+        try {
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed.map(mapFn) : null;
+        } catch {
+          return null;
+        }
+      };
+
       if (tasksData) {
-        const tasks = JSON.parse(tasksData).map(parseDates);
-        set({ tasks });
+        const tasks = safeParseArray(tasksData, parseDates);
+        if (tasks) set({ tasks });
       }
       if (projectsData) {
-        const projects = JSON.parse(projectsData).map(parseDates);
-        set({ projects });
+        const projects = safeParseArray(projectsData, parseDates);
+        if (projects && projects.length > 0) set({ projects });
       }
       if (categoriesData) {
-        const categories = JSON.parse(categoriesData).map(parseDates);
-        if (categories.length > 0) set({ categories });
+        const categories = safeParseArray(categoriesData, parseDates);
+        if (categories && categories.length > 0) set({ categories });
       }
       if (tagsData) {
-        const tags = JSON.parse(tagsData).map(parseDates);
-        if (tags.length > 0) set({ tags });
+        const tags = safeParseArray(tagsData, parseDates);
+        if (tags && tags.length > 0) set({ tags });
       }
       if (viewsData) {
-        const views = JSON.parse(viewsData).map(parseDates);
-        if (views.length > 0) {
+        const views = safeParseArray(viewsData, parseDates);
+        if (views && views.length > 0) {
           set({ views, activeView: views[0] });
         }
       }
       if (themeData) {
-        const theme = JSON.parse(themeData);
-        set({ theme });
+        try { set({ theme: JSON.parse(themeData) }); } catch { /* 损坏则保留默认主题 */ }
       }
       if (goalsData) {
-        const goals = JSON.parse(goalsData).map(parseDates);
-        if (goals.length > 0) set({ goals });
+        const goals = safeParseArray(goalsData, parseDates);
+        if (goals && goals.length > 0) set({ goals });
       }
       if (habitsData) {
-        const habits = JSON.parse(habitsData).map(parseDates);
-        if (habits.length > 0) set({ habits });
+        const habits = safeParseArray(habitsData, parseDates);
+        if (habits && habits.length > 0) set({ habits });
       }
       if (notesData) {
-        const notes = JSON.parse(notesData).map(parseDates);
-        if (notes.length > 0) set({ notes });
+        const notes = safeParseArray(notesData, parseDates);
+        if (notes && notes.length > 0) set({ notes });
       }
       if (calendarsData) {
-        const calendars = JSON.parse(calendarsData).map(parseDates);
-        if (calendars.length > 0) set({ calendars });
+        const calendars = safeParseArray(calendarsData, parseDates);
+        if (calendars && calendars.length > 0) set({ calendars });
       }
       if (eventsData) {
-        const events = JSON.parse(eventsData).map(parseDates);
-        if (events.length > 0) set({ events });
+        const events = safeParseArray(eventsData, parseDates);
+        if (events && events.length > 0) set({ events });
       }
       if (remindersData) {
-        const reminders = JSON.parse(remindersData).map(parseDates);
-        if (reminders.length > 0) set({ reminders });
+        const reminders = safeParseArray(remindersData, parseDates);
+        if (reminders && reminders.length > 0) set({ reminders });
       }
       if (automationData) {
-        const automationRules = JSON.parse(automationData).map(parseDates);
-        if (automationRules.length > 0) set({ automationRules });
+        const automationRules = safeParseArray(automationData, parseDates);
+        if (automationRules && automationRules.length > 0) set({ automationRules });
       }
       if (templatesData) {
-        const templates = JSON.parse(templatesData).map(parseDates);
-        if (templates.length > 0) set({ templates });
+        const templates = safeParseArray(templatesData, parseDates);
+        if (templates && templates.length > 0) set({ templates });
       }
       if (teamsData) {
-        const teams = JSON.parse(teamsData).map(parseDates);
-        if (teams.length > 0) set({ teams });
+        const teams = safeParseArray(teamsData, parseDates);
+        if (teams && teams.length > 0) set({ teams });
       }
       if (sessionsData) {
-        const sessions = JSON.parse(sessionsData).map((s: Record<string, unknown>) => ({
+        const sessions = safeParseArray(sessionsData, (s: Record<string, unknown>) => ({
           ...s,
           startedAt: s.startedAt ? new Date(s.startedAt as string | number | Date) : new Date(),
         }));
-        if (sessions.length > 0) set({ sessions });
+        if (sessions && sessions.length > 0) set({ sessions });
       }
 
       const userPrefsData = await AsyncStorage.getItem(STORAGE_KEYS.USER_PREFERENCES);
       if (userPrefsData) {
-        set({ userPreferences: JSON.parse(userPrefsData) });
+        try { set({ userPreferences: JSON.parse(userPrefsData) }); } catch { /* 损坏则保留默认偏好 */ }
       }
 
       const sidebarData = await AsyncStorage.getItem(STORAGE_KEYS.SIDEBAR_OPEN);
       if (sidebarData) {
-        set({ sidebarOpen: JSON.parse(sidebarData) });
+        try { set({ sidebarOpen: JSON.parse(sidebarData) }); } catch { /* 损坏则保留默认值 */ }
       }
 
       const searchHistoryData = await AsyncStorage.getItem(STORAGE_KEYS.SEARCH_HISTORY);
       if (searchHistoryData) {
-        set({ searchHistory: JSON.parse(searchHistoryData) });
+        try { set({ searchHistory: JSON.parse(searchHistoryData) }); } catch { /* 损坏则清空搜索历史 */ }
       }
     } catch (error) {
       console.error('Error loading data:', error);

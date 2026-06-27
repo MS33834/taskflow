@@ -265,7 +265,12 @@ export class SyncSession extends EventEmitter {
     if (!this.peerDeviceId || !this.peerNonce || !this.peerPublicKey) {
       throw new Error('Peer identity not established');
     }
-    const payload = JSON.parse(Buffer.from(encryptedPayload, 'base64').toString('utf8'));
+    let payload: { ecdhPublicKeyPem?: string; signature?: string };
+    try {
+      payload = JSON.parse(Buffer.from(encryptedPayload, 'base64').toString('utf8'));
+    } catch {
+      throw new Error('Malformed OFFER/ANSWER payload: invalid JSON');
+    }
     if (!payload.ecdhPublicKeyPem || !payload.signature) {
       throw new Error('Invalid OFFER/ANSWER payload');
     }

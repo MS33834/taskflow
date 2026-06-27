@@ -55,7 +55,12 @@ export function getSyncSettings(): SyncSettings {
   }
 
   const decrypted = safeStorage.decryptString(Buffer.from(raw.payload, 'base64'));
-  const parsed = JSON.parse(decrypted) as Partial<SyncSettings>;
+  let parsed: Partial<SyncSettings>;
+  try {
+    parsed = JSON.parse(decrypted) as Partial<SyncSettings>;
+  } catch {
+    throw new Error(`Corrupt sync settings file: ${filePath}`);
+  }
   return {
     enabled: typeof parsed.enabled === 'boolean' ? parsed.enabled : DEFAULT_SYNC_SETTINGS.enabled,
     relayUrl: typeof parsed.relayUrl === 'string' ? parsed.relayUrl : DEFAULT_SYNC_SETTINGS.relayUrl,
