@@ -121,8 +121,8 @@ def validate_git_url(url: str) -> str:
 
     if is_ssh:
         # SSH 格式 git@host:path 没有 scheme，urlparse 会把 host 放到 path
-        hostname = url.split(":", 1)[0].split("@", 1)[-1]
-        port = 22
+        hostname: Optional[str] = url.split(":", 1)[0].split("@", 1)[-1]
+        port: Optional[int] = 22
     else:
         hostname = parsed.hostname
         port = parsed.port

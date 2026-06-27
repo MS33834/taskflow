@@ -177,4 +177,4 @@ class FileOrganizer:
         stmt = stmt.limit(limit)
         
         result = await self.db.execute(stmt)
-        return result.scalars().all()
+        return list(result.scalars().all())

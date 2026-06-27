@@ -1,14 +1,14 @@
 from pathlib import Path
 from typing import Optional
 
-from pydantic import ConfigDict, Field
-from pydantic_settings import BaseSettings
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """应用配置"""
 
-    model_config = ConfigDict(
+    model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8"
     )

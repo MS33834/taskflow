@@ -185,7 +185,7 @@ class GitManager:
             return []
         
         commits = []
-        for commit in repo.walk(repo.head.target, pygit2.GIT_SORT_TIME):
+        for commit in repo.walk(repo.head.target, pygit2.enums.SortMode.TIME):
             commits.append(GitCommit(
                 hash=str(commit.id),
                 message=commit.message.strip(),
@@ -223,7 +223,7 @@ class GitManager:
         # 执行快进合并
         repo.merge(remote_commit)
         
-        if repo.state == pygit2.GIT_REPO_STATE_MERGE:
+        if repo.state == pygit2.enums.RepositoryState.MERGE:
             # 如果有冲突，需要手动解决
             raise ValueError("合并冲突，需要手动解决")
         

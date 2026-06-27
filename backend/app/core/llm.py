@@ -1,9 +1,10 @@
 """大模型统一调度模块"""
 import re
-from typing import AsyncIterator, Dict, List, Optional, Tuple
+from typing import Any, AsyncIterator, Dict, List, Optional, Tuple, Union
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from pydantic import SecretStr
 
 from app.config import settings
 from app.utils.logger import logger
@@ -19,9 +20,26 @@ _SENSITIVE_PATTERNS = [
 ]
 
 
-def _sanitize_text(text: str) -> Tuple[str, int]:
-    """对文本进行简单脱敏，返回脱敏后的文本与命中规则数。"""
-    masked = text
+def _sanitize_text(text: Union[str, List[Any]]) -> Tuple[str, int]:
+    """对文本进行简单脱敏，返回脱敏后的文本与命中规则数。
+
+    LangChain 消息内容既可能是纯文本 ``str``，也可能是多模态
+    ``list[str | dict]``；后者会把每个文本片段拼接后再统一脱敏。
+    """
+    if isinstance(text, list):
+        parts: List[str] = []
+        for part in text:
+            if isinstance(part, str):
+                parts.append(part)
+            elif isinstance(part, dict):
+                # 常见结构 {"type": "text", "text": "..."}
+                value = part.get("text", "")
+                if isinstance(value, str):
+                    parts.append(value)
+        masked = "\n".join(parts)
+    else:
+        masked = text
+
     hits = 0
     for pattern in _SENSITIVE_PATTERNS:
         matches = list(pattern.finditer(masked))
@@ -64,10 +82,10 @@ class LLMManager:
         
         return ChatOpenAI(
             model=settings.openai_model,
-            api_key=settings.openai_api_key,
+            api_key=SecretStr(settings.openai_api_key),
             base_url=settings.openai_base_url,
             temperature=0.7,
-            max_tokens=2000,
+            model_kwargs={"max_tokens": 2000},
         )
     
     def _create_ollama_llm(self) -> BaseChatModel:
@@ -111,7 +129,7 @@ class LLMManager:
     
     def _convert_messages(self, messages: List[Dict[str, str]]) -> List[BaseMessage]:
         """转换消息格式为 LangChain 格式"""
-        converted = []
+        converted: List[BaseMessage] = []
         for msg in messages:
             role = msg.get("role", "user")
             content = msg.get("content", "")
