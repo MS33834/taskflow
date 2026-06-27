@@ -89,6 +89,14 @@ export function deleteTask(id: string): void {
 }
 
 function parseTask(row: TaskRow): Task {
+  // tag_ids 存储为 JSON 文本；损坏时回退为空数组，避免单条坏数据
+  // 导致整个任务列表查询抛异常。
+  let tagIds: string[] = [];
+  try {
+    tagIds = JSON.parse(row.tag_ids || '[]');
+  } catch {
+    tagIds = [];
+  }
   return {
     id: row.id,
     title: row.title,
@@ -99,7 +107,7 @@ function parseTask(row: TaskRow): Task {
     priority: row.priority,
     status: row.status,
     categoryId: row.category_id ?? undefined,
-    tagIds: JSON.parse(row.tag_ids || '[]'),
+    tagIds,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

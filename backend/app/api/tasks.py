@@ -198,7 +198,11 @@ async def update_task(
         if key == "id":
             continue
         if key in json_fields:
-            if isinstance(value, list) and value and hasattr(value[0], "model_dump"):
+            if (
+                isinstance(value, list)
+                and value
+                and all(hasattr(v, "model_dump") for v in value)
+            ):
                 value = [v.model_dump() for v in value]
             setattr(task, json_fields[key], _dump(value))
         elif hasattr(task, key):

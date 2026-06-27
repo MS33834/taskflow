@@ -26,33 +26,35 @@ export const createAnalyticsSlice: StateCreator<AppStore, [], [], AnalyticsSlice
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     const activeTasks = tasks.filter((t) => !t.isArchived && !t.isDeleted);
-    const completedTasks = activeTasks.filter((t) => t.completed);
-    const inProgressTasks = activeTasks.filter((t) => t.status === 'in-progress');
-    const overdueTasks = activeTasks.filter(
-      (t) => !t.completed && t.dueDate && new Date(t.dueDate) < today
-    );
-    const upcomingTasks = activeTasks.filter(
-      (t) =>
-        !t.completed &&
-        t.dueDate &&
-        new Date(t.dueDate) >= today &&
-        new Date(t.dueDate) <= tomorrow
-    );
-    const todayTasks = activeTasks.filter((t) => {
-      if (!t.dueDate) return false;
-      const dueDate = new Date(t.dueDate);
-      return dueDate >= today && dueDate < tomorrow;
-    });
+    // 单次遍历统计各维度计数，避免 6 次 filter 的 O(6n) 重复扫描。
+    let completedCount = 0;
+    let inProgressCount = 0;
+    let overdueCount = 0;
+    let upcomingCount = 0;
+    let todayCount = 0;
+    for (const t of activeTasks) {
+      if (t.completed) completedCount++;
+      if (t.status === 'in-progress') inProgressCount++;
+      if (t.dueDate) {
+        const dueDate = new Date(t.dueDate);
+        const isToday = dueDate >= today && dueDate < tomorrow;
+        if (isToday) todayCount++;
+        if (!t.completed) {
+          if (dueDate < today) overdueCount++;
+          if (dueDate >= today && dueDate <= tomorrow) upcomingCount++;
+        }
+      }
+    }
 
     const stats: DashboardStats = {
       overview: {
         totalTasks: activeTasks.length,
-        completedTasks: completedTasks.length,
-        inProgressTasks: inProgressTasks.length,
-        overdueTasks: overdueTasks.length,
-        upcomingTasks: upcomingTasks.length,
-        todayTasks: todayTasks.length,
-        completionRate: activeTasks.length > 0 ? (completedTasks.length / activeTasks.length) * 100 : 0,
+        completedTasks: completedCount,
+        inProgressTasks: inProgressCount,
+        overdueTasks: overdueCount,
+        upcomingTasks: upcomingCount,
+        todayTasks: todayCount,
+        completionRate: activeTasks.length > 0 ? (completedCount / activeTasks.length) * 100 : 0,
         averageCompletionTime: 0,
         streak: 0,
         bestStreak: 0,

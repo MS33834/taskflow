@@ -289,12 +289,17 @@ export class SyncSession extends EventEmitter {
     if (!this.ecdhKeyPair || !this.peerDeviceId) {
       throw new Error('Cannot compute session keys');
     }
+    if (!this.peerNonce) {
+      // 握手尚未完成（peer nonce 未建立），fail-closed 而非把 undefined
+      // 写入 salt buffer 导致错误密钥。
+      throw new Error('Cannot compute session keys: peer nonce not established');
+    }
     const sharedSecret = computeSharedSecret(
       this.ecdhKeyPair.privateKeyPem,
       peerEcdhPublicKeyPem
     );
     const sortedDeviceIds = [this.identity.deviceId, this.peerDeviceId].sort();
-    const sortedNonces = [this.nonce, this.peerNonce!].sort();
+    const sortedNonces = [this.nonce, this.peerNonce].sort();
     const salt = createHash('sha256')
       .update(
         Buffer.concat([

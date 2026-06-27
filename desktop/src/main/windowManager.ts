@@ -44,10 +44,6 @@ export function setContentProtection(enabled: boolean): void {
   }
 }
 
-export function getMainWindow(): BrowserWindow | null {
-  return mainWindow;
-}
-
 export function registerGlobalShortcuts(): void {
   globalShortcut.register('CommandOrControl+L', () => {
     mainWindow?.webContents.send('app:lock');

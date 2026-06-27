@@ -77,7 +77,14 @@ function serializeFields(fields: VaultField[]): string {
 }
 
 function parseVaultItem(row: VaultItemRow): VaultItem {
-  const fields: VaultField[] = JSON.parse(row.fields || '[]');
+  // fields 存储为 JSON 文本；损坏时回退为空数组，避免单条坏数据
+  // 导致整个密码库列表查询抛异常。
+  let fields: VaultField[] = [];
+  try {
+    fields = JSON.parse(row.fields || '[]');
+  } catch {
+    fields = [];
+  }
   const decryptedFields = fields.map((field) => ({
     ...field,
     value: field.isSensitive ? decryptWithMasterKey(Buffer.from(field.value, 'base64')) : field.value,
